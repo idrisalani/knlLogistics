@@ -1,0 +1,386 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block css %}
+<style>
+  :root {
+    --kamrate-orange: #FF9500;
+    --kamrate-blue: #001F4D;
+    --kamrate-green: #0D7A3D;
+    --danger-red: #d32f2f;
+  }
+
+  /* Page Header */
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 3px solid var(--kamrate-orange);
+  }
+
+  .page-header h1 {
+    color: var(--kamrate-blue);
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    background-color: var(--kamrate-orange);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+  }
+
+  .btn:hover {
+    background-color: #E67E00;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
+  }
+
+  /* Stats Cards */
+  .stats-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+  }
+
+  .stat-card {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-left: 5px solid var(--kamrate-orange);
+  }
+
+  .stat-card h3 {
+    color: #999;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    margin: 0 0 10px 0;
+    letter-spacing: 1px;
+  }
+
+  .stat-value {
+    color: var(--kamrate-blue);
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin: 0;
+  }
+
+  .stat-card.positive {
+    border-left-color: var(--kamrate-green);
+  }
+
+  .stat-card.negative {
+    border-left-color: var(--danger-red);
+  }
+
+  .stat-card.positive .stat-value {
+    color: var(--kamrate-green);
+  }
+
+  .stat-card.negative .stat-value {
+    color: var(--danger-red);
+  }
+
+  /* Trips Table */
+  .trips-table {
+    width: 100%;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .trips-table table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .trips-table thead {
+    background-color: var(--kamrate-blue);
+    color: white;
+  }
+
+  .trips-table th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 800;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .trips-table td {
+    padding: 15px;
+    border-bottom: 1px solid #e0e0e0;
+    color: #333;
+  }
+
+  .trips-table tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+
+  .trip-number {
+    font-weight: 700;
+    color: var(--kamrate-blue);
+  }
+
+  .route {
+    color: var(--kamrate-orange);
+    font-weight: 600;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  .status-completed {
+    background-color: #e8f5e9;
+    color: var(--kamrate-green);
+  }
+
+  .status-in-progress {
+    background-color: #fff3e0;
+    color: #ff9800;
+  }
+
+  .status-planned {
+    background-color: #e3f2fd;
+    color: #1976d2;
+  }
+
+  .status-cancelled {
+    background-color: #ffebee;
+    color: var(--danger-red);
+  }
+
+  .profit-positive {
+    color: var(--kamrate-green);
+    font-weight: 700;
+  }
+
+  .profit-negative {
+    color: var(--danger-red);
+    font-weight: 700;
+  }
+
+  .profit-break-even {
+    color: #999;
+    font-weight: 700;
+  }
+
+  /* Action Buttons */
+  .action-buttons {
+    display: flex;
+    gap: 5px;
+  }
+
+  .btn-sm {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .btn-view {
+    background-color: var(--kamrate-blue);
+    color: white;
+  }
+
+  .btn-view:hover {
+    background-color: #002244;
+  }
+
+  .btn-edit {
+    background-color: var(--kamrate-orange);
+    color: white;
+  }
+
+  .btn-edit:hover {
+    background-color: #E67E00;
+  }
+
+  .btn-delete {
+    background-color: var(--danger-red);
+    color: white;
+  }
+
+  .btn-delete:hover {
+    background-color: #b71c1c;
+  }
+
+  /* Empty State */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+  }
+
+  .empty-state h2 {
+    color: var(--kamrate-blue);
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 10px;
+  }
+
+  .empty-state p {
+    color: #666;
+    font-size: 1rem;
+    margin-bottom: 30px;
+  }
+
+  .empty-state .btn {
+    display: inline-block;
+    margin: 0;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .stats-container {
+      grid-template-columns: 1fr;
+    }
+
+    .trips-table {
+      overflow-x: auto;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+    }
+
+    .btn-sm {
+      width: 100%;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block main %}
+<main>
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>🚚 Truck Trips</h1>
+    <button class="btn" onclick="openNewTripModal()">+ New Trip</button>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="stats-container">
+    <div class="stat-card">
+      <h3>Total Trips</h3>
+      <p class="stat-value">{{ total_trips }}</p>
+    </div>
+    <div class="stat-card positive">
+      <h3>Total Revenue</h3>
+      <p class="stat-value">₦{{ total_revenue|floatformat:0 }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Total Expenses</h3>
+      <p class="stat-value">₦{{ total_expenses|floatformat:0 }}</p>
+    </div>
+    <div class="stat-card {% if total_profit_loss >= 0 %}positive{% else %}negative{% endif %}">
+      <h3>Total Profit/Loss</h3>
+      <p class="stat-value">₦{{ total_profit_loss|floatformat:0 }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Profitability %</h3>
+      <p class="stat-value">{{ profit_percentage|floatformat:1 }}%</p>
+    </div>
+  </div>
+
+  <!-- Trips Table -->
+  <div class="trips-table">
+    {% if trips %}
+      <table>
+        <thead>
+          <tr>
+            <th>Trip #</th>
+            <th>Route</th>
+            <th>Truck</th>
+            <th>Status</th>
+            <th>Revenue</th>
+            <th>Expenses</th>
+            <th>Profit/Loss</th>
+            <th>Margin %</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for trip in trips %}
+          <tr>
+            <td class="trip-number">{{ trip.tripNumber }}</td>
+            <td class="route">{{ trip.origin }} → {{ trip.destination }}</td>
+            <td>{{ trip.truck.plateNumber }}</td>
+            <td>
+              <span class="status-badge status-{{ trip.status|lower }}">
+                {{ trip.get_status_display }}
+              </span>
+            </td>
+            <td>₦{{ trip.revenue|floatformat:0 }}</td>
+            <td>₦{{ trip.get_total_expenses|floatformat:0 }}</td>
+            <td class="{% if trip.get_profit_loss >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+              ₦{{ trip.get_profit_loss|floatformat:0 }}
+            </td>
+            <td>
+              <span class="{% if trip.get_profit_loss >= 0 %}profit-positive{% else %}profit-negative{% endif %}">
+                {{ trip.get_profitability_percentage|floatformat:1 }}%
+              </span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button class="btn-sm btn-view" onclick="viewTrip({{ trip.id }})">View</button>
+                <button class="btn-sm btn-edit" onclick="editTrip({{ trip.id }})">Edit</button>
+                <button class="btn-sm btn-delete" onclick="deleteTrip({{ trip.id }})">Delete</button>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty-state">
+        <h2>No Trips Yet</h2>
+        <p>Start by creating your first trip to track revenue and expenses</p>
+        <button class="btn" onclick="openNewTripModal()">+ Create First Trip</button>
+      </div>
+    {% endif %}
+  </div>
+</main>
+
+<script>
+  function openNewTripModal() {
+    // Implement trip creation modal
+    alert('Trip creation modal will open here');
+  }
+
+  function viewTrip(tripId) {
+    window.location.href = `/knlInvoice/trips/${tripId}/`;
+  }
+
+  function editTrip(tripId) {
+    window.location.href = `/knlInvoice/trips/${tripId}/edit/`;
+  }
+
+  function deleteTrip(tripId) {
+    if (confirm('Are you sure you want to delete this trip?')) {
+      window.location.href = `/knlInvoice/trips/${tripId}/delete/`;
+    }
+  }
+</script>
+
+{% endblock %}

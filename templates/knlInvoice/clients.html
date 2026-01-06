@@ -1,0 +1,551 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block css %}
+<style>
+  :root {
+    --kamrate-orange: #FF9500;
+    --kamrate-blue: #001F4D;
+    --kamrate-green: #0D7A3D;
+  }
+
+  /* Page Header */
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 3px solid var(--kamrate-orange);
+  }
+
+  .page-header h1 {
+    color: var(--kamrate-blue);
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0;
+  }
+
+  .page-header .btn {
+    padding: 10px 20px;
+    background-color: var(--kamrate-orange);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.95rem;
+  }
+
+  .page-header .btn:hover {
+    background-color: #E67E00;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
+  }
+
+  /* Empty State */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+  }
+
+  .empty-state-image {
+    max-width: 200px;
+    margin-bottom: 20px;
+    opacity: 0.8;
+  }
+
+  .empty-state h2 {
+    color: var(--kamrate-blue);
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-bottom: 10px;
+  }
+
+  .empty-state p {
+    color: #666;
+    font-size: 1rem;
+    margin-bottom: 30px;
+  }
+
+  .empty-state .btn {
+    padding: 14px 28px;
+    background-color: var(--kamrate-orange);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+  }
+
+  .empty-state .btn:hover {
+    background-color: #E67E00;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(255, 149, 0, 0.3);
+  }
+
+  /* Clients Table */
+  .clients-table {
+    width: 100%;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .clients-table table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .clients-table thead {
+    background-color: var(--kamrate-blue);
+    color: white;
+  }
+
+  .clients-table th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 800;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .clients-table td {
+    padding: 15px;
+    border-bottom: 1px solid #e0e0e0;
+    color: #333;
+  }
+
+  .clients-table tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+
+  .client-name {
+    font-weight: 700;
+    color: var(--kamrate-blue);
+  }
+
+  .client-email {
+    color: var(--kamrate-orange);
+    text-decoration: none;
+  }
+
+  .client-email:hover {
+    text-decoration: underline;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 5px;
+  }
+
+  .btn-sm {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .btn-view {
+    background-color: var(--kamrate-blue);
+    color: white;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-view:hover {
+    background-color: #002244;
+  }
+
+  .btn-edit {
+    background-color: var(--kamrate-orange);
+    color: white;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-edit:hover {
+    background-color: #E67E00;
+  }
+
+  /* Modal Styles */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s ease;
+  }
+
+  .modal.show {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  .modal-content {
+    background: white;
+    margin: 5% auto;
+    padding: 40px;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 600px;
+    animation: slideDown 0.3s ease;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+
+  @keyframes slideDown {
+    from {
+      transform: translateY(-50px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 3px solid var(--kamrate-orange);
+  }
+
+  .modal-header h2 {
+    margin: 0;
+    color: var(--kamrate-blue);
+    font-size: 1.8rem;
+    font-weight: 800;
+  }
+
+  .close {
+    color: #666;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+  }
+
+  .close:hover {
+    color: var(--kamrate-orange);
+    transform: scale(1.2);
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--kamrate-blue);
+    font-weight: 700;
+    font-size: 0.95rem;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  }
+
+  .form-control:focus {
+    outline: none;
+    border-color: var(--kamrate-orange);
+    box-shadow: 0 0 0 3px rgba(255, 149, 0, 0.1);
+    background-color: #fffbf8;
+  }
+
+  .form-control:hover {
+    border-color: var(--kamrate-orange);
+  }
+
+  .modal-footer {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #e0e0e0;
+    justify-content: flex-end;
+  }
+
+  .btn-primary {
+    background-color: var(--kamrate-orange);
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex: 1;
+  }
+
+  .btn-primary:hover {
+    background-color: #E67E00;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
+  }
+
+  .btn-secondary {
+    background-color: #f0f0f0;
+    color: #333;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 120px;
+  }
+
+  .btn-secondary:hover {
+    background-color: #e0e0e0;
+    transform: translateY(-2px);
+  }
+
+  @media (max-width: 768px) {
+    .page-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 15px;
+    }
+
+    .page-header h1 {
+      font-size: 1.5rem;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+    }
+
+    .btn-sm {
+      width: 100%;
+    }
+
+    .modal-content {
+      width: 95%;
+      margin: 20% auto;
+      padding: 25px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block main %}
+<main>
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>Clients</h1>
+    <button class="btn" onclick="openClientModal()">+ Add New Client</button>
+  </div>
+
+  <!-- Clients Table or Empty State -->
+  <div class="clients-table">
+    {% if clients %}
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Address</th>
+            <th>State</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for client in clients %}
+          <tr>
+            <td class="client-name">{{ client.clientName }}</td>
+            <td><a href="mailto:{{ client.emailAddress }}" class="client-email">{{ client.emailAddress }}</a></td>
+            <td>{{ client.phoneNumber }}</td>
+            <td>{{ client.addressLine1 }}</td>
+            <td>{{ client.state }}</td>
+            <td>
+              <div class="action-buttons">
+                <a href="{% url 'client-detail' client.slug %}" class="btn-sm btn-view">View</a>
+                <a href="{% url 'client-update' client.slug %}" class="btn-sm btn-edit">Edit</a>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty-state">
+        <svg class="empty-state-image" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="100" cy="70" r="30" fill="#FF9500" opacity="0.3"/>
+          <rect x="60" y="110" width="80" height="60" rx="8" fill="#FF9500" opacity="0.2"/>
+          <circle cx="85" cy="140" r="5" fill="#FF9500" opacity="0.5"/>
+          <circle cx="115" cy="140" r="5" fill="#FF9500" opacity="0.5"/>
+          <path d="M 85 155 Q 100 165 115 155" stroke="#FF9500" stroke-width="3" fill="none" opacity="0.5" stroke-linecap="round"/>
+        </svg>
+        <h2>No Clients Yet</h2>
+        <p>Start by adding your first client to get invoicing</p>
+        <button class="btn" onclick="openClientModal()">+ Add First Client</button>
+      </div>
+    {% endif %}
+  </div>
+</main>
+
+<!-- Add Client Modal -->
+<div id="clientModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>👥 Add New Client</h2>
+      <button class="close" onclick="closeClientModal()">&times;</button>
+    </div>
+
+    <form id="clientForm" method="POST" action="{% url 'client-create' %}" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label for="clientName">Client Name <span style="color: #d32f2f;">*</span></label>
+        <input type="text" id="clientName" name="clientName" class="form-control" placeholder="Company Name" required>
+      </div>
+
+      <div class="form-group">
+        <label for="emailAddress">Email Address</label>
+        <input type="email" id="emailAddress" name="emailAddress" class="form-control" placeholder="email@example.com">
+      </div>
+
+      <div class="form-group">
+        <label for="phoneNumber">Phone Number</label>
+        <input type="tel" id="phoneNumber" name="phoneNumber" class="form-control" placeholder="+234 123 456 7890">
+      </div>
+
+      <div class="form-group">
+        <label for="addressLine1">Address</label>
+        <input type="text" id="addressLine1" name="addressLine1" class="form-control" placeholder="Street Address">
+      </div>
+
+      <div class="form-group">
+        <label for="state">State <span style="color: #d32f2f;">*</span></label>
+        <select id="state" name="state" class="form-control" required>
+          <option value="">-- Select State --</option>
+          <option value="Lagos">Lagos</option>
+          <option value="Abuja">Abuja (FCT)</option>
+          <option value="Abia">Abia</option>
+          <option value="Adamawa">Adamawa</option>
+          <option value="Akwa Ibom">Akwa Ibom</option>
+          <option value="Anambra">Anambra</option>
+          <option value="Bauchi">Bauchi</option>
+          <option value="Bayelsa">Bayelsa</option>
+          <option value="Borno">Borno</option>
+          <option value="Cross River">Cross River</option>
+          <option value="Delta">Delta</option>
+          <option value="Ebonyi">Ebonyi</option>
+          <option value="Edo">Edo</option>
+          <option value="Ekiti">Ekiti</option>
+          <option value="Enugu">Enugu</option>
+          <option value="Gombe">Gombe</option>
+          <option value="Imo">Imo</option>
+          <option value="Jigawa">Jigawa</option>
+          <option value="Kaduna">Kaduna</option>
+          <option value="Kano">Kano</option>
+          <option value="Katsina">Katsina</option>
+          <option value="Kebbi">Kebbi</option>
+          <option value="Kogi">Kogi</option>
+          <option value="Kwara">Kwara</option>
+          <option value="Nasarawa">Nasarawa</option>
+          <option value="Niger">Niger</option>
+          <option value="Ogun">Ogun</option>
+          <option value="Ondo">Ondo</option>
+          <option value="Osun">Osun</option>
+          <option value="Oyo">Oyo</option>
+          <option value="Plateau">Plateau</option>
+          <option value="Rivers">Rivers</option>
+          <option value="Sokoto">Sokoto</option>
+          <option value="Taraba">Taraba</option>
+          <option value="Yobe">Yobe</option>
+          <option value="Zamfara">Zamfara</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="postalCode">Postal Code</label>
+        <input type="text" id="postalCode" name="postalCode" class="form-control" placeholder="Postal Code">
+      </div>
+
+      <div class="form-group">
+        <label for="taxNumber">Tax Number</label>
+        <input type="text" id="taxNumber" name="taxNumber" class="form-control" placeholder="Tax ID / BVN">
+      </div>
+
+      <div class="form-group">
+        <label for="clientLogo">Company Logo</label>
+        <input type="file" id="clientLogo" name="clientLogo" class="form-control" accept="image/*">
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-secondary" onclick="closeClientModal()">Close</button>
+        <button type="submit" class="btn-primary">Save Client</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+  // Open Modal
+  function openClientModal() {
+    document.getElementById('clientModal').classList.add('show');
+  }
+
+  // Close Modal
+  function closeClientModal() {
+    document.getElementById('clientModal').classList.remove('show');
+    document.getElementById('clientForm').reset();
+  }
+
+  // Close modal when clicking outside
+  window.onclick = function(event) {
+    const modal = document.getElementById('clientModal');
+    if (event.target == modal) {
+      closeClientModal();
+    }
+  }
+
+  // Prevent modal close when clicking inside content
+  document.querySelector('.modal-content').onclick = function(event) {
+    event.stopPropagation();
+  }
+</script>
+
+{% endblock %}

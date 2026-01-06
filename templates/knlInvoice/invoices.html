@@ -1,0 +1,335 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block css %}
+<style>
+  :root {
+    --kamrate-orange: #FF9500;
+    --kamrate-blue: #001F4D;
+    --kamrate-green: #0D7A3D;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 3px solid var(--kamrate-orange);
+  }
+
+  .page-header h1 {
+    color: var(--kamrate-blue);
+    font-weight: 800;
+    font-size: 2rem;
+    margin: 0;
+  }
+
+  .btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 8px;
+    border: 1px solid;
+    background-color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .btn-outline-secondary:hover {
+    background-color: var(--kamrate-blue);
+    color: white;
+    border-color: var(--kamrate-blue);
+  }
+
+  .btn-primary {
+    background-color: var(--kamrate-orange);
+    border-color: var(--kamrate-orange);
+    color: white;
+    font-weight: 700;
+    padding: 10px 24px;
+    border-radius: 8px;
+    border: none;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .btn-primary:hover {
+    background-color: #E67E00;
+    border-color: #E67E00;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255, 149, 0, 0.2);
+  }
+
+  /* INVOICES SECTION */
+  .invoices-section {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  .invoices-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+  }
+
+  .invoices-header h2 {
+    color: var(--kamrate-blue);
+    font-weight: 700;
+    font-size: 1.4rem;
+    margin: 0;
+  }
+
+  .table {
+    margin: 0;
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .table thead {
+    background-color: #f8f9fa;
+  }
+
+  .table thead th {
+    color: var(--kamrate-blue);
+    font-weight: 700;
+    border: none;
+    padding: 15px;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+  }
+
+  .table tbody td {
+    padding: 15px;
+    border: none;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: middle;
+  }
+
+  .table tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+
+  .invoice-id {
+    color: var(--kamrate-blue);
+    font-weight: 700;
+  }
+
+  .invoice-amount {
+    color: var(--kamrate-green);
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  .table-responsive {
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .status-paid {
+    background-color: #d1e7dd;
+    color: #0f5132;
+  }
+
+  .status-overdue {
+    background-color: #f8d7da;
+    color: #842029;
+  }
+
+  .status-current {
+    background-color: #cfe2ff;
+    color: #084298;
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 5px;
+  }
+
+  .btn-sm {
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .btn-view {
+    background-color: var(--kamrate-blue);
+    color: white;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-view:hover {
+    background-color: #002244;
+  }
+
+  .btn-edit {
+    background-color: var(--kamrate-orange);
+    color: white;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-edit:hover {
+    background-color: #E67E00;
+  }
+
+  /* EMPTY STATE */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+  }
+
+  .empty-state h3 {
+    color: var(--kamrate-blue);
+    font-weight: 700;
+    font-size: 1.5rem;
+    margin-bottom: 15px;
+  }
+
+  .empty-state p {
+    color: #6c757d;
+    margin-bottom: 30px;
+  }
+
+  @media (max-width: 768px) {
+    .page-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 15px;
+    }
+
+    .page-header h1 {
+      font-size: 1.5rem;
+    }
+
+    .invoices-section {
+      padding: 20px;
+    }
+
+    .table thead th,
+    .table tbody td {
+      padding: 10px;
+      font-size: 0.85rem;
+    }
+
+    .action-buttons {
+      flex-direction: column;
+    }
+
+    .btn-sm {
+      width: 100%;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block main %}
+<main>
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>Invoices</h1>
+    <div style="display: flex; gap: 10px;">
+      <button type="button" class="btn btn-outline-secondary" onclick="alert('Print functionality coming soon')">Print</button>
+      <button type="button" class="btn btn-outline-secondary" onclick="alert('Export functionality coming soon')">Export</button>
+      <a href="{% url 'invoice-create' %}" class="btn btn-primary">+ New Invoice</a>
+    </div>
+  </div>
+
+  <!-- Invoices Table or Empty State -->
+  <div class="invoices-section">
+    <div class="invoices-header">
+      <h2>All Invoices</h2>
+      <span style="color: #6c757d; font-size: 0.9rem;">{{ invoices|length }} invoice{{ invoices|length|pluralize }} found</span>
+    </div>
+
+    <div class="table-responsive">
+      {% if invoices %}
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Client</th>
+              <th>Date</th>
+              <th>Due Date</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for invoice in invoices %}
+            <tr>
+              <td class="invoice-id">{{ invoice.number }}</td>
+              <td>{{ invoice.client.clientName }}</td>
+              <td>{{ invoice.date_created|date:"d M Y" }}</td>
+              <td>{{ invoice.dueDate|date:"d M Y" }}</td>
+              <td class="invoice-amount">₦{{ invoice.product.price|floatformat:0 }}</td>
+              <td>
+                <span class="status-badge status-{{ invoice.status|lower }}">
+                  {{ invoice.get_status_display }}
+                </span>
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <a href="{% url 'invoice-detail' invoice.slug %}" class="btn-sm btn-view">View</a>
+                  <a href="{% url 'invoice-update' invoice.slug %}" class="btn-sm btn-edit">Edit</a>
+                </div>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% else %}
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Client</th>
+              <th>Date</th>
+              <th>Due Date</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td colspan="7">
+                <div class="empty-state">
+                  <h3>No Invoices Yet</h3>
+                  <p>Create your first invoice to get started</p>
+                  <a href="{% url 'invoice-create' %}" class="btn btn-primary">+ Create First Invoice</a>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      {% endif %}
+    </div>
+  </div>
+
+</main>
+{% endblock %}

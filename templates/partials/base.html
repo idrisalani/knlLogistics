@@ -1,0 +1,484 @@
+{% load static %}
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Kamrate Nigeria Limited - Invoice Management Dashboard">        
+    <meta name="author" content="Kamrate Nigeria Limited">
+    <title>Kamrate - Invoice Management System</title>
+
+    <link rel="canonical" href="">
+    <link href="{% static 'assets/css/bootstrap.min.css' %}" rel="stylesheet">
+    <link href="{% static 'assets/css/dashboard.css' %}" rel="stylesheet">
+
+    {% block css %}
+    {% endblock %}
+
+    <style>
+      :root {
+        --kamrate-orange: #FF9500;
+        --kamrate-blue: #001F4D;
+        --kamrate-green: #0D7A3D;
+        --light-gray: #F5F5F5;
+        --dark-gray: #2c3e50;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f8f9fa;
+      }
+
+      /* ===== NAVBAR ===== */
+      .navbar-dark {
+        background: linear-gradient(90deg, var(--kamrate-blue) 0%, #002d66 50%, var(--kamrate-orange) 100%) !important;
+        box-shadow: 0 6px 20px rgba(255, 149, 0, 0.2);
+        padding: 12px 0 !important;
+        position: sticky;
+        top: 0;
+        z-index: 1030;
+      }
+
+      .navbar-brand {
+        font-weight: 800;
+        font-size: 1.3rem;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        color: white !important;
+        letter-spacing: 1px;
+        transition: transform 0.3s ease;
+      }
+
+      .navbar-brand:hover {
+        transform: scale(1.02);
+      }
+
+      .navbar-brand img {
+        height: 60px;
+        width: auto;
+        filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.15));
+        transition: transform 0.3s ease;
+      }
+
+      .navbar-brand img:hover {
+        transform: scale(1.05);
+      }
+
+      .form-control-dark {
+        background-color: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.2);
+        color: white;
+        font-weight: 500;
+      }
+
+      .form-control-dark:focus {
+        background-color: rgba(255, 255, 255, 0.15);
+        border-color: var(--kamrate-orange);
+        color: white;
+        box-shadow: 0 0 0 0.25rem rgba(255, 149, 0, 0.15);
+      }
+
+      .form-control-dark::placeholder {
+        color: rgba(255, 255, 255, 0.6);
+      }
+
+      .navbar-nav .nav-link {
+        color: rgba(255, 255, 255, 0.8) !important;
+        transition: all 0.3s ease;
+        font-weight: 600;
+      }
+
+      .navbar-nav .nav-link:hover {
+        color: white !important;
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+      }
+
+      /* ===== SIDEBAR ===== */
+      .sidebar {
+        background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+        border-right: 3px solid #FF9500;
+        position: fixed;
+        top: 56px;
+        bottom: 0;
+        left: 0;
+        z-index: 100;
+        width: 320px;
+        padding: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        box-shadow: 4px 0 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .sidebar .position-sticky {
+        position: sticky;
+        top: 0;
+      }
+
+      .sidebar-section {
+        padding: 30px 0;
+        border-bottom: 1px solid #e9ecef;
+      }
+
+      .sidebar-section:last-child {
+        border-bottom: none;
+      }
+
+      .sidebar-title {
+        padding: 20px 28px;
+        font-size: 0.85rem;
+        font-weight: 900;
+        text-transform: uppercase;
+        color: #001F4D;
+        letter-spacing: 2px;
+        margin: 0;
+        background-color: #f8f9fa;
+      }
+
+      .nav-link {
+        color: #2c3e50;
+        padding: 20px 28px;
+        transition: all 0.3s ease;
+        border-left: 5px solid transparent;
+        margin: 8px 0;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+      }
+
+      .nav-link:hover {
+        background-color: #f0f0f0;
+        border-left-color: var(--kamrate-orange);
+        color: var(--kamrate-orange);
+      }
+
+      .nav-link.active {
+        background-color: #e8f4ff;
+        border-left-color: var(--kamrate-orange);
+        color: var(--kamrate-blue);
+      }
+
+      .nav-link .icon {
+        font-size: 1.5rem;
+      }
+
+      /* ===== MAIN CONTENT ===== */
+      main {
+        margin-left: 400px;
+        padding: 20px 20px;
+        padding-bottom: 60px;
+        min-height: calc(100vh - 56px);
+      }
+
+      .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 3px solid var(--kamrate-orange);
+      }
+
+      .page-header h1 {
+        color: var(--kamrate-blue);
+        font-weight: 800;
+        font-size: 2rem;
+        margin: 0;
+      }
+
+      .btn-group {
+        display: flex;
+        gap: 10px;
+      }
+
+      .btn-group .btn {
+        padding: 10px 16px;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary {
+        background-color: var(--kamrate-orange);
+        border-color: var(--kamrate-orange);
+        color: white;
+        font-weight: 700;
+      }
+
+      .btn-primary:hover {
+        background-color: #E67E00;
+        border-color: #E67E00;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(255, 149, 0, 0.2);
+      }
+
+      .btn-outline-secondary {
+        color: #6c757d;
+        border-color: #6c757d;
+        padding: 10px 16px;
+      }
+
+      .btn-outline-secondary:hover {
+        background-color: #f8f9fa;
+        color: var(--kamrate-orange);
+        border-color: var(--kamrate-orange);
+      }
+
+      /* ===== RESPONSIVE ===== */
+      @media (max-width: 768px) {
+        .sidebar {
+          width: 250px;
+        }
+
+        main {
+          margin-left: 0;
+          padding: 15px;
+        }
+
+        .page-header {
+          flex-direction: column;
+          gap: 15px;
+          align-items: flex-start;
+        }
+
+        .page-header h1 {
+          font-size: 1.5rem;
+        }
+
+        .nav-link {
+          padding: 15px 20px;
+          font-size: 0.9rem;
+        }
+
+        .sidebar-title {
+          padding: 15px 20px;
+          font-size: 0.8rem;
+        }
+      }
+
+      @media (max-width: 576px) {
+        .sidebar {
+          position: fixed;
+          left: -320px;
+          transition: all 0.3s ease;
+          z-index: 200;
+        }
+
+        .sidebar.show {
+          left: 0;
+        }
+
+        main {
+          margin-left: 0;
+        }
+
+        .navbar {
+          padding: 10px 0 !important;
+        }
+
+        .navbar-brand {
+          font-size: 1.1rem;
+        }
+
+        .navbar-brand img {
+          height: 45px;
+        }
+      }
+
+      /* ===== SCROLLBAR ===== */
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: var(--kamrate-orange);
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: #E67E00;
+      }
+
+      /* ===== UTILITIES ===== */
+      .text-muted {
+        color: #6c757d !important;
+      }
+
+      .border-top {
+        border-top: 1px solid #dee2e6 !important;
+      }
+
+      .mt-5 {
+        margin-top: 3rem !important;
+      }
+
+      .pt-3 {
+        padding-top: 1rem !important;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- NAVBAR -->
+    <nav class="navbar navbar-dark navbar-expand-lg sticky-top">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="{% url 'dashboard' %}">
+          <img src="{% static 'assets/img/kamrate-logo.png' %}" alt="Kamrate Logo">
+          <span>KAMRATE</span>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <form class="d-flex ms-auto me-3" style="flex: 1; max-width: 400px;">
+            <input class="form-control form-control-dark" type="search" placeholder="Search invoices, clients..." aria-label="Search">
+          </form>
+
+          <div class="dropdown">
+            <button class="btn btn-link text-white text-decoration-none dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+              <strong>{{ request.user.username }}</strong>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+              <li><a class="dropdown-item" href="#">Profile</a></li>
+              <li><a class="dropdown-item" href="#">Settings</a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{% url 'logout' %}">Sign Out</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <!-- MAIN CONTAINER -->
+    <div style="display: flex;">
+      <!-- SIDEBAR -->
+      <nav class="sidebar">
+        <div class="position-sticky">
+          <!-- MAIN MENU -->
+          <div class="sidebar-section">
+            <h6 class="sidebar-title">MAIN MENU</h6>
+            
+            <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+              <span class="icon">🏠</span>
+              <span>Dashboard</span>
+            </a>
+
+            <a href="{% url 'invoices-list' %}" class="nav-link {% if request.resolver_match.url_name == 'invoices-list' %}active{% endif %}">
+              <span class="icon">📄</span>
+              <span>Invoices</span>
+            </a>
+
+            <a href="{% url 'products-list' %}" class="nav-link {% if request.resolver_match.url_name == 'products-list' %}active{% endif %}">
+              <span class="icon">🛒</span>
+              <span>Products / Services</span>
+            </a>
+
+            <a href="{% url 'clients-list' %}" class="nav-link {% if request.resolver_match.url_name == 'clients-list' %}active{% endif %}">
+              <span class="icon">👥</span>
+              <span>Clients</span>
+            </a>
+
+            <a href="{% url 'trips-list' %}" class="nav-link {% if request.resolver_match.url_name == 'trips-list' %}active{% endif %}">
+              <span class="icon">🚚</span>
+              <span>Truck Trips</span>
+            </a>
+          </div>
+
+          <!-- ACCOUNT SECTION -->
+          <div class="sidebar-section">
+            <h6 class="sidebar-title">ACCOUNT</h6>
+            
+            <a href="{% url 'logout' %}" class="nav-link">
+              <span class="icon">🚪</span>
+              <span>Sign Out</span>
+            </a>
+          </div>
+        </div>
+      </nav>
+
+      <!-- MAIN CONTENT -->
+      {% block main %}
+      <main>
+        <!-- Default main content goes here -->
+      </main>
+      {% endblock %}
+    </div>
+
+    <!-- FOOTER -->
+    <footer style="background-color: var(--kamrate-blue); color: white; padding: 30px; text-align: center; margin-top: 50px;">
+      <div style="max-width: 1200px; margin: 0 auto;">
+        <p style="margin: 0; font-weight: 700;">© 2026 Kamrate Nigeria Limited. All rights reserved.</p>
+        <p style="margin: 5px 0 0 0; font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">Professional Invoice Management System</p>
+      </div>
+    </footer>
+
+    <!-- SCRIPTS -->
+    <script src="{% static 'assets/js/bootstrap.bundle.min.js' %}"></script>
+    
+    <script>
+      // Mobile sidebar toggle
+      document.addEventListener('DOMContentLoaded', function() {
+        // Sidebar toggle for mobile
+        const navToggler = document.querySelector('.navbar-toggler');
+        const sidebar = document.querySelector('.sidebar');
+        
+        if (navToggler) {
+          navToggler.addEventListener('click', function() {
+            sidebar.classList.toggle('show');
+          });
+        }
+
+        // Close sidebar when clicking on a nav link on mobile
+        const navLinks = document.querySelectorAll('.nav-link');
+        navLinks.forEach(link => {
+          link.addEventListener('click', function() {
+            if (window.innerWidth < 768) {
+              sidebar.classList.remove('show');
+            }
+          });
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+          if (window.innerWidth < 768) {
+            const isClickInsideSidebar = sidebar.contains(event.target);
+            const isClickOnToggler = navToggler && navToggler.contains(event.target);
+            
+            if (!isClickInsideSidebar && !isClickOnToggler && sidebar.classList.contains('show')) {
+              sidebar.classList.remove('show');
+            }
+          }
+        });
+      });
+
+      // Add active class to current nav link
+      document.addEventListener('DOMContentLoaded', function() {
+        const currentUrl = window.location.pathname;
+        const navLinks = document.querySelectorAll('.nav-link');
+        
+        navLinks.forEach(link => {
+          if (link.getAttribute('href') === currentUrl) {
+            link.classList.add('active');
+          }
+        });
+      });
+    </script>
+
+    {% block scripts %}
+    {% endblock %}
+  </body>
+</html>

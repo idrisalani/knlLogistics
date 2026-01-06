@@ -1,0 +1,454 @@
+{% load static %}
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Kamrate Nigeria Limited - Professional Invoice Management System for Global Logistics">        
+    <meta name="author" content="Kamrate Nigeria Limited">
+    <title>Kamrate Nigeria Limited - Invoice Management</title>
+
+    <link rel="canonical" href="">
+
+    <!-- Bootstrap core CSS -->
+    <link href="{% static 'assets/css/bootstrap.min.css' %}" rel="stylesheet">
+
+    <style>
+      :root {
+        --kamrate-orange: #FF9500;
+        --kamrate-blue: #001F4D;
+        --kamrate-green: #0D7A3D;
+        --light-gray: #F5F5F5;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      /* GRADIENT Header with Logo on Gradient Background */
+      .navbar {
+        background: linear-gradient(90deg, var(--kamrate-blue) 0%, #002d66 40%, var(--kamrate-orange) 100%) !important;
+        box-shadow: 0 8px 24px rgba(255, 149, 0, 0.25);
+        padding: 12px 0 !important;
+      }
+
+      .navbar-brand {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        font-weight: 800;
+        font-size: 1.4rem;
+        color: white !important;
+        letter-spacing: 1px;
+        transition: transform 0.3s ease;
+      }
+
+      .navbar-brand:hover {
+        transform: scale(1.02);
+      }
+
+      .navbar-brand img {
+        height: 70px;
+        width: auto;
+        filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.15));
+        transition: transform 0.3s ease;
+      }
+
+      .navbar-brand img:hover {
+        transform: scale(1.05);
+      }
+
+      .nav-link {
+        color: rgba(255, 255, 255, 0.9) !important;
+        transition: all 0.3s ease;
+        margin: 0 8px;
+        font-weight: 600;
+        font-size: 1rem;
+      }
+
+      .nav-link:hover {
+        color: white !important;
+        text-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+      }
+
+      .btn-kamrate-primary {
+        background-color: var(--kamrate-orange);
+        border-color: var(--kamrate-orange);
+        color: white;
+        font-weight: 700;
+        padding: 12px 28px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(255, 149, 0, 0.2);
+      }
+
+      .btn-kamrate-primary:hover {
+        background-color: #E67E00;
+        border-color: #E67E00;
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(255, 149, 0, 0.3);
+      }
+
+      /* WHITE BACKGROUND SECTIONS */
+      .white-section {
+        background-color: white;
+        padding: 80px 0 60px;
+      }
+
+      /* GRADIENT Hero Section */
+      .hero-section {
+        background: linear-gradient(135deg, var(--kamrate-blue) 0%, #003366 100%);
+        color: white;
+        padding: 60px 0;
+      }
+
+      .hero-section h1 {
+        font-size: 3rem;
+        font-weight: 800;
+        margin-bottom: 20px;
+        line-height: 1.2;
+      }
+
+      .hero-section .lead {
+        font-size: 1.2rem;
+        margin-bottom: 30px;
+        opacity: 0.95;
+      }
+
+      .hero-image {
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 31, 77, 0.3);
+        width: 100%;
+        height: auto;
+        object-fit: cover;
+      }
+
+      /* WHITE Features Section */
+      .features-section {
+        background-color: #F8F9FA;
+        padding: 80px 0;
+      }
+
+      .features-section h2 {
+        color: var(--kamrate-blue);
+        font-weight: 700;
+        margin-bottom: 50px;
+        padding-bottom: 20px;
+        border-bottom: 4px solid var(--kamrate-orange);
+        display: inline-block;
+      }
+
+      .feature {
+        text-align: center;
+        padding: 40px 30px;
+        border-radius: 16px;
+        background: white;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        height: 100%;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      }
+
+      .feature:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 16px 40px rgba(0, 31, 77, 0.15);
+      }
+
+      .feature-icon {
+        background: linear-gradient(135deg, var(--kamrate-orange) 0%, #FF7700 100%);
+        width: 90px;
+        height: 90px;
+        margin: 0 auto 25px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 20px rgba(255, 149, 0, 0.2);
+      }
+
+      .feature h3 {
+        color: var(--kamrate-blue);
+        font-weight: 700;
+        margin: 20px 0;
+        font-size: 1.2rem;
+      }
+
+      .feature p {
+        color: #666;
+        line-height: 1.8;
+        margin-bottom: 20px;
+      }
+
+      .icon-link {
+        color: var(--kamrate-orange);
+        font-weight: 700;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        transition: gap 0.3s ease;
+      }
+
+      .icon-link:hover {
+        gap: 12px;
+      }
+
+      .icon-link svg {
+        width: 16px;
+        height: 16px;
+      }
+
+      /* WHITE Footer */
+      footer {
+        background-color: var(--kamrate-blue);
+        color: white;
+        padding: 50px 0;
+        border-top: 4px solid var(--kamrate-orange);
+      }
+
+      footer .logo-text {
+        font-weight: 700;
+        font-size: 1.3rem;
+        color: var(--kamrate-orange);
+        margin-bottom: 10px;
+      }
+
+      footer p {
+        color: rgba(255, 255, 255, 0.8);
+        line-height: 1.8;
+      }
+
+      .btn-outline-light:hover {
+        background-color: white;
+        color: var(--kamrate-blue);
+        border-color: white;
+      }
+
+      /* SVG Icons */
+      svg.feather {
+        width: 24px;
+        height: 24px;
+      }
+
+      @media (max-width: 768px) {
+        .hero-section h1 {
+          font-size: 2rem;
+        }
+
+        .navbar-brand img {
+          height: 50px;
+        }
+
+        .navbar-brand {
+          font-size: 1.2rem;
+        }
+      }
+    </style>
+
+  </head>
+
+  <body>
+
+    <!-- GRADIENT Navigation Header -->
+    <header class="navbar navbar-expand-lg navbar-dark sticky-top">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/">
+          <img src="{% static 'assets/img/kamrate-logo.jpeg' %}" alt="Kamrate Logo">
+          <span>KAMRATE</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+          <ul class="navbar-nav ms-auto">
+            <li class="nav-item"><a class="nav-link" href="#home">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="#features">Features</a></li>
+            <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+          </ul>
+          <div class="ms-3">
+            <a href="{% url 'login' %}"><button type="button" class="btn btn-kamrate-primary">Login</button></a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- GRADIENT Hero Section with Logistics Image -->
+    <main>
+      <section class="hero-section" id="home">
+        <div class="container">
+          <div class="row align-items-center">
+            <div class="col-lg-6">
+              <h1>Professional Invoice Management for Global Logistics</h1>
+              <p class="lead">Streamline your invoicing, client management, and product inventory with Kamrate - Your trusted partner for business efficiency.</p>
+              <div class="d-flex gap-3">
+                <a href="{% url 'login' %}"><button type="button" class="btn btn-kamrate-primary btn-lg">Get Started</button></a>
+                <button type="button" class="btn btn-outline-light btn-lg">Learn More</button>
+              </div>
+            </div>
+            <div class="col-lg-6">
+              <img src="{% static 'assets/img/logistics-hero.webp' %}" alt="Logistics Truck and Containers" class="hero-image">
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- WHITE Features Section -->
+      <section class="features-section" id="features">
+        <div class="container">
+          <div class="mb-5">
+            <h2>Why Choose Kamrate?</h2>
+          </div>
+          <div class="row g-4">
+            
+            <!-- Feature 1: Professional Invoices -->
+            <div class="col-md-6 col-lg-4">
+              <div class="feature">
+                <div class="feature-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                  </svg>
+                </div>
+                <h3>Professional Invoices</h3>
+                <p>Create stunning invoices with your Kamrate branding. Customize templates and impress your clients with polished documentation.</p>
+                <a href="{% url 'login' %}" class="icon-link">
+                  Create Invoice
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </a>
+              </div>
+            </div>
+
+            <!-- Feature 2: Client Management -->
+            <div class="col-md-6 col-lg-4">
+              <div class="feature">
+                <div class="feature-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                </div>
+                <h3>Client Management</h3>
+                <p>Manage all your clients in one centralized database. Store contact info, billing addresses, and maintain complete transaction history.</p>
+                <a href="{% url 'login' %}" class="icon-link">
+                  Manage Clients
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </a>
+              </div>
+            </div>
+
+            <!-- Feature 3: Product Inventory -->
+            <div class="col-md-6 col-lg-4">
+              <div class="feature">
+                <div class="feature-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                  </svg>
+                </div>
+                <h3>Product Inventory</h3>
+                <p>Keep track of products and services with detailed descriptions, pricing, and quantities. Maintain accurate inventory records effortlessly.</p>
+                <a href="{% url 'login' %}" class="icon-link">
+                  Manage Products
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </a>
+              </div>
+            </div>
+
+            <!-- Feature 4: Cloud Storage -->
+            <div class="col-md-6 col-lg-4">
+              <div class="feature">
+                <div class="feature-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15A2 2 0 0 0 19 7h-1.26a6 6 0 1 0-11.48 0H5a2 2 0 0 0 0 4h14a2 2 0 0 0 2-2z"></path>
+                  </svg>
+                </div>
+                <h3>Secure Cloud Storage</h3>
+                <p>All invoices and client data securely stored in the cloud. Access your information anytime, anywhere, on any device.</p>
+                <a href="{% url 'login' %}" class="icon-link">
+                  Start Today
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </a>
+              </div>
+            </div>
+
+            <!-- Feature 5: Multi-Currency -->
+            <div class="col-md-6 col-lg-4">
+              <div class="feature">
+                <div class="feature-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 6v6l4 2"></path>
+                  </svg>
+                </div>
+                <h3>Multi-Currency Support</h3>
+                <p>Work with NGN, USD, and other currencies. Manage international transactions with ease and precision.</p>
+                <a href="{% url 'login' %}" class="icon-link">
+                  View All
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </a>
+              </div>
+            </div>
+
+            <!-- Feature 6: Real-Time Tracking -->
+            <div class="col-md-6 col-lg-4">
+              <div class="feature">
+                <div class="feature-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                  </svg>
+                </div>
+                <h3>Invoice Status Tracking</h3>
+                <p>Track invoices in real-time. Monitor payment status and get insights into your business performance.</p>
+                <a href="{% url 'login' %}" class="icon-link">
+                  Get Started
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- BLUE Footer -->
+    <footer>
+      <div class="container">
+        <div class="row py-4">
+          <div class="col-md-6">
+            <p class="logo-text">🌍 Kamrate Nigeria Limited</p>
+            <p>Professional Invoice Management for Global Business & Logistics</p>
+          </div>
+          <div class="col-md-6 text-md-end">
+            <p>&copy; 2026 Kamrate Nigeria Limited. All rights reserved.</p>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="{% static 'assets/js/bootstrap.bundle.min.js' %}"></script>
+
+  </body>
+
+</html>

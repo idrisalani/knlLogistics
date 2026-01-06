@@ -1,0 +1,240 @@
+{% load static %}
+{% load crispy_forms_tags %}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Kamrate Nigeria Limited - Professional Invoice Management">        
+    <meta name="author" content="Kamrate Nigeria Limited">
+    <title>Kamrate - Login</title>
+    <link rel="canonical" href="">
+    <!-- Bootstrap core CSS -->
+    <link href="{% static 'assets/css/bootstrap.min.css' %}" rel="stylesheet">
+    <!-- Custom styles for this template -->
+    <link href="{% static 'assets/css/signin.css' %}" rel="stylesheet">
+    <style>
+      :root {
+        --kamrate-orange: #FF9500;
+        --kamrate-blue: #001F4D;
+        --kamrate-green: #0D7A3D;
+      }
+
+      body {
+        background: linear-gradient(135deg, var(--kamrate-blue) 0%, #003366 50%, #004d99 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      .form-signin {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 30px 80px rgba(0, 31, 77, 0.25);
+        padding: 60px 50px;
+        max-width: 460px;
+        width: 100%;
+      }
+
+      .logo-container {
+        text-align: center;
+        margin-bottom: 40px;
+      }
+
+      .logo-container img {
+        height: 140px;
+        width: auto;
+        margin-bottom: 25px;
+        filter: drop-shadow(0 4px 12px rgba(255, 149, 0, 0.15));
+        transition: transform 0.3s ease;
+      }
+
+      .logo-container img:hover {
+        transform: scale(1.05);
+      }
+
+      .brand-name {
+        color: var(--kamrate-blue);
+        font-weight: 800;
+        font-size: 2rem;
+        margin: 15px 0 5px 0;
+        letter-spacing: 1px;
+      }
+
+      .brand-tagline {
+        color: var(--kamrate-orange);
+        font-size: 0.9rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 30px;
+      }
+
+      .form-signin h2 {
+        color: var(--kamrate-blue);
+        font-weight: 700;
+        margin: 40px 0 30px 0;
+        text-align: center;
+        font-size: 1.4rem;
+      }
+
+      .form-signin .form-floating > label {
+        color: #6c757d;
+        font-weight: 600;
+      }
+
+      .form-signin input.form-control {
+        border-radius: 12px;
+        border: 2px solid #e9ecef;
+        padding: 16px 18px;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        margin-bottom: 2px;
+      }
+
+      .form-signin input.form-control:focus {
+        border-color: var(--kamrate-orange);
+        box-shadow: 0 0 0 0.25rem rgba(255, 149, 0, 0.15);
+        background-color: #fffbf7;
+      }
+
+      .form-signin .btn-primary {
+        background-color: var(--kamrate-orange);
+        border-color: var(--kamrate-orange);
+        padding: 16px;
+        font-weight: 700;
+        border-radius: 12px;
+        margin-top: 15px;
+        transition: all 0.3s ease;
+        font-size: 1.1rem;
+        letter-spacing: 0.5px;
+      }
+
+      .form-signin .btn-primary:hover {
+        background-color: #E67E00;
+        border-color: #E67E00;
+        transform: translateY(-3px);
+        box-shadow: 0 12px 30px rgba(255, 149, 0, 0.25);
+      }
+
+      .form-signin .alert {
+        border-radius: 12px;
+        border: none;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      }
+
+      .alert-danger {
+        background-color: #f8d7da;
+        color: #721c24;
+      }
+
+      .footer-text {
+        color: #6c757d;
+        font-size: 0.95rem;
+        text-align: center;
+      }
+
+      .footer-link {
+        color: var(--kamrate-orange);
+        text-decoration: none;
+        font-weight: 700;
+        transition: all 0.3s ease;
+      }
+
+      .footer-link:hover {
+        text-decoration: underline;
+        color: #E67E00;
+      }
+
+      .bd-placeholder-img {
+        font-size: 1.125rem;
+        text-anchor: middle;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        user-select: none;
+      }
+
+      @media (min-width: 768px) {
+        .bd-placeholder-img-lg {
+          font-size: 3.5rem;
+        }
+      }
+
+      /* Mobile responsiveness */
+      @media (max-width: 480px) {
+        .form-signin {
+          padding: 40px 25px;
+        }
+
+        .logo-container img {
+          height: 100px;
+        }
+
+        .brand-name {
+          font-size: 1.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="form-signin">
+      <form method="post">
+        <div class="logo-container">
+          <img src="{% static 'assets/img/kamrate-logo.jpeg' %}" alt="Kamrate Logo">
+          <h1 class="brand-name">KAMRATE</h1>
+          <p class="brand-tagline">Nigeria Limited</p>
+        </div>
+
+        <h2>Sign in to your account</h2>
+
+        {% csrf_token %}
+
+        <!-- Display Messages -->
+        {% if messages %}
+          {% for message in messages %}
+            {% if message.tags == 'error' %}
+              <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <strong>Error:</strong> {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% else %}
+              <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+
+        <!-- Username Field -->
+        <div class="form-floating mb-3">
+          {{ form.username }}
+          <label for="floatingInput">Username or Email</label>
+        </div>
+
+        <!-- Password Field -->
+        <div class="form-floating mb-4">
+          {{ form.password }}
+          <label for="floatingPassword">Password</label>
+        </div>
+
+        <!-- Sign In Button -->
+        <button class="w-100 btn btn-lg btn-primary" type="submit">Sign In</button>
+
+        <!-- Footer -->
+        <div class="footer-text mt-5">
+          <p style="font-weight: 600;">© 2026 Kamrate Nigeria Limited</p>
+          <p class="small">
+            <a href="/" class="footer-link">Back to Home</a>
+          </p>
+        </div>
+      </form>
+    </main>
+
+    <!-- Bootstrap JS -->
+    <script src="{% static 'assets/js/bootstrap.bundle.min.js' %}"></script>
+  </body>
+</html>

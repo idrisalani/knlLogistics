@@ -1,0 +1,561 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block css %}
+<style>
+  :root {
+    --kamrate-orange: #FF9500;
+    --kamrate-blue: #001F4D;
+    --kamrate-green: #0D7A3D;
+  }
+
+  .invoice-container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    font-family: 'Arial', sans-serif;
+  }
+
+  /* HEADER */
+  .invoice-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 40px;
+    padding-bottom: 30px;
+    border-bottom: 3px solid var(--kamrate-orange);
+  }
+
+  .company-logo {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .company-logo img {
+    height: 80px;
+    width: auto;
+  }
+
+  .company-name {
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--kamrate-blue);
+    letter-spacing: 2px;
+  }
+
+  .company-tagline {
+    color: var(--kamrate-orange);
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-top: 5px;
+  }
+
+  .invoice-info {
+    text-align: right;
+  }
+
+  .invoice-info h3 {
+    color: var(--kamrate-blue);
+    font-size: 1.5rem;
+    margin: 0 0 10px 0;
+    font-weight: 800;
+  }
+
+  .invoice-info p {
+    margin: 5px 0;
+    color: #666;
+    font-size: 0.95rem;
+  }
+
+  /* BILL TO / SHIP TO */
+  .invoice-meta {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 40px;
+  }
+
+  .bill-to, .ship-to {
+    font-size: 0.95rem;
+    color: #333;
+    line-height: 1.8;
+  }
+
+  .bill-to h4, .ship-to h4 {
+    color: var(--kamrate-blue);
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-bottom: 10px;
+  }
+
+  /* TABLE */
+  .invoice-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 30px 0;
+  }
+
+  .invoice-table thead {
+    background-color: var(--kamrate-blue);
+    color: white;
+  }
+
+  .invoice-table th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 800;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border: none;
+  }
+
+  .invoice-table td {
+    padding: 15px;
+    border-bottom: 1px solid #e0e0e0;
+  }
+
+  .invoice-table tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+
+  .item-description {
+    font-weight: 600;
+    color: var(--kamrate-blue);
+  }
+
+  .amount {
+    text-align: right;
+    font-weight: 700;
+    color: var(--kamrate-green);
+  }
+
+  .quantity {
+    text-align: center;
+  }
+
+  /* TOTALS */
+  .invoice-totals {
+    display: flex;
+    justify-content: flex-end;
+    margin: 40px 0;
+  }
+
+  .totals-box {
+    width: 350px;
+  }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #e0e0e0;
+    font-size: 0.95rem;
+  }
+
+  .total-row.subtotal {
+    color: #666;
+  }
+
+  .total-row.tax {
+    color: #666;
+  }
+
+  .total-row.grand-total {
+    border-bottom: 3px solid var(--kamrate-orange);
+    padding-top: 15px;
+    font-size: 1.3rem;
+    font-weight: 900;
+    color: var(--kamrate-blue);
+  }
+
+  .total-label {
+    font-weight: 700;
+  }
+
+  .total-amount {
+    font-weight: 900;
+    text-align: right;
+  }
+
+  /* AMOUNT IN WORDS */
+  .amount-words {
+    background-color: #f8f9fa;
+    padding: 15px;
+    margin: 30px 0;
+    border-left: 4px solid var(--kamrate-orange);
+    font-weight: 600;
+    color: var(--kamrate-blue);
+    border-radius: 4px;
+  }
+
+  /* PAYMENT INFO */
+  .payment-info {
+    background-color: #f8f9fa;
+    padding: 25px;
+    margin: 30px 0;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+  }
+
+  .payment-info h4 {
+    color: var(--kamrate-blue);
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-bottom: 15px;
+  }
+
+  .payment-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #e0e0e0;
+    font-size: 0.95rem;
+  }
+
+  .payment-item:last-child {
+    border-bottom: none;
+  }
+
+  .payment-label {
+    font-weight: 600;
+    color: #333;
+  }
+
+  .payment-value {
+    color: #666;
+    font-weight: 500;
+  }
+
+  /* NOTES & FOOTER */
+  .invoice-notes {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 2px solid #e0e0e0;
+  }
+
+  .invoice-notes h4 {
+    color: var(--kamrate-blue);
+    font-weight: 800;
+    margin-bottom: 10px;
+  }
+
+  .invoice-notes p {
+    color: #666;
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  /* SIGNATURE */
+  .signature-section {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 50px;
+    padding-top: 30px;
+    border-top: 1px solid #e0e0e0;
+  }
+
+  .signature {
+    text-align: center;
+    width: 250px;
+  }
+
+  .signature-line {
+    border-top: 2px solid #333;
+    margin: 30px 0 5px 0;
+  }
+
+  .signature-name {
+    font-weight: 700;
+    color: var(--kamrate-blue);
+    font-size: 0.95rem;
+  }
+
+  .signature-title {
+    color: #666;
+    font-size: 0.85rem;
+  }
+
+  /* FOOTER */
+  .invoice-footer {
+    background: linear-gradient(90deg, var(--kamrate-blue) 0%, var(--kamrate-green) 100%);
+    color: white;
+    padding: 20px;
+    margin: 40px -40px -40px -40px;
+    border-radius: 0 0 12px 12px;
+    font-size: 0.85rem;
+    text-align: center;
+    line-height: 1.6;
+  }
+
+  /* PRINT STYLES */
+  @media print {
+    body {
+      background: white;
+    }
+
+    .invoice-container {
+      box-shadow: none;
+      padding: 20px;
+    }
+
+    .btn {
+      display: none;
+    }
+  }
+
+  /* BUTTONS */
+  .invoice-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 30px;
+    justify-content: flex-end;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary {
+    background-color: var(--kamrate-orange);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: #E67E00;
+    transform: translateY(-2px);
+  }
+
+  .btn-secondary {
+    background-color: #e0e0e0;
+    color: #333;
+  }
+
+  .btn-secondary:hover {
+    background-color: #d0d0d0;
+  }
+</style>
+{% endblock %}
+
+{% block main %}
+<main>
+  <!-- Action Buttons -->
+  <div class="invoice-actions">
+    <button class="btn btn-secondary" onclick="window.history.back()">← Back</button>
+    <button class="btn btn-secondary" onclick="window.print()">🖨️ Print</button>
+    <button class="btn btn-primary">📧 Send Email</button>
+  </div>
+
+  <!-- INVOICE CONTAINER -->
+  <div class="invoice-container">
+    
+    <!-- HEADER -->
+    <div class="invoice-header">
+      <div class="company-logo">
+        <img src="{% static 'assets/img/kamrate-logo.png' %}" alt="Kamrate Logo">
+        <div>
+          <div class="company-name">KAMRATE</div>
+          <div class="company-tagline">Nigeria Limited</div>
+          <div style="font-size: 0.85rem; color: #666; margin-top: 5px;">
+            📞 08134834928 | 🌐 www.kamratelimited.com
+          </div>
+        </div>
+      </div>
+      <div class="invoice-info">
+        <h3>INVOICE</h3>
+        <p><strong>Invoice No:</strong> KNL/JH/26/ISDD-INB-072-EFM/1070</p>
+        <p><strong>Date:</strong> 2nd January 2026</p>
+        <p><strong>Due Date:</strong> 2nd February 2026</p>
+      </div>
+    </div>
+
+    <!-- BILL TO / SHIP TO -->
+    <div class="invoice-meta">
+      <div class="bill-to">
+        <h4>BILL TO:</h4>
+        <p>
+          <strong>Jupiter Haulage Ltd</strong><br>
+          8, Lisabi Road<br>
+          Apapa, Lagos<br>
+          <br>
+          <strong>Contact:</strong> +234 XXX XXXX XXX<br>
+          <strong>Email:</strong> accounts@jupiterhaulage.com
+        </p>
+      </div>
+      <div class="ship-to">
+        <h4>COMPANY DETAILS:</h4>
+        <p>
+          <strong>KAMRATE NIGERIA LIMITED</strong><br>
+          33, Creek Road<br>
+          Ibu Boulevard, Apapa, Lagos<br>
+          <br>
+          <strong>TIN:</strong> 20727419-0001<br>
+          <strong>RC No:</strong> 1421251<br>
+          <strong>Prepared By:</strong> Accounts Dept
+        </p>
+      </div>
+    </div>
+
+    <!-- ITEMS TABLE -->
+    <table class="invoice-table">
+      <thead>
+        <tr>
+          <th style="width: 10%;">S/N</th>
+          <th style="width: 20%;">DATE LOADED</th>
+          <th style="width: 15%;">FILE REFERENCE</th>
+          <th style="width: 15%;">CONTAINER NO</th>
+          <th style="width: 15%;">TRUCK NO</th>
+          <th style="width: 10%;">LENGTH</th>
+          <th style="width: 15%;">DESTINATION</th>
+          <th style="width: 15%;" class="amount">AMOUNT (₦)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>1</td>
+          <td>30/12/2025</td>
+          <td>ISDD-INB-072</td>
+          <td>IBP014</td>
+          <td>T13577LA</td>
+          <td>20FT</td>
+          <td>PORTHARCOURT</td>
+          <td class="amount">1,450,000.00</td>
+        </tr>
+        <tr>
+          <td>2</td>
+          <td>30/12/2025</td>
+          <td>ISDD-INB-072</td>
+          <td>IBP037</td>
+          <td>LND986XY</td>
+          <td>20FT</td>
+          <td>PORTHARCOURT</td>
+          <td class="amount">1,450,000.00</td>
+        </tr>
+        <tr>
+          <td>3</td>
+          <td>31/12/2025</td>
+          <td>ISDD-INB-072</td>
+          <td>IBP021</td>
+          <td>FST783XB</td>
+          <td>20FT</td>
+          <td>PORTHARCOURT</td>
+          <td class="amount">1,450,000.00</td>
+        </tr>
+        <tr>
+          <td>4</td>
+          <td>31/12/2025</td>
+          <td>ISDD-INB-072</td>
+          <td>IBP025</td>
+          <td>T7088LA</td>
+          <td>20FT</td>
+          <td>PORTHARCOURT</td>
+          <td class="amount">1,450,000.00</td>
+        </tr>
+        <tr>
+          <td>5</td>
+          <td>31/12/2025</td>
+          <td>ISDD-INB-072</td>
+          <td>IBP001</td>
+          <td>JJJ903XK</td>
+          <td>20FT</td>
+          <td>PORTHARCOURT</td>
+          <td class="amount">1,450,000.00</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- TOTALS -->
+    <div class="invoice-totals">
+      <div class="totals-box">
+        <div class="total-row subtotal">
+          <span class="total-label">Subtotal:</span>
+          <span class="total-amount">₦7,250,000.00</span>
+        </div>
+        <div class="total-row tax">
+          <span class="total-label">Tax (VAT 7.5%):</span>
+          <span class="total-amount">₦543,750.00</span>
+        </div>
+        <div class="total-row grand-total">
+          <span class="total-label">TOTAL DUE:</span>
+          <span class="total-amount">₦7,793,750.00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AMOUNT IN WORDS -->
+    <div class="amount-words">
+      <strong>TOTAL AMOUNT IN WORDS:</strong><br>
+      Seven Million, Seven Hundred Ninety-Three Thousand, Seven Hundred Fifty Naira Only
+    </div>
+
+    <!-- PAYMENT INFORMATION -->
+    <div class="payment-info">
+      <h4>💳 PAYMENT DETAILS</h4>
+      <div class="payment-item">
+        <span class="payment-label">Account Name:</span>
+        <span class="payment-value">KAMRATE NIGERIA LIMITED</span>
+      </div>
+      <div class="payment-item">
+        <span class="payment-label">Account No:</span>
+        <span class="payment-value">0004662938</span>
+      </div>
+      <div class="payment-item">
+        <span class="payment-label">Bank Name:</span>
+        <span class="payment-value">JAIZ BANK</span>
+      </div>
+      <div class="payment-item">
+        <span class="payment-label">TIN:</span>
+        <span class="payment-value">20727419-0001</span>
+      </div>
+    </div>
+
+    <!-- NOTES -->
+    <div class="invoice-notes">
+      <h4>📝 Notes:</h4>
+      <p>
+        Payment is due within 30 days of invoice date. Please include invoice number in payment reference.
+        Late payment may incur interest charges as per agreed terms.
+      </p>
+    </div>
+
+    <!-- SIGNATURE -->
+    <div class="signature-section">
+      <div class="signature">
+        <div class="signature-line"></div>
+        <div class="signature-name">Ayinla O Kamaldeen</div>
+        <div class="signature-title">MD/CEO</div>
+      </div>
+      <div class="signature">
+        <div class="signature-line"></div>
+        <div class="signature-name">Authorized By</div>
+        <div class="signature-title">Finance Manager</div>
+      </div>
+      <div class="signature">
+        <div class="signature-line"></div>
+        <div class="signature-name">Received By</div>
+        <div class="signature-title">Customer</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="invoice-footer">
+    <strong>KAMRATE NIGERIA LIMITED</strong><br>
+    33, Creek Road, Ibu Boulevard, Apapa, Lagos | 
+    Tel: 08134834928, 08026826552, 09126220261<br>
+    📧 info@kamratelimited.com | 🌐 www.kamratelimited.com<br>
+    <strong>RC: 1421251 | TIN: 20727419-0001</strong>
+  </div>
+
+</main>
+{% endblock %}
