@@ -264,8 +264,10 @@
                   NGN (₦)
                 {% elif product.currency == '$' %}
                   USD ($)
-                {% elif product.currency == 'R' %}
-                  ZAR (R) 
+                {% elif product.currency == '€' %}
+                  EUR (€) 
+                {% elif product.currency == '£' %}
+                  GBP (£)
                 {% endif %}
               </td>
               <td>{{ product.quantity|default:"—" }}</td>
