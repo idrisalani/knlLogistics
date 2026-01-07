@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: kamrate-invoice-system
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt && python manage.py migrate
+    startCommand: gunicorn knlLogistics.wsgi
+    envVars:
+      - key: DEBUG
+        value: False
+      - key: PYTHON_VERSION
+        value: 3.11.7
+    databases:
+      - name: postgresql
+        plan: free
