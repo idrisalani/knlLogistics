@@ -260,12 +260,12 @@
               <td>{{ product.description|truncatewords:10 }}</td>
               <td class="product-price">{{ product.price|floatformat:0 }}</td>
               <td>
-                {% if product.currency == 'N' %}
+                {% if product.currency == '₦' %}
                   NGN (₦)
                 {% elif product.currency == '$' %}
                   USD ($)
                 {% elif product.currency == 'R' %}
-                  ZAR (R)
+                  ZAR (R) 
                 {% endif %}
               </td>
               <td>{{ product.quantity|default:"—" }}</td>

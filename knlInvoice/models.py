@@ -231,7 +231,8 @@ class Client(models.Model):
 
 class Product(models.Model):
     CURRENCY = [
-        ('R', 'ZAR'),
+        ('€', 'EUR'),
+        ('£', 'GBP'),
         ('$', 'USD'),
         ('₦', 'NGN'),
     ]
