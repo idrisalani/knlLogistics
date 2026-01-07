@@ -33,8 +33,8 @@ DEBUG = config('DEBUG', default=True, cast=bool)
 ALLOWED_HOSTS = [
     '127.0.0.1',
     'localhost',
-    '*.onrender.com',  # Render domains
-    'localhost:3000',
+    'knllogistics.onrender.com',  # ← ADD THIS!
+    '*.onrender.com',
 ]
 
 # Add your specific Render domain if needed:
