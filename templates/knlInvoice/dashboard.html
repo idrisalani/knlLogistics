@@ -3,6 +3,8 @@
 
 {% block css %}
 <style>
+  /* @ts-nocheck */
+  /* stylelint-disable */
   :root {
     --kamrate-orange: #FF9500;
     --kamrate-blue: #001F4D;
@@ -573,7 +575,7 @@
       <button class="close" onclick="closeTripModal()">&times;</button>
     </div>
 
-    <form id="tripForm" method="POST" action="{% url 'trip-create' %}">
+    <form id="tripForm" method="POST" action="{% url 'knlInvoice:trip-create' %}">
       {% csrf_token %}
 
       <div class="form-group">
@@ -651,7 +653,7 @@
       <button class="close" onclick="closeInvoiceModal()">&times;</button>
     </div>
 
-    <form id="invoiceForm" method="POST" action="{% url 'invoice-create' %}">
+    <form id="invoiceForm" method="POST" action="{% url 'knlInvoice:invoice-create' %}">
       {% csrf_token %}
 
       <div class="form-group">
@@ -722,7 +724,7 @@
       <button class="close" onclick="closeProductModal()">&times;</button>
     </div>
 
-    <form id="productForm" method="POST" action="{% url 'product-create' %}">
+    <form id="productForm" method="POST" action="{% url 'knlInvoice:product-create' %}">
       {% csrf_token %}
 
       <div class="form-group">

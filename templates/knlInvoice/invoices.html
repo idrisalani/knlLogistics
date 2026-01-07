@@ -254,7 +254,7 @@
     <div style="display: flex; gap: 10px;">
       <button type="button" class="btn btn-outline-secondary" onclick="alert('Print functionality coming soon')">Print</button>
       <button type="button" class="btn btn-outline-secondary" onclick="alert('Export functionality coming soon')">Export</button>
-      <a href="{% url 'invoice-create' %}" class="btn btn-primary">+ New Invoice</a>
+      <a href="{% url 'knlInvoice:invoice-create' %}" class="btn btn-primary">+ New Invoice</a>
     </div>
   </div>
 
@@ -294,8 +294,8 @@
               </td>
               <td>
                 <div class="action-buttons">
-                  <a href="{% url 'invoice-detail' invoice.slug %}" class="btn-sm btn-view">View</a>
-                  <a href="{% url 'invoice-update' invoice.slug %}" class="btn-sm btn-edit">Edit</a>
+                  <a href="{% url 'knlInvoice:invoice-detail' invoice.slug %}" class="btn-sm btn-view">View</a>
+                  <a href="{% url 'knlInvoice:invoice-update' invoice.slug %}" class="btn-sm btn-edit">Edit</a>
                 </div>
               </td>
             </tr>
@@ -321,7 +321,7 @@
                 <div class="empty-state">
                   <h3>No Invoices Yet</h3>
                   <p>Create your first invoice to get started</p>
-                  <a href="{% url 'invoice-create' %}" class="btn btn-primary">+ Create First Invoice</a>
+                  <a href="{% url 'knlInvoice:invoice-create' %}" class="btn btn-primary">+ Create First Invoice</a>
                 </div>
               </td>
             </tr>

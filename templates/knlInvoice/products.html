@@ -229,7 +229,7 @@
     <div style="display: flex; gap: 10px;">
       <button type="button" class="btn btn-outline-secondary" onclick="alert('Print functionality coming soon')">Print</button>
       <button type="button" class="btn btn-outline-secondary" onclick="alert('Export functionality coming soon')">Export</button>
-      <a href="{% url 'product-create' %}" class="btn btn-primary">+ Add Product</a>
+      <a href="{% url 'knlInvoice:product-create' %}" class="btn btn-primary">+ Add Product</a>
     </div>
   </div>
 
@@ -273,8 +273,8 @@
               <td>{{ product.quantity|default:"—" }}</td>
               <td>
                 <div class="action-buttons">
-                  <a href="{% url 'product-update' product.slug %}" class="btn-sm btn-edit">Edit</a>
-                  <a href="{% url 'product-delete' product.slug %}" class="btn-sm btn-delete">Delete</a>
+                  <a href="{% url 'knlInvoice:product-update' product.slug %}" class="btn-sm btn-edit">Edit</a>
+                  <a href="{% url 'knlInvoice:product-delete' product.slug %}" class="btn-sm btn-delete">Delete</a>
                 </div>
               </td>
             </tr>
@@ -299,7 +299,7 @@
                 <div class="empty-state">
                   <h3>No Products Yet</h3>
                   <p>Add your first product to start using invoicing</p>
-                  <a href="{% url 'product-create' %}" class="btn btn-primary">+ Create First Product</a>
+                  <a href="{% url 'knlInvoice:product-create' %}" class="btn btn-primary">+ Create First Product</a>
                 </div>
               </td>
             </tr>

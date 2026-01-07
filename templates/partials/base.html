@@ -334,7 +334,7 @@
     <!-- NAVBAR -->
     <nav class="navbar navbar-dark navbar-expand-lg sticky-top">
       <div class="container-fluid">
-        <a class="navbar-brand" href="{% url 'dashboard' %}">
+        <a class="navbar-brand" href="{% url 'knlInvoice:dashboard' %}">
           <img src="{% static 'assets/img/kamrate-logo.png' %}" alt="Kamrate Logo">
           <span>KAMRATE</span>
         </a>
@@ -356,7 +356,7 @@
               <li><a class="dropdown-item" href="#">Profile</a></li>
               <li><a class="dropdown-item" href="#">Settings</a></li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item" href="{% url 'logout' %}">Sign Out</a></li>
+              <li><a class="dropdown-item" href="{% url 'knlInvoice:logout' %}">Sign Out</a></li>
             </ul>
           </div>
         </div>
@@ -372,27 +372,27 @@
           <div class="sidebar-section">
             <h6 class="sidebar-title">MAIN MENU</h6>
             
-            <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <a href="{% url 'knlInvoice:dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
               <span class="icon">🏠</span>
               <span>Dashboard</span>
             </a>
 
-            <a href="{% url 'invoices-list' %}" class="nav-link {% if request.resolver_match.url_name == 'invoices-list' %}active{% endif %}">
+            <a href="{% url 'knlInvoice:invoices-list' %}" class="nav-link {% if request.resolver_match.url_name == 'invoices-list' %}active{% endif %}">
               <span class="icon">📄</span>
               <span>Invoices</span>
             </a>
 
-            <a href="{% url 'products-list' %}" class="nav-link {% if request.resolver_match.url_name == 'products-list' %}active{% endif %}">
+            <a href="{% url 'knlInvoice:products-list' %}" class="nav-link {% if request.resolver_match.url_name == 'products-list' %}active{% endif %}">
               <span class="icon">🛒</span>
               <span>Products / Services</span>
             </a>
 
-            <a href="{% url 'clients-list' %}" class="nav-link {% if request.resolver_match.url_name == 'clients-list' %}active{% endif %}">
+            <a href="{% url 'knlInvoice:clients-list' %}" class="nav-link {% if request.resolver_match.url_name == 'clients-list' %}active{% endif %}">
               <span class="icon">👥</span>
               <span>Clients</span>
             </a>
 
-            <a href="{% url 'trips-list' %}" class="nav-link {% if request.resolver_match.url_name == 'trips-list' %}active{% endif %}">
+            <a href="{% url 'knlInvoice:trips-list' %}" class="nav-link {% if request.resolver_match.url_name == 'trips-list' %}active{% endif %}">
               <span class="icon">🚚</span>
               <span>Truck Trips</span>
             </a>
@@ -402,7 +402,7 @@
           <div class="sidebar-section">
             <h6 class="sidebar-title">ACCOUNT</h6>
             
-            <a href="{% url 'logout' %}" class="nav-link">
+            <a href="{% url 'knlInvoice:logout' %}" class="nav-link">
               <span class="icon">🚪</span>
               <span>Sign Out</span>
             </a>

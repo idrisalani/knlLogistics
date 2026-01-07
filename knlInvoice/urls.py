@@ -1,26 +1,23 @@
+# knlInvoice/urls.py
 from django.urls import path
-from django.contrib.auth import views as auth_views
 from . import views
-from .forms import UserLoginForm
+
+app_name = 'knlInvoice'
 
 urlpatterns = [
+
     # ============================================
-    # AUTHENTICATION
+    # LANDING & AUTHENTICATION (NEW)
     # ============================================
-    path('login/', auth_views.LoginView.as_view(
-        template_name='knlInvoice/login.html',
-        authentication_form=UserLoginForm
-    ), name='login'),
-    
-    path('logout/', auth_views.LogoutView.as_view(
-        next_page='login'
-    ), name='logout'),
+    path('', views.index, name='index'),  # Landing page
+    path('login/', views.login_view, name='login'),  # Login page
+    path('logout/', views.logout_view, name='logout'),  # Logout
     
     # ============================================
     # DASHBOARD
     # ============================================
     path('dashboard/', views.dashboard, name='dashboard'),
-    path('', views.dashboard, name='home'),
+    path('home/', views.dashboard, name='home'),  # Alternative home route
     
     # ============================================
     # TRIPS
@@ -33,13 +30,15 @@ urlpatterns = [
     path('trips/<slug:slug>/delete/', views.trip_delete, name='trip-delete'),
     
     # ============================================
-    # INVOICES
+    # INVOICES (ENHANCED)
     # ============================================
     path('invoices/', views.invoices_list, name='invoices-list'),
     path('invoices/new/', views.invoice_create, name='invoice-create'),
     path('invoices/new/ajax/', views.invoice_create_ajax, name='invoice-create-ajax'),
     path('invoices/<slug:slug>/', views.invoice_detail, name='invoice-detail'),
     path('invoices/<slug:slug>/edit/', views.invoice_update, name='invoice-update'),
+    path('invoices/<slug:slug>/add-item/', views.add_invoice_item, name='add-invoice-item'),
+    path('invoices/<slug:slug>/record-payment/', views.record_payment, name='record-payment'),
     
     # ============================================
     # PRODUCTS

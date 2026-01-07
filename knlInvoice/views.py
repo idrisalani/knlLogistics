@@ -1,38 +1,156 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login, logout
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from .models import Trip, Invoice, Product, Truck, Client, TripExpense
+from django.contrib import messages
+from django.db import models
+from .models import Trip, Invoice, Product, Truck, Client, TripExpense, InvoiceItem, PaymentRecord
 from .forms import TripForm, InvoiceForm, ProductForm, TripExpenseForm
+
+
+# ============================================
+# LANDING & AUTHENTICATION VIEWS
+# ============================================
+
+def index(request):
+    """
+    Landing page view - shown to all users (authenticated or not)
+    """
+    # If user is already logged in, redirect to dashboard
+    if request.user.is_authenticated:
+        return redirect('knlInvoice:dashboard')
+    
+    context = {
+        'page_title': 'Kamrate - Professional Invoice Management'
+    }
+    return render(request, 'knlInvoice/index.html', context)
+
+
+def login_view(request):
+    """
+    User login view
+    """
+    # If user is already logged in, redirect to dashboard
+    if request.user.is_authenticated:
+        return redirect('knlInvoice:dashboard')
+    
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        # Authenticate user
+        user = authenticate(request, username=username, password=password)
+        
+        if user is not None:
+            # Login successful
+            login(request, user)
+            messages.success(request, f'Welcome back, {user.first_name or user.username}!')
+            
+            # Redirect to dashboard or next page
+            next_page = request.GET.get('next', 'knlInvoice:dashboard')
+            return redirect(next_page)
+        else:
+            # Login failed
+            messages.error(request, 'Invalid username or password.')
+    
+    context = {
+        'page_title': 'Login - Kamrate Invoice System'
+    }
+    return render(request, 'knlInvoice/login.html', context)
+
+
+def logout_view(request):
+    """
+    User logout view
+    """
+    logout(request)
+    messages.success(request, 'You have been logged out successfully.')
+    return redirect('knlInvoice:index')
 
 
 # ============================================
 # DASHBOARD VIEW
 # ============================================
 
-@login_required(login_url='login')
+@login_required(login_url='knlInvoice:login')
 def dashboard(request):
-    """Main dashboard view"""
-    invoices = Invoice.objects.all().order_by('-date_created')[:5]
+    """
+    Main dashboard view with invoice and trip analytics
+    """
+    # Get user's invoices
+    invoices = Invoice.objects.filter(user=request.user).order_by('-date_created')[:5]
     trips = Trip.objects.all().order_by('-startDate')[:5]
     products = Product.objects.all()[:5]
     
-    # Calculate statistics
-    total_invoices = Invoice.objects.count()
+    # Calculate invoice statistics
+    user_invoices = Invoice.objects.filter(user=request.user)
+    total_invoices = user_invoices.count()
+    total_revenue = sum(
+        float(inv.total) for inv in user_invoices.filter(status='paid')
+    )
+    pending_invoices = user_invoices.filter(status__in=['pending', 'sent']).count()
+    overdue_invoices = user_invoices.filter(status='overdue').count()
+    outstanding_amount = sum(
+        float(inv.outstanding_amount) for inv in user_invoices 
+        if inv.outstanding_amount > 0
+    )
+    
+    # Calculate trip statistics
     total_trips = Trip.objects.count()
-    total_revenue = sum(trip.revenue for trip in Trip.objects.all())
+    total_trip_revenue = sum(trip.revenue for trip in Trip.objects.all())
     total_expenses = sum(trip.get_total_expenses() for trip in Trip.objects.all())
-    total_profit = total_revenue - total_expenses
+    total_profit = total_trip_revenue - total_expenses
+    
+    # Monthly revenue data (last 6 months) - for charts
+    from django.db.models import Sum
+    from django.db.models.functions import TruncMonth
+    from datetime import timedelta
+    from django.utils import timezone
+    
+    six_months_ago = timezone.now() - timedelta(days=180)
+    monthly_revenue = (
+        Invoice.objects.filter(
+            user=request.user,
+            status='paid',
+            date_created__gte=six_months_ago
+        )
+        .annotate(month=TruncMonth('date_created'))
+        .values('month')
+        .annotate(total=Sum('total'))
+        .order_by('month')
+    )
+    
+    # Status breakdown
+    status_breakdown = (
+        user_invoices
+        .values('status')
+        .annotate(count=Sum('id', output_field=models.IntegerField()))
+    )
     
     context = {
+        'page_title': 'Dashboard - Kamrate Invoice System',
+        'user': request.user,
+        
+        # Invoices
         'invoices': invoices,
-        'trips': trips,
-        'products': products,
         'total_invoices': total_invoices,
-        'total_trips': total_trips,
         'total_revenue': total_revenue,
+        'pending_invoices': pending_invoices,
+        'overdue_invoices': overdue_invoices,
+        'outstanding_amount': outstanding_amount,
+        'monthly_revenue': list(monthly_revenue),
+        'status_breakdown': list(status_breakdown),
+        
+        # Trips
+        'trips': trips,
+        'total_trips': total_trips,
+        'total_trip_revenue': total_trip_revenue,
         'total_expenses': total_expenses,
         'total_profit': total_profit,
+        
+        # Products
+        'products': products,
     }
     return render(request, 'knlInvoice/dashboard.html', context)
 
@@ -41,36 +159,59 @@ def dashboard(request):
 # CLIENT VIEWS
 # ============================================
 
-@login_required(login_url='login')
+@login_required(login_url='knlInvoice:login')
 def clients_list(request):
     """List all clients"""
     clients = Client.objects.all().order_by('-date_created')
-    context = {'clients': clients}
+    context = {
+        'page_title': 'Clients - Kamrate',
+        'clients': clients
+    }
     return render(request, 'knlInvoice/clients.html', context)
 
 
-@login_required(login_url='login')
+@login_required(login_url='knlInvoice:login')
 def client_create(request):
     """Create new client"""
     if request.method == 'POST':
-        form = ClientForm(request.POST, request.FILES)
-        if form.is_valid():
-            client = form.save()
-            return redirect('clients-list')
-    else:
-        form = ClientForm()
+        # Handle form submission
+        client_name = request.POST.get('clientName')
+        address = request.POST.get('addressLine1')
+        state = request.POST.get('state')
+        postal_code = request.POST.get('postalCode')
+        phone = request.POST.get('phoneNumber')
+        email = request.POST.get('emailAddress')
+        tax_number = request.POST.get('taxNumber')
+        
+        # Create client
+        client = Client.objects.create(
+            clientName=client_name,
+            addressLine1=address,
+            state=state,
+            postalCode=postal_code,
+            phoneNumber=phone,
+            emailAddress=email,
+            taxNumber=tax_number,
+        )
+        messages.success(request, f'Client {client_name} created successfully!')
+        return redirect('knlInvoice:clients-list')
+    
+    from .models import Client as ClientModel
+    states = ClientModel.STATES
     
     context = {
-        'form': form,
+        'page_title': 'Create Client - Kamrate',
         'title': 'Create New Client',
+        'states': states,
     }
     return render(request, 'knlInvoice/client_form.html', context)
+
 
 # ============================================
 # TRIP VIEWS
 # ============================================
 
-@login_required(login_url='login')
+@login_required(login_url='knlInvoice:login')
 def trips_list(request):
     """List all trips with analytics"""
     trips = Trip.objects.all().order_by('-startDate')
@@ -83,6 +224,7 @@ def trips_list(request):
     profit_percentage = ((total_profit_loss / total_expenses) * 100) if total_expenses > 0 else 0
     
     context = {
+        'page_title': 'Trips - Kamrate',
         'trips': trips,
         'total_trips': total_trips,
         'total_revenue': total_revenue,
@@ -93,7 +235,7 @@ def trips_list(request):
     return render(request, 'knlInvoice/trips.html', context)
 
 
-@login_required(login_url='login')
+@login_required(login_url='knlInvoice:login')
 @require_http_methods(["POST"])
 def trip_create_ajax(request):
     """Create trip via AJAX"""
@@ -113,18 +255,20 @@ def trip_create_ajax(request):
         }, status=400)
 
 
-@login_required(login_url='login')
+@login_required(login_url='knlInvoice:login')
 def trip_create(request):
     """Create new trip"""
     if request.method == 'POST':
         form = TripForm(request.POST)
         if form.is_valid():
             trip = form.save()
-            return redirect('trips-list')
+            messages.success(request, f'Trip {trip.tripNumber} created successfully!')
+            return redirect('knlInvoice:trips-list')
     else:
         form = TripForm()
     
     context = {
+        'page_title': 'Create Trip - Kamrate',
         'form': form,
         'title': 'Create New Trip',
         'trucks': Truck.objects.filter(status='ACTIVE')
@@ -132,7 +276,7 @@ def trip_create(request):
     return render(request, 'knlInvoice/trip_form.html', context)
 
 
-@login_required(login_url='login')
+@login_required(login_url='knlInvoice:login')
 def trip_detail(request, slug):
     """View trip details with expenses"""
     trip = get_object_or_404(Trip, slug=slug)
@@ -140,6 +284,7 @@ def trip_detail(request, slug):
     expense_form = TripExpenseForm()
     
     context = {
+        'page_title': f'{trip.tripNumber} - Kamrate',
         'trip': trip,
         'expenses': expenses,
         'total_expenses': trip.get_total_expenses(),
@@ -150,7 +295,7 @@ def trip_detail(request, slug):
     return render(request, 'knlInvoice/trip_detail.html', context)
 
 
-@login_required(login_url='login')
+@login_required(login_url='knlInvoice:login')
 def trip_update(request, slug):
     """Edit trip"""
     trip = get_object_or_404(Trip, slug=slug)
@@ -158,11 +303,13 @@ def trip_update(request, slug):
         form = TripForm(request.POST, instance=trip)
         if form.is_valid():
             form.save()
-            return redirect('trip-detail', slug=trip.slug)
+            messages.success(request, f'Trip {trip.tripNumber} updated successfully!')
+            return redirect('knlInvoice:trip-detail', slug=trip.slug)
     else:
         form = TripForm(instance=trip)
     
     context = {
+        'page_title': f'Edit {trip.tripNumber} - Kamrate',
         'form': form,
         'title': f'Edit {trip.tripNumber}',
         'trip': trip,
@@ -170,40 +317,57 @@ def trip_update(request, slug):
     return render(request, 'knlInvoice/trip_form.html', context)
 
 
-@login_required(login_url='login')
+@login_required(login_url='knlInvoice:login')
 def trip_delete(request, slug):
     """Delete trip"""
     trip = get_object_or_404(Trip, slug=slug)
     if request.method == 'POST':
+        trip_number = trip.tripNumber
         trip.delete()
-        return redirect('trips-list')
+        messages.success(request, f'Trip {trip_number} deleted successfully!')
+        return redirect('knlInvoice:trips-list')
     
-    context = {'trip': trip}
+    context = {
+        'page_title': f'Delete {trip.tripNumber} - Kamrate',
+        'trip': trip
+    }
     return render(request, 'knlInvoice/trip_confirm_delete.html', context)
 
 
 # ============================================
-# INVOICE VIEWS
+# INVOICE VIEWS (ENHANCED)
 # ============================================
 
-@login_required(login_url='login')
+@login_required(login_url='knlInvoice:login')
 def invoices_list(request):
-    """List all invoices"""
-    invoices = Invoice.objects.all().order_by('-date_created')
-    context = {'invoices': invoices}
+    """List all invoices for the logged-in user"""
+    invoices = Invoice.objects.filter(user=request.user).order_by('-date_created')
+    
+    # Filter by status if provided
+    status = request.GET.get('status')
+    if status:
+        invoices = invoices.filter(status=status)
+    
+    context = {
+        'page_title': 'Invoices - Kamrate',
+        'invoices': invoices,
+        'current_status': status,
+    }
     return render(request, 'knlInvoice/invoices.html', context)
 
 
-@login_required(login_url='login')
+@login_required(login_url='knlInvoice:login')
 @require_http_methods(["POST"])
 def invoice_create_ajax(request):
     """Create invoice via AJAX"""
     form = InvoiceForm(request.POST)
     if form.is_valid():
-        invoice = form.save()
+        invoice = form.save(commit=False)
+        invoice.user = request.user
+        invoice.save()
         return JsonResponse({
             'success': True,
-            'message': f'Invoice {invoice.number} created successfully!',
+            'message': f'Invoice {invoice.invoice_number} created successfully!',
             'invoice_id': invoice.id,
             'redirect_url': '/knlInvoice/invoices/'
         })
@@ -214,19 +378,39 @@ def invoice_create_ajax(request):
         }, status=400)
 
 
-@login_required(login_url='login')
+@login_required(login_url='knlInvoice:login')
 def invoice_create(request):
-    """Create new invoice"""
+    """Create new invoice with enhanced system"""
     if request.method == 'POST':
-        form = InvoiceForm(request.POST)
-        if form.is_valid():
-            invoice = form.save()
-            return redirect('invoices-list')
-    else:
-        form = InvoiceForm()
+        # Handle manual invoice creation
+        invoice_number = request.POST.get('invoice_number')
+        client_id = request.POST.get('client')
+        issue_date = request.POST.get('issue_date')
+        due_date = request.POST.get('due_date')
+        tax_rate = request.POST.get('tax_rate', 0)
+        payment_terms = request.POST.get('paymentTerms', '14 days')
+        notes = request.POST.get('notes', '')
+        
+        try:
+            client = Client.objects.get(id=client_id) if client_id else None
+            
+            invoice = Invoice.objects.create(
+                invoice_number=invoice_number,
+                user=request.user,
+                client=client,
+                issue_date=issue_date,
+                due_date=due_date,
+                tax_rate=float(tax_rate),
+                paymentTerms=payment_terms,
+                notes=notes,
+            )
+            messages.success(request, f'Invoice {invoice_number} created successfully!')
+            return redirect('knlInvoice:invoice-detail', slug=invoice.slug)
+        except Exception as e:
+            messages.error(request, f'Error creating invoice: {str(e)}')
     
     context = {
-        'form': form,
+        'page_title': 'Create Invoice - Kamrate',
         'title': 'Create New Invoice',
         'clients': Client.objects.all(),
         'products': Product.objects.all(),
@@ -234,47 +418,120 @@ def invoice_create(request):
     return render(request, 'knlInvoice/invoice_form.html', context)
 
 
-@login_required(login_url='login')
+@login_required(login_url='knlInvoice:login')
 def invoice_detail(request, slug):
-    """View invoice details"""
-    invoice = get_object_or_404(Invoice, slug=slug)
-    context = {'invoice': invoice}
+    """View invoice details with items and payments"""
+    invoice = get_object_or_404(Invoice, slug=slug, user=request.user)
+    items = invoice.items.all()
+    payments = invoice.payments.all()
+    
+    context = {
+        'page_title': f'{invoice.invoice_number} - Kamrate',
+        'invoice': invoice,
+        'items': items,
+        'payments': payments,
+    }
     return render(request, 'knlInvoice/invoice_detail.html', context)
 
 
-@login_required(login_url='login')
+@login_required(login_url='knlInvoice:login')
 def invoice_update(request, slug):
     """Edit invoice"""
-    invoice = get_object_or_404(Invoice, slug=slug)
+    invoice = get_object_or_404(Invoice, slug=slug, user=request.user)
     if request.method == 'POST':
         form = InvoiceForm(request.POST, instance=invoice)
         if form.is_valid():
             form.save()
-            return redirect('invoice-detail', slug=invoice.slug)
+            messages.success(request, f'Invoice {invoice.invoice_number} updated successfully!')
+            return redirect('knlInvoice:invoice-detail', slug=invoice.slug)
     else:
         form = InvoiceForm(instance=invoice)
     
     context = {
+        'page_title': f'Edit {invoice.invoice_number} - Kamrate',
         'form': form,
-        'title': f'Edit Invoice {invoice.number}',
+        'title': f'Edit Invoice {invoice.invoice_number}',
         'invoice': invoice,
     }
     return render(request, 'knlInvoice/invoice_form.html', context)
+
+
+@login_required(login_url='knlInvoice:login')
+def add_invoice_item(request, invoice_slug):
+    """Add line item to invoice"""
+    invoice = get_object_or_404(Invoice, slug=invoice_slug, user=request.user)
+    
+    if request.method == 'POST':
+        description = request.POST.get('description')
+        quantity = float(request.POST.get('quantity', 1))
+        unit_price = float(request.POST.get('unit_price', 0))
+        product_id = request.POST.get('product')
+        
+        product = Product.objects.get(id=product_id) if product_id else None
+        
+        item = InvoiceItem.objects.create(
+            invoice=invoice,
+            product=product,
+            description=description,
+            quantity=quantity,
+            unit_price=unit_price,
+        )
+        messages.success(request, 'Item added to invoice!')
+        return redirect('knlInvoice:invoice-detail', slug=invoice.slug)
+    
+    context = {
+        'invoice': invoice,
+        'products': Product.objects.all(),
+    }
+    return render(request, 'knlInvoice/add_invoice_item.html', context)
+
+
+@login_required(login_url='knlInvoice:login')
+def record_payment(request, invoice_slug):
+    """Record payment for invoice"""
+    invoice = get_object_or_404(Invoice, slug=invoice_slug, user=request.user)
+    
+    if request.method == 'POST':
+        amount = float(request.POST.get('amount', 0))
+        payment_date = request.POST.get('payment_date')
+        payment_method = request.POST.get('payment_method', 'bank_transfer')
+        reference_number = request.POST.get('reference_number', '')
+        notes = request.POST.get('notes', '')
+        
+        payment = PaymentRecord.objects.create(
+            invoice=invoice,
+            amount=amount,
+            payment_date=payment_date,
+            payment_method=payment_method,
+            reference_number=reference_number,
+            notes=notes,
+        )
+        messages.success(request, f'Payment of ₦{amount:,.2f} recorded!')
+        return redirect('knlInvoice:invoice-detail', slug=invoice.slug)
+    
+    context = {
+        'page_title': f'Record Payment - {invoice.invoice_number}',
+        'invoice': invoice,
+    }
+    return render(request, 'knlInvoice/record_payment.html', context)
 
 
 # ============================================
 # PRODUCT VIEWS
 # ============================================
 
-@login_required(login_url='login')
+@login_required(login_url='knlInvoice:login')
 def products_list(request):
     """List all products"""
     products = Product.objects.all().order_by('-date_created')
-    context = {'products': products}
+    context = {
+        'page_title': 'Products - Kamrate',
+        'products': products
+    }
     return render(request, 'knlInvoice/products.html', context)
 
 
-@login_required(login_url='login')
+@login_required(login_url='knlInvoice:login')
 @require_http_methods(["POST"])
 def product_create_ajax(request):
     """Create product via AJAX"""
@@ -294,25 +551,27 @@ def product_create_ajax(request):
         }, status=400)
 
 
-@login_required(login_url='login')
+@login_required(login_url='knlInvoice:login')
 def product_create(request):
     """Create new product"""
     if request.method == 'POST':
         form = ProductForm(request.POST)
         if form.is_valid():
             product = form.save()
-            return redirect('products-list')
+            messages.success(request, f'Product {product.title} created successfully!')
+            return redirect('knlInvoice:products-list')
     else:
         form = ProductForm()
     
     context = {
+        'page_title': 'Create Product - Kamrate',
         'form': form,
         'title': 'Create New Product',
     }
     return render(request, 'knlInvoice/product_form.html', context)
 
 
-@login_required(login_url='login')
+@login_required(login_url='knlInvoice:login')
 def product_update(request, slug):
     """Edit product"""
     product = get_object_or_404(Product, slug=slug)
@@ -320,11 +579,13 @@ def product_update(request, slug):
         form = ProductForm(request.POST, instance=product)
         if form.is_valid():
             form.save()
-            return redirect('products-list')
+            messages.success(request, f'Product {product.title} updated successfully!')
+            return redirect('knlInvoice:products-list')
     else:
         form = ProductForm(instance=product)
     
     context = {
+        'page_title': f'Edit {product.title} - Kamrate',
         'form': form,
         'title': f'Edit {product.title}',
         'product': product,
@@ -332,15 +593,20 @@ def product_update(request, slug):
     return render(request, 'knlInvoice/product_form.html', context)
 
 
-@login_required(login_url='login')
+@login_required(login_url='knlInvoice:login')
 def product_delete(request, slug):
     """Delete product"""
     product = get_object_or_404(Product, slug=slug)
     if request.method == 'POST':
+        product_title = product.title
         product.delete()
-        return redirect('products-list')
+        messages.success(request, f'Product {product_title} deleted successfully!')
+        return redirect('knlInvoice:products-list')
     
-    context = {'product': product}
+    context = {
+        'page_title': f'Delete {product.title} - Kamrate',
+        'product': product
+    }
     return render(request, 'knlInvoice/product_confirm_delete.html', context)
 
 
@@ -348,7 +614,7 @@ def product_delete(request, slug):
 # EXPENSE VIEWS
 # ============================================
 
-@login_required(login_url='login')
+@login_required(login_url='knlInvoice:login')
 def expense_create(request, trip_slug):
     """Create expense for trip"""
     trip = get_object_or_404(Trip, slug=trip_slug)
@@ -358,11 +624,13 @@ def expense_create(request, trip_slug):
             expense = form.save(commit=False)
             expense.trip = trip
             expense.save()
-            return redirect('trip-detail', slug=trip.slug)
+            messages.success(request, 'Expense added successfully!')
+            return redirect('knlInvoice:trip-detail', slug=trip.slug)
     else:
         form = TripExpenseForm(initial={'trip': trip})
     
     context = {
+        'page_title': f'Add Expense - Kamrate',
         'form': form,
         'trip': trip,
         'title': f'Add Expense to {trip.tripNumber}',
@@ -370,14 +638,19 @@ def expense_create(request, trip_slug):
     return render(request, 'knlInvoice/expense_form.html', context)
 
 
-@login_required(login_url='login')
+@login_required(login_url='knlInvoice:login')
 def expense_delete(request, pk):
     """Delete expense"""
     expense = get_object_or_404(TripExpense, pk=pk)
     trip = expense.trip
     if request.method == 'POST':
         expense.delete()
-        return redirect('trip-detail', slug=trip.slug)
+        messages.success(request, 'Expense deleted successfully!')
+        return redirect('knlInvoice:trip-detail', slug=trip.slug)
     
-    context = {'expense': expense, 'trip': trip}
+    context = {
+        'page_title': f'Delete Expense - Kamrate',
+        'expense': expense,
+        'trip': trip
+    }
     return render(request, 'knlInvoice/expense_confirm_delete.html', context)
