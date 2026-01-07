@@ -50,7 +50,7 @@ class Command(BaseCommand):
                 User.objects.create_superuser(
                     username='admin',
                     email='admin@kamrate.com',
-                    password='limited1'
+                    password=password
                 )
                 
                 self.stdout.write(
