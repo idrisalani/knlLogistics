@@ -1,3 +1,4 @@
+# ===== IMPORTS =====
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import authenticate, login, logout
@@ -7,7 +8,10 @@ from django.contrib import messages
 from django.db import models
 from .models import Trip, Invoice, Product, Truck, Client, TripExpense, InvoiceItem, PaymentRecord
 from .forms import TripForm, InvoiceForm, ProductForm, TripExpenseForm
-
+from django.db.models import Sum, Count, Q
+from django.db.models.functions import TruncMonth
+from datetime import timedelta
+from django.utils import timezone
 
 # ============================================
 # LANDING & AUTHENTICATION VIEWS
@@ -76,42 +80,109 @@ def logout_view(request):
 @login_required(login_url='knlInvoice:login')
 def dashboard(request):
     """
-    Main dashboard view with invoice and trip analytics
-    """
-    # Get user's invoices
-    invoices = Invoice.objects.filter(user=request.user).order_by('-date_created')[:5]
-    trips = Trip.objects.all().order_by('-startDate')[:5]
-    products = Product.objects.all()[:5]
+    Main dashboard view with comprehensive invoice and trip analytics
+    + Day 5: Chart data for revenue trends and status breakdown
+    Optimized for performance with database aggregation
     
-    # Calculate invoice statistics
+    Context Variables Provided:
+    - Invoice metrics: total, revenue, pending, overdue, outstanding
+    - Trip metrics: total, revenue, expenses, profit, margin
+    - Product & Client metrics: top products, unpaid clients
+    - Chart data: monthly_revenue, months_names, paid/pending/overdue counts
+    - Recent items: invoices, trips, products
+    """
+
+    # ===== INVOICE STATISTICS =====
     user_invoices = Invoice.objects.filter(user=request.user)
     total_invoices = user_invoices.count()
-    total_revenue = sum(
-        float(inv.total) for inv in user_invoices.filter(status='paid')
+    
+    # Revenue calculations (paid invoices only - optimized with aggregate)
+    revenue_data = user_invoices.filter(status='paid').aggregate(
+        total_revenue=Sum('total')
     )
+    total_revenue = revenue_data['total_revenue'] or 0
+    
+    # Outstanding amount (unpaid invoices - optimized with aggregate)
+    outstanding_data = user_invoices.exclude(status='paid').aggregate(
+        outstanding=Sum('total')
+    )
+    outstanding_amount = outstanding_data['outstanding'] or 0
+    
+    # Status counts
     pending_invoices = user_invoices.filter(status__in=['pending', 'sent']).count()
     overdue_invoices = user_invoices.filter(status='overdue').count()
-    outstanding_amount = sum(
-        float(inv.outstanding_amount) for inv in user_invoices 
-        if inv.outstanding_amount > 0
-    )
     
-    # Calculate trip statistics
-    total_trips = Trip.objects.count()
-    total_trip_revenue = sum(trip.revenue for trip in Trip.objects.all())
-    total_expenses = sum(trip.get_total_expenses() for trip in Trip.objects.all())
+    # Recent invoices
+    invoices = user_invoices.order_by('-date_created')[:5]
+    
+    # ===== TIME-BASED ANALYTICS =====
+    today = timezone.now()
+    
+    # This month's revenue
+    month_start = today.replace(day=1)
+    this_month_data = user_invoices.filter(
+        status='paid',
+        date_created__gte=month_start
+    ).aggregate(total=Sum('total'))
+    this_month_revenue = this_month_data['total'] or 0
+    
+    # Last 30 days revenue
+    thirty_days_ago = today - timedelta(days=30)
+    thirty_days_data = user_invoices.filter(
+        status='paid',
+        date_created__gte=thirty_days_ago
+    ).aggregate(total=Sum('total'))
+    thirty_days_revenue = thirty_days_data['total'] or 0
+    
+    # ===== TRIP STATISTICS =====
+    all_trips = Trip.objects.all()
+    total_trips = all_trips.count()
+    
+    # Trip revenue and expenses
+    total_trip_revenue = sum(trip.revenue for trip in all_trips) if all_trips else 0
+    total_expenses = sum(trip.get_total_expenses() for trip in all_trips) if all_trips else 0
     total_profit = total_trip_revenue - total_expenses
     
-    # Monthly revenue data (last 6 months) - for charts
-    from django.db.models import Sum
-    from django.db.models.functions import TruncMonth
-    from datetime import timedelta
-    from django.utils import timezone
+    # Profit margin percentage
+    profit_margin = (
+        (total_profit / total_trip_revenue * 100) 
+        if total_trip_revenue > 0 else 0
+    )
     
-    six_months_ago = timezone.now() - timedelta(days=180)
-    monthly_revenue = (
-        Invoice.objects.filter(
-            user=request.user,
+    # Recent trips
+    trips = all_trips.order_by('-startDate')[:5]
+    
+    # ===== PRODUCT STATISTICS =====
+    products = Product.objects.all().order_by('-date_created')[:5]
+    
+    # Top products (most used in invoices)
+    top_products = (
+        InvoiceItem.objects
+        .values('product__title')
+        .annotate(count=Count('id'))
+        .order_by('-count')[:5]
+    )
+    
+    # ===== CLIENT STATISTICS =====
+    total_clients = Client.objects.all().count()
+    
+    # Clients with unpaid invoices
+    clients_with_unpaid = (
+        Invoice.objects
+        .filter(status__in=['pending', 'sent', 'overdue'])
+        .values('client')
+        .distinct()
+        .count()
+    )
+    
+    # ===== DAY 5: CHART DATA =====
+    
+    # ===== MONTHLY REVENUE (Last 6 Months) =====
+    six_months_ago = today - timedelta(days=180)
+    
+    # Get monthly revenue data (efficient aggregation with TruncMonth)
+    monthly_revenue_qs = (
+        user_invoices.filter(
             status='paid',
             date_created__gte=six_months_ago
         )
@@ -121,39 +192,68 @@ def dashboard(request):
         .order_by('month')
     )
     
-    # Status breakdown
-    status_breakdown = (
-        user_invoices
-        .values('status')
-        .annotate(count=Sum('id', output_field=models.IntegerField()))
-    )
+    # Convert queryset to lists for JavaScript/charts
+    monthly_revenue_list = []
+    months_names_list = []
     
+    for item in monthly_revenue_qs:
+        monthly_revenue_list.append(item['total'] or 0)
+        months_names_list.append(item['month'].strftime('%b'))  # Jan, Feb, Mar, etc.
+    
+    # If no data for the period, ensure we have 6 months of data (even if 0)
+    # This ensures consistent x-axis on charts
+    if len(monthly_revenue_list) == 0:
+        for i in range(6):
+            month_date = today - timedelta(days=30 * (5 - i))
+            months_names_list.append(month_date.strftime('%b'))
+            monthly_revenue_list.append(0)
+    
+    # ===== INVOICE STATUS BREAKDOWN (for pie chart) =====
+    paid_count = user_invoices.filter(status='paid').count()
+    pending_count = user_invoices.filter(status__in=['pending', 'sent']).count()
+    overdue_count = user_invoices.filter(status='overdue').count()
+    
+    # ===== BUILD CONTEXT =====
     context = {
         'page_title': 'Dashboard - Kamrate Invoice System',
         'user': request.user,
         
-        # Invoices
+        # ===== INVOICE METRICS =====
         'invoices': invoices,
         'total_invoices': total_invoices,
         'total_revenue': total_revenue,
         'pending_invoices': pending_invoices,
         'overdue_invoices': overdue_invoices,
         'outstanding_amount': outstanding_amount,
-        'monthly_revenue': list(monthly_revenue),
-        'status_breakdown': list(status_breakdown),
+        'this_month_revenue': this_month_revenue,
+        'thirty_days_revenue': thirty_days_revenue,
         
-        # Trips
+        # ===== TRIP METRICS =====
         'trips': trips,
         'total_trips': total_trips,
         'total_trip_revenue': total_trip_revenue,
         'total_expenses': total_expenses,
         'total_profit': total_profit,
+        'profit_margin': profit_margin,
         
-        # Products
+        # ===== PRODUCT & CLIENT METRICS =====
         'products': products,
+        'top_products': list(top_products),
+        'total_clients': total_clients,
+        'clients_with_unpaid': clients_with_unpaid,
+        
+        # ===== DAY 5: CHART DATA =====
+        # Monthly revenue for revenue trend chart (line chart)
+        'monthly_revenue': monthly_revenue_list,  # [1500000, 1800000, ...]
+        'months_names': months_names_list,        # ['Jul', 'Aug', 'Sep', ...]
+        
+        # Invoice status counts for status breakdown chart (pie chart)
+        'paid_count': paid_count,                  # 5
+        'pending_count': pending_count,            # 3
+        'overdue_count': overdue_count,            # 1
     }
+    
     return render(request, 'knlInvoice/dashboard.html', context)
-
 
 # ============================================
 # CLIENT VIEWS

@@ -3,33 +3,45 @@
 
 {% block css %}
 <style>
-  /* @ts-nocheck */
-  /* stylelint-disable */
+  /* ===== ROOT COLORS ===== */
   :root {
     --kamrate-orange: #FF9500;
     --kamrate-blue: #001F4D;
     --kamrate-green: #0D7A3D;
     --light-gray: #F5F5F5;
     --dark-gray: #2c3e50;
+    --border-color: #e0e0e0;
   }
 
-  /* Page Header */
+  /* ===== PAGE HEADER ===== */
   .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
+    margin-bottom: 35px;
     padding-bottom: 20px;
     border-bottom: 3px solid var(--kamrate-orange);
   }
 
   .page-header h1 {
     color: var(--kamrate-blue);
-    font-size: 2rem;
+    font-size: 2.2rem;
     font-weight: 800;
     margin: 0;
   }
 
+  .page-header p {
+    color: #999;
+    margin: 5px 0 0 0;
+    font-size: 0.95rem;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 12px;
+  }
+
+  /* ===== BUTTONS ===== */
   .btn-action {
     padding: 12px 24px;
     background-color: var(--kamrate-orange);
@@ -40,6 +52,7 @@
     cursor: pointer;
     font-size: 0.95rem;
     transition: all 0.3s ease;
+    display: inline-block;
   }
 
   .btn-action:hover {
@@ -48,7 +61,7 @@
     box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
   }
 
-  /* Stats Container */
+  /* ===== STATS CONTAINER ===== */
   .stats-container {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -58,7 +71,7 @@
 
   .stat-card {
     background: white;
-    padding: 25px;
+    padding: 28px;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     border-left: 5px solid var(--kamrate-orange);
@@ -66,8 +79,8 @@
   }
 
   .stat-card:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
-    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    transform: translateY(-4px);
   }
 
   .stat-card h3 {
@@ -81,9 +94,10 @@
 
   .stat-value {
     color: var(--kamrate-blue);
-    font-size: 2rem;
+    font-size: 2.2rem;
     font-weight: 800;
     margin: 0;
+    line-height: 1;
   }
 
   .stat-card.positive {
@@ -94,7 +108,7 @@
     color: var(--kamrate-green);
   }
 
-  /* Tables */
+  /* ===== SECTIONS ===== */
   .section {
     margin-bottom: 40px;
   }
@@ -103,7 +117,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
     padding-bottom: 15px;
     border-bottom: 2px solid var(--kamrate-orange);
   }
@@ -116,7 +130,7 @@
   }
 
   .section-header .btn-small {
-    padding: 8px 16px;
+    padding: 8px 18px;
     background-color: var(--kamrate-orange);
     color: white;
     border: none;
@@ -130,8 +144,10 @@
   .section-header .btn-small:hover {
     background-color: #E67E00;
     transform: translateY(-2px);
+    box-shadow: 0 2px 8px rgba(255, 149, 0, 0.2);
   }
 
+  /* ===== TABLE CONTAINER ===== */
   .table-container {
     background: white;
     border-radius: 12px;
@@ -150,7 +166,7 @@
   }
 
   .table-container th {
-    padding: 15px;
+    padding: 16px 15px;
     text-align: left;
     font-weight: 800;
     font-size: 0.9rem;
@@ -159,8 +175,8 @@
   }
 
   .table-container td {
-    padding: 15px;
-    border-bottom: 1px solid #e0e0e0;
+    padding: 16px 15px;
+    border-bottom: 1px solid var(--border-color);
     color: #333;
   }
 
@@ -168,30 +184,84 @@
     background-color: #f8f9fa;
   }
 
-  /* Empty State */
+  .table-container tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  /* ===== STATUS BADGES ===== */
+  .badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+  }
+
+  .badge-paid {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  .badge-pending {
+    background-color: #e3f2fd;
+    color: #1565c0;
+  }
+
+  .badge-overdue {
+    background-color: #ffebee;
+    color: #c62828;
+  }
+
+  .badge-sent {
+    background-color: #f3e5f5;
+    color: #6a1b9a;
+  }
+
+  .badge-completed {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  .badge-in-progress {
+    background-color: #fff3e0;
+    color: #ff9800;
+  }
+
+  .badge-planned {
+    background-color: #e3f2fd;
+    color: #1976d2;
+  }
+
+  /* ===== EMPTY STATE ===== */
   .empty-state {
     text-align: center;
     padding: 60px 20px;
   }
 
-  .empty-state h2 {
+  .empty-state-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+  }
+
+  .empty-state h3 {
     color: var(--kamrate-blue);
-    font-size: 1.8rem;
+    font-size: 1.5rem;
     font-weight: 800;
-    margin-bottom: 10px;
+    margin: 15px 0 10px 0;
   }
 
   .empty-state p {
     color: #666;
     font-size: 1rem;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
   }
 
   .empty-state .btn-action {
     display: inline-block;
   }
 
-  /* MODALS */
+  /* ===== MODALS ===== */
   .modal {
     display: none;
     position: fixed;
@@ -278,8 +348,9 @@
     transform: scale(1.2);
   }
 
+  /* ===== FORM STYLING ===== */
   .form-group {
-    margin-bottom: 20px;
+    margin-bottom: 22px;
   }
 
   .form-group label {
@@ -293,7 +364,7 @@
   .form-control {
     width: 100%;
     padding: 12px 14px;
-    border: 2px solid #e0e0e0;
+    border: 2px solid var(--border-color);
     border-radius: 8px;
     font-size: 0.95rem;
     transition: all 0.3s ease;
@@ -329,7 +400,7 @@
     gap: 10px;
     margin-top: 30px;
     padding-top: 20px;
-    border-top: 1px solid #e0e0e0;
+    border-top: 1px solid var(--border-color);
     justify-content: flex-end;
   }
 
@@ -368,7 +439,11 @@
     transform: translateY(-2px);
   }
 
-  /* Responsive */
+  .required {
+    color: red;
+  }
+
+  /* ===== RESPONSIVE DESIGN ===== */
   @media (max-width: 768px) {
     .stats-container {
       grid-template-columns: 1fr;
@@ -380,10 +455,33 @@
       align-items: flex-start;
     }
 
+    .header-actions {
+      width: 100%;
+      flex-direction: column;
+    }
+
+    .header-actions .btn-action {
+      width: 100%;
+    }
+
+    .section-header {
+      flex-direction: column;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .section-header .btn-small {
+      width: 100%;
+    }
+
     .modal-content {
       width: 95%;
       margin: 20% auto;
       padding: 25px;
+    }
+
+    .stat-value {
+      font-size: 1.8rem;
     }
   }
 </style>
@@ -393,10 +491,13 @@
 <main>
   <!-- PAGE HEADER -->
   <div class="page-header">
-    <h1>📊 Dashboard</h1>
+    <div>
+      <h1>📊 Dashboard</h1>
+      <p>Welcome back, {{ user.first_name|default:user.username }}!</p>
+    </div>
   </div>
 
-  <!-- STATS CARDS -->
+  <!-- PRIMARY STATS (4 Cards) -->
   <div class="stats-container">
     <div class="stat-card">
       <h3>Total Invoices</h3>
@@ -404,7 +505,7 @@
     </div>
     <div class="stat-card positive">
       <h3>Total Revenue</h3>
-      <p class="stat-value">₦{{ total_revenue|floatformat:0 }}</p>
+      <p class="stat-value">₦{{ total_revenue|floatformat:0|default:"0" }}</p>
     </div>
     <div class="stat-card">
       <h3>Total Trips</h3>
@@ -412,7 +513,66 @@
     </div>
     <div class="stat-card positive">
       <h3>Total Profit</h3>
-      <p class="stat-value">₦{{ total_profit|floatformat:0 }}</p>
+      <p class="stat-value">₦{{ total_profit|floatformat:0|default:"0" }}</p>
+    </div>
+  </div>
+
+  <!-- TIME-BASED STATS (2 Cards) -->
+  <div class="stats-container" style="margin-bottom: 30px;">
+    <div class="stat-card">
+      <h3>This Month Revenue</h3>
+      <p class="stat-value">₦{{ this_month_revenue|floatformat:0|default:"0" }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Last 30 Days Revenue</h3>
+      <p class="stat-value">₦{{ thirty_days_revenue|floatformat:0|default:"0" }}</p>
+    </div>
+  </div>
+
+  <!-- INVOICE STATUS STATS (4 Cards) -->
+  <div class="stats-container" style="margin-bottom: 30px;">
+    <div class="stat-card">
+      <h3>Pending Invoices</h3>
+      <p class="stat-value">{{ pending_invoices }}</p>
+    </div>
+    <div class="stat-card">
+      <h3>Overdue Invoices</h3>
+      <p class="stat-value">{{ overdue_invoices }}</p>
+    </div>
+    <div class="stat-card positive">
+      <h3>Outstanding Amount</h3>
+      <p class="stat-value">₦{{ outstanding_amount|floatformat:0|default:"0" }}</p>
+    </div>
+    <div class="stat-card positive">
+      <h3>Profit Margin</h3>
+      <p class="stat-value">{{ profit_margin|floatformat:1|default:"0" }}%</p>
+    </div>
+  </div>
+
+  <!-- DAY 5: ANALYTICS SECTION WITH CHARTS -->
+  <div class="section">
+    <div class="section-header">
+      <h2>📈 Analytics & Trends</h2>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px; margin-bottom: 40px;">
+      <!-- REVENUE TREND CHART -->
+      <div class="table-container" style="padding: 20px;">
+        <h3 style="color: #001F4D; margin-top: 0; margin-bottom: 20px;">Revenue Trend (Last 6 Months)</h3>
+        <canvas id="revenueChart" height="80"></canvas>
+        <p style="text-align: center; color: #999; margin-top: 15px; font-size: 0.85rem;">
+          📊 Track revenue performance over time
+        </p>
+      </div>
+
+      <!-- STATUS BREAKDOWN CHART -->
+      <div class="table-container" style="padding: 20px;">
+        <h3 style="color: #001F4D; margin-top: 0; margin-bottom: 20px;">Invoice Status Breakdown</h3>
+        <canvas id="statusChart" height="80"></canvas>
+        <p style="text-align: center; color: #999; margin-top: 15px; font-size: 0.85rem;">
+          📊 Invoice status distribution
+        </p>
+      </div>
     </div>
   </div>
 
@@ -438,17 +598,19 @@
           <tbody>
             {% for invoice in invoices %}
             <tr>
-              <td><strong>{{ invoice.number }}</strong></td>
+              <td><strong>{{ invoice.invoice_number|default:invoice.number }}</strong></td>
               <td>{{ invoice.client.clientName }}</td>
-              <td>₦{{ invoice.product.price|floatformat:0 }}</td>
+              <td><strong>₦{{ invoice.total|default:invoice.product.price|floatformat:0 }}</strong></td>
               <td>
-                <span style="background-color: 
-                  {% if invoice.status == 'PAID' %}#e8f5e9; color: #2e7d32;
-                  {% elif invoice.status == 'OVERDUE' %}#ffebee; color: #c62828;
-                  {% else %}#e3f2fd; color: #1565c0;{% endif %}
-                  padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 0.8rem;">
-                  {{ invoice.status }}
-                </span>
+                {% if invoice.status == 'PAID' or invoice.status == 'paid' %}
+                  <span class="badge badge-paid">✓ Paid</span>
+                {% elif invoice.status == 'OVERDUE' or invoice.status == 'overdue' %}
+                  <span class="badge badge-overdue">⚠ Overdue</span>
+                {% elif invoice.status == 'SENT' or invoice.status == 'sent' %}
+                  <span class="badge badge-sent">→ Sent</span>
+                {% else %}
+                  <span class="badge badge-pending">⏳ Pending</span>
+                {% endif %}
               </td>
               <td>{{ invoice.date_created|date:"d M Y" }}</td>
             </tr>
@@ -459,7 +621,8 @@
     {% else %}
       <div class="table-container">
         <div class="empty-state">
-          <h2>No Invoices Yet</h2>
+          <div class="empty-state-icon">📄</div>
+          <h3>No Invoices Yet</h3>
           <p>Create your first invoice to get started</p>
           <button class="btn-action" onclick="openInvoiceModal()">+ Create Invoice</button>
         </div>
@@ -493,16 +656,17 @@
               <td><strong>{{ trip.tripNumber }}</strong></td>
               <td>{{ trip.origin }} → {{ trip.destination }}</td>
               <td>{{ trip.truck.plateNumber }}</td>
-              <td>₦{{ trip.revenue|floatformat:0 }}</td>
+              <td><strong>₦{{ trip.revenue|floatformat:0 }}</strong></td>
               <td>
-                <span style="background-color: 
-                  {% if trip.status == 'COMPLETED' %}#e8f5e9; color: #2e7d32;
-                  {% elif trip.status == 'IN_PROGRESS' %}#fff3e0; color: #ff9800;
-                  {% elif trip.status == 'PLANNED' %}#e3f2fd; color: #1976d2;
-                  {% else %}#ffebee; color: #c62828;{% endif %}
-                  padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 0.8rem;">
-                  {{ trip.get_status_display }}
-                </span>
+                {% if trip.status == 'COMPLETED' %}
+                  <span class="badge badge-completed">✓ Completed</span>
+                {% elif trip.status == 'IN_PROGRESS' %}
+                  <span class="badge badge-in-progress">⏳ In Progress</span>
+                {% elif trip.status == 'PLANNED' %}
+                  <span class="badge badge-planned">📅 Planned</span>
+                {% else %}
+                  <span class="badge badge-overdue">⚠ Cancelled</span>
+                {% endif %}
               </td>
               <td>{{ trip.startDate|date:"d M Y" }}</td>
             </tr>
@@ -513,7 +677,8 @@
     {% else %}
       <div class="table-container">
         <div class="empty-state">
-          <h2>No Trips Yet</h2>
+          <div class="empty-state-icon">🚚</div>
+          <h3>No Trips Yet</h3>
           <p>Create your first trip to track revenue and expenses</p>
           <button class="btn-action" onclick="openTripModal()">+ Create Trip</button>
         </div>
@@ -524,7 +689,7 @@
   <!-- PRODUCTS SECTION -->
   <div class="section">
     <div class="section-header">
-      <h2>🛒 Recent Products</h2>
+      <h2>🛒 Recent Products / Services</h2>
       <button class="btn-small" onclick="openProductModal()">+ New Product</button>
     </div>
 
@@ -544,9 +709,9 @@
             {% for product in products %}
             <tr>
               <td><strong>{{ product.title }}</strong></td>
-              <td>{{ product.description|truncatewords:5 }}</td>
+              <td>{{ product.description|truncatewords:5|default:"—" }}</td>
               <td>{{ product.price|floatformat:0 }}</td>
-              <td>{{ product.get_currency_display }}</td>
+              <td>{{ product.get_currency_display|default:"NGN" }}</td>
               <td>{{ product.date_created|date:"d M Y" }}</td>
             </tr>
             {% endfor %}
@@ -556,7 +721,8 @@
     {% else %}
       <div class="table-container">
         <div class="empty-state">
-          <h2>No Products Yet</h2>
+          <div class="empty-state-icon">🛒</div>
+          <h3>No Products Yet</h3>
           <p>Create your first product to start invoicing</p>
           <button class="btn-action" onclick="openProductModal()">+ Create Product</button>
         </div>
@@ -579,50 +745,50 @@
       {% csrf_token %}
 
       <div class="form-group">
-        <label for="tripNumber">Trip Number <span style="color: red;">*</span></label>
+        <label for="tripNumber">Trip Number <span class="required">*</span></label>
         <input type="text" id="tripNumber" name="tripNumber" class="form-control" 
                placeholder="e.g., TRIP-001-2026" required>
       </div>
 
       <div class="form-group">
-        <label for="truck">Truck <span style="color: red;">*</span></label>
+        <label for="truck">Truck <span class="required">*</span></label>
         <select id="truck" name="truck" class="form-control" required>
           <option value="">-- Select Truck --</option>
           {% for truck in trucks %}
           <option value="{{ truck.id }}">{{ truck.plateNumber }} - {{ truck.model }}</option>
           {% empty %}
-          <option value="">No trucks available. Add a truck first.</option>
+          <option value="">No trucks available</option>
           {% endfor %}
         </select>
       </div>
 
       <div class="form-row">
         <div class="form-group">
-          <label for="origin">Origin <span style="color: red;">*</span></label>
+          <label for="origin">Origin <span class="required">*</span></label>
           <input type="text" id="origin" name="origin" class="form-control" 
                  placeholder="e.g., Lagos" required>
         </div>
         <div class="form-group">
-          <label for="destination">Destination <span style="color: red;">*</span></label>
+          <label for="destination">Destination <span class="required">*</span></label>
           <input type="text" id="destination" name="destination" class="form-control" 
                  placeholder="e.g., Port Harcourt" required>
         </div>
       </div>
 
       <div class="form-group">
-        <label for="distance">Distance (km) <span style="color: red;">*</span></label>
+        <label for="distance">Distance (km) <span class="required">*</span></label>
         <input type="number" id="distance" name="distance" class="form-control" 
                placeholder="e.g., 400" step="0.1" required>
       </div>
 
       <div class="form-group">
-        <label for="revenue">Revenue (₦) <span style="color: red;">*</span></label>
+        <label for="revenue">Revenue (₦) <span class="required">*</span></label>
         <input type="number" id="revenue" name="revenue" class="form-control" 
                placeholder="e.g., 150000" step="0.01" required>
       </div>
 
       <div class="form-group">
-        <label for="startDate">Start Date <span style="color: red;">*</span></label>
+        <label for="startDate">Start Date <span class="required">*</span></label>
         <input type="datetime-local" id="startDate" name="startDate" class="form-control" required>
       </div>
 
@@ -657,19 +823,19 @@
       {% csrf_token %}
 
       <div class="form-group">
-        <label for="inv_number">Invoice Number <span style="color: red;">*</span></label>
+        <label for="inv_number">Invoice Number <span class="required">*</span></label>
         <input type="text" id="inv_number" name="number" class="form-control" 
                placeholder="e.g., INV-001-2026" required>
       </div>
 
       <div class="form-group">
-        <label for="inv_client">Client <span style="color: red;">*</span></label>
+        <label for="inv_client">Client <span class="required">*</span></label>
         <select id="inv_client" name="client" class="form-control" required>
           <option value="">-- Select Client --</option>
           {% for client in clients %}
           <option value="{{ client.id }}">{{ client.clientName }}</option>
           {% empty %}
-          <option value="">No clients available. Add a client first.</option>
+          <option value="">No clients available</option>
           {% endfor %}
         </select>
       </div>
@@ -681,7 +847,7 @@
           {% for product in products %}
           <option value="{{ product.id }}">{{ product.title }} (₦{{ product.price|floatformat:0 }})</option>
           {% empty %}
-          <option value="">No products available. Add a product first.</option>
+          <option value="">No products available</option>
           {% endfor %}
         </select>
       </div>
@@ -728,7 +894,7 @@
       {% csrf_token %}
 
       <div class="form-group">
-        <label for="prod_title">Product Name <span style="color: red;">*</span></label>
+        <label for="prod_title">Product Name <span class="required">*</span></label>
         <input type="text" id="prod_title" name="title" class="form-control" 
                placeholder="e.g., Haulage Service" required>
       </div>
@@ -741,7 +907,7 @@
 
       <div class="form-row">
         <div class="form-group">
-          <label for="prod_price">Price (₦) <span style="color: red;">*</span></label>
+          <label for="prod_price">Price (₦) <span class="required">*</span></label>
           <input type="number" id="prod_price" name="price" class="form-control" 
                  placeholder="e.g., 150000" step="0.01" required>
         </div>
@@ -757,7 +923,8 @@
         <select id="prod_currency" name="currency" class="form-control">
           <option value="N">NGN (₦)</option>
           <option value="$">USD ($)</option>
-          <option value="R">ZAR (R)</option>
+          <option value="€">EUR (€)</option>
+          <option value="£">GBP (£)</option>
         </select>
       </div>
 
@@ -770,11 +937,129 @@
 </div>
 
 <!-- ============================================
-     MODAL JAVASCRIPT
+     DAY 5: CHART.JS LIBRARY & INITIALIZATION
      ============================================ -->
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+<!-- Chart Initialization with Real Data -->
 <script>
-  // @ts-nocheck
-  
+  document.addEventListener('DOMContentLoaded', function() {
+    
+    // ===== GET DATA FROM DJANGO CONTEXT =====
+    const monthlyRevenue = {{ monthly_revenue|safe }};
+    const monthNames = {{ months_names|safe }};
+    const paidCount = {{ paid_count }};
+    const pendingCount = {{ pending_count }};
+    const overdueCount = {{ overdue_count }};
+    
+    // ===== REVENUE TREND CHART =====
+    const revenueCtx = document.getElementById('revenueChart');
+    if (revenueCtx) {
+      new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+          labels: monthNames,
+          datasets: [{
+            label: 'Revenue (₦)',
+            data: monthlyRevenue,
+            borderColor: '#FF9500',
+            backgroundColor: 'rgba(255, 149, 0, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointRadius: 5,
+            pointBackgroundColor: '#FF9500',
+            pointBorderColor: 'white',
+            pointBorderWidth: 2,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              labels: { color: '#333', font: { weight: 'bold' } }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  let label = context.dataset.label || '';
+                  if (label) {
+                    label += ': ';
+                  }
+                  if (context.parsed.y !== null) {
+                    label += '₦' + context.parsed.y.toLocaleString('en-NG');
+                  }
+                  return label;
+                }
+              }
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: { 
+                color: '#666',
+                callback: function(value) {
+                  return '₦' + value.toLocaleString('en-NG');
+                }
+              },
+              grid: { color: 'rgba(0, 0, 0, 0.05)' }
+            },
+            x: {
+              ticks: { color: '#666' },
+              grid: { display: false }
+            }
+          }
+        }
+      });
+    }
+
+    // ===== STATUS BREAKDOWN CHART =====
+    const statusCtx = document.getElementById('statusChart');
+    if (statusCtx) {
+      new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Paid', 'Pending', 'Overdue'],
+          datasets: [{
+            data: [paidCount, pendingCount, overdueCount],
+            backgroundColor: ['#4CAF50', '#2196F3', '#F44336'],
+            borderColor: 'white',
+            borderWidth: 3,
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          plugins: {
+            legend: {
+              position: 'bottom',
+              labels: { 
+                color: '#333', 
+                font: { weight: 'bold' },
+                padding: 15
+              }
+            },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const label = context.label || '';
+                  const value = context.parsed || 0;
+                  return label + ': ' + value + ' invoices';
+                }
+              }
+            }
+          }
+        }
+      });
+    }
+  });
+</script>
+
+<!-- MODAL JAVASCRIPT (Existing) -->
+<script>
   // TRIP MODAL
   function openTripModal() {
     document.getElementById('tripModal').classList.add('show');
