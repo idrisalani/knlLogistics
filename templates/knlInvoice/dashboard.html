@@ -53,12 +53,14 @@
     font-size: 0.95rem;
     transition: all 0.3s ease;
     display: inline-block;
+    text-decoration: none;
   }
 
   .btn-action:hover {
     background-color: #E67E00;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
+    color: white;
   }
 
   /* ===== STATS CONTAINER ===== */
@@ -139,12 +141,15 @@
     cursor: pointer;
     font-size: 0.85rem;
     transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
   }
 
   .section-header .btn-small:hover {
     background-color: #E67E00;
     transform: translateY(-2px);
     box-shadow: 0 2px 8px rgba(255, 149, 0, 0.2);
+    color: white;
   }
 
   /* ===== TABLE CONTAINER ===== */
@@ -261,188 +266,6 @@
     display: inline-block;
   }
 
-  /* ===== MODALS ===== */
-  .modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    animation: fadeIn 0.3s ease;
-  }
-
-  .modal.show {
-    display: block;
-  }
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  .modal-content {
-    background: white;
-    margin: 5% auto;
-    padding: 40px;
-    border-radius: 16px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-    width: 90%;
-    max-width: 600px;
-    animation: slideDown 0.3s ease;
-    max-height: 90vh;
-    overflow-y: auto;
-  }
-
-  @keyframes slideDown {
-    from {
-      transform: translateY(-50px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-
-  .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-    padding-bottom: 20px;
-    border-bottom: 3px solid var(--kamrate-orange);
-  }
-
-  .modal-header h2 {
-    margin: 0;
-    color: var(--kamrate-blue);
-    font-size: 1.8rem;
-    font-weight: 800;
-  }
-
-  .close {
-    color: #666;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-    border: none;
-    background: none;
-    padding: 0;
-    width: 30px;
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-  }
-
-  .close:hover {
-    color: var(--kamrate-orange);
-    transform: scale(1.2);
-  }
-
-  /* ===== FORM STYLING ===== */
-  .form-group {
-    margin-bottom: 22px;
-  }
-
-  .form-group label {
-    display: block;
-    margin-bottom: 8px;
-    color: var(--kamrate-blue);
-    font-weight: 700;
-    font-size: 0.95rem;
-  }
-
-  .form-control {
-    width: 100%;
-    padding: 12px 14px;
-    border: 2px solid var(--border-color);
-    border-radius: 8px;
-    font-size: 0.95rem;
-    transition: all 0.3s ease;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  }
-
-  .form-control:focus {
-    outline: none;
-    border-color: var(--kamrate-orange);
-    box-shadow: 0 0 0 3px rgba(255, 149, 0, 0.1);
-    background-color: #fffbf8;
-  }
-
-  .form-control:hover {
-    border-color: var(--kamrate-orange);
-  }
-
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-  }
-
-  @media (max-width: 600px) {
-    .form-row {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  .modal-footer {
-    display: flex;
-    gap: 10px;
-    margin-top: 30px;
-    padding-top: 20px;
-    border-top: 1px solid var(--border-color);
-    justify-content: flex-end;
-  }
-
-  .btn-primary {
-    background-color: var(--kamrate-orange);
-    color: white;
-    padding: 12px 24px;
-    border: none;
-    border-radius: 8px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    flex: 1;
-  }
-
-  .btn-primary:hover {
-    background-color: #E67E00;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
-  }
-
-  .btn-secondary {
-    background-color: #f0f0f0;
-    color: #333;
-    padding: 12px 24px;
-    border: none;
-    border-radius: 8px;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    min-width: 120px;
-  }
-
-  .btn-secondary:hover {
-    background-color: #e0e0e0;
-    transform: translateY(-2px);
-  }
-
-  .required {
-    color: red;
-  }
-
   /* ===== RESPONSIVE DESIGN ===== */
   @media (max-width: 768px) {
     .stats-container {
@@ -474,12 +297,6 @@
       width: 100%;
     }
 
-    .modal-content {
-      width: 95%;
-      margin: 20% auto;
-      padding: 25px;
-    }
-
     .stat-value {
       font-size: 1.8rem;
     }
@@ -487,7 +304,7 @@
 </style>
 {% endblock %}
 
-{% block main %}
+{% block content %}
 <main>
   <!-- PAGE HEADER -->
   <div class="page-header">
@@ -576,11 +393,55 @@
     </div>
   </div>
 
-  <!-- INVOICES SECTION -->
+  <!-- CLIENTS SECTION (NEW - FORM PAGE LINK) -->
+  <div class="section">
+    <div class="section-header">
+      <h2>👥 Recent Clients</h2>
+      <a href="{% url 'knlInvoice:client-create' %}" class="btn-small">+ New Client</a>
+    </div>
+
+    {% if clients %}
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Client Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>State</th>
+              <th>Date Added</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for client in clients %}
+            <tr>
+              <td><strong>{{ client.clientName }}</strong></td>
+              <td>{{ client.emailAddress }}</td>
+              <td>{{ client.phoneNumber }}</td>
+              <td>{{ client.state|default:"—" }}</td>
+              <td>{{ client.dateCreated|date:"d M Y"|default:client.date_created|date:"d M Y" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="table-container">
+        <div class="empty-state">
+          <div class="empty-state-icon">👥</div>
+          <h3>No Clients Yet</h3>
+          <p>Add your first client to start invoicing</p>
+          <a href="{% url 'knlInvoice:client-create' %}" class="btn-action">+ Create Client</a>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- INVOICES SECTION (FORM PAGE LINK) -->
   <div class="section">
     <div class="section-header">
       <h2>📄 Recent Invoices</h2>
-      <button class="btn-small" onclick="openInvoiceModal()">+ New Invoice</button>
+      <a href="{% url 'knlInvoice:invoice-create' %}" class="btn-small">+ New Invoice</a>
     </div>
 
     {% if invoices %}
@@ -624,17 +485,61 @@
           <div class="empty-state-icon">📄</div>
           <h3>No Invoices Yet</h3>
           <p>Create your first invoice to get started</p>
-          <button class="btn-action" onclick="openInvoiceModal()">+ Create Invoice</button>
+          <a href="{% url 'knlInvoice:invoice-create' %}" class="btn-action">+ Create Invoice</a>
         </div>
       </div>
     {% endif %}
   </div>
 
-  <!-- TRIPS SECTION -->
+  <!-- PRODUCTS SECTION (FORM PAGE LINK) -->
+  <div class="section">
+    <div class="section-header">
+      <h2>🛒 Recent Products / Services</h2>
+      <a href="{% url 'knlInvoice:product-create' %}" class="btn-small">+ New Product</a>
+    </div>
+
+    {% if products %}
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Product Name</th>
+              <th>Description</th>
+              <th>Price</th>
+              <th>Currency</th>
+              <th>Date Added</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for product in products %}
+            <tr>
+              <td><strong>{{ product.title }}</strong></td>
+              <td>{{ product.description|truncatewords:5|default:"—" }}</td>
+              <td>{{ product.price|floatformat:0 }}</td>
+              <td>{{ product.get_currency_display|default:"NGN" }}</td>
+              <td>{{ product.date_created|date:"d M Y" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="table-container">
+        <div class="empty-state">
+          <div class="empty-state-icon">🛒</div>
+          <h3>No Products Yet</h3>
+          <p>Create your first product to start invoicing</p>
+          <a href="{% url 'knlInvoice:product-create' %}" class="btn-action">+ Create Product</a>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- TRIPS SECTION (FORM PAGE LINK) -->
   <div class="section">
     <div class="section-header">
       <h2>🚚 Recent Trips</h2>
-      <button class="btn-small" onclick="openTripModal()">+ New Trip</button>
+      <a href="{% url 'knlInvoice:trip-create' %}" class="btn-small">+ New Trip</a>
     </div>
 
     {% if trips %}
@@ -680,265 +585,13 @@
           <div class="empty-state-icon">🚚</div>
           <h3>No Trips Yet</h3>
           <p>Create your first trip to track revenue and expenses</p>
-          <button class="btn-action" onclick="openTripModal()">+ Create Trip</button>
-        </div>
-      </div>
-    {% endif %}
-  </div>
-
-  <!-- PRODUCTS SECTION -->
-  <div class="section">
-    <div class="section-header">
-      <h2>🛒 Recent Products / Services</h2>
-      <button class="btn-small" onclick="openProductModal()">+ New Product</button>
-    </div>
-
-    {% if products %}
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Product Name</th>
-              <th>Description</th>
-              <th>Price</th>
-              <th>Currency</th>
-              <th>Date Added</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for product in products %}
-            <tr>
-              <td><strong>{{ product.title }}</strong></td>
-              <td>{{ product.description|truncatewords:5|default:"—" }}</td>
-              <td>{{ product.price|floatformat:0 }}</td>
-              <td>{{ product.get_currency_display|default:"NGN" }}</td>
-              <td>{{ product.date_created|date:"d M Y" }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    {% else %}
-      <div class="table-container">
-        <div class="empty-state">
-          <div class="empty-state-icon">🛒</div>
-          <h3>No Products Yet</h3>
-          <p>Create your first product to start invoicing</p>
-          <button class="btn-action" onclick="openProductModal()">+ Create Product</button>
+          <a href="{% url 'knlInvoice:trip-create' %}" class="btn-action">+ Create Trip</a>
         </div>
       </div>
     {% endif %}
   </div>
 </main>
 
-<!-- ============================================
-     NEW TRIP MODAL
-     ============================================ -->
-<div id="tripModal" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2>🚚 Create New Trip</h2>
-      <button class="close" onclick="closeTripModal()">&times;</button>
-    </div>
-
-    <form id="tripForm" method="POST" action="{% url 'knlInvoice:trip-create' %}">
-      {% csrf_token %}
-
-      <div class="form-group">
-        <label for="tripNumber">Trip Number <span class="required">*</span></label>
-        <input type="text" id="tripNumber" name="tripNumber" class="form-control" 
-               placeholder="e.g., TRIP-001-2026" required>
-      </div>
-
-      <div class="form-group">
-        <label for="truck">Truck <span class="required">*</span></label>
-        <select id="truck" name="truck" class="form-control" required>
-          <option value="">-- Select Truck --</option>
-          {% for truck in trucks %}
-          <option value="{{ truck.id }}">{{ truck.plateNumber }} - {{ truck.model }}</option>
-          {% empty %}
-          <option value="">No trucks available</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label for="origin">Origin <span class="required">*</span></label>
-          <input type="text" id="origin" name="origin" class="form-control" 
-                 placeholder="e.g., Lagos" required>
-        </div>
-        <div class="form-group">
-          <label for="destination">Destination <span class="required">*</span></label>
-          <input type="text" id="destination" name="destination" class="form-control" 
-                 placeholder="e.g., Port Harcourt" required>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="distance">Distance (km) <span class="required">*</span></label>
-        <input type="number" id="distance" name="distance" class="form-control" 
-               placeholder="e.g., 400" step="0.1" required>
-      </div>
-
-      <div class="form-group">
-        <label for="revenue">Revenue (₦) <span class="required">*</span></label>
-        <input type="number" id="revenue" name="revenue" class="form-control" 
-               placeholder="e.g., 150000" step="0.01" required>
-      </div>
-
-      <div class="form-group">
-        <label for="startDate">Start Date <span class="required">*</span></label>
-        <input type="datetime-local" id="startDate" name="startDate" class="form-control" required>
-      </div>
-
-      <div class="form-group">
-        <label for="status">Status</label>
-        <select id="status" name="status" class="form-control">
-          <option value="PLANNED">Planned</option>
-          <option value="IN_PROGRESS">In Progress</option>
-          <option value="COMPLETED">Completed</option>
-        </select>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn-secondary" onclick="closeTripModal()">Close</button>
-        <button type="submit" class="btn-primary">Create Trip</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- ============================================
-     NEW INVOICE MODAL
-     ============================================ -->
-<div id="invoiceModal" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2>📄 Create New Invoice</h2>
-      <button class="close" onclick="closeInvoiceModal()">&times;</button>
-    </div>
-
-    <form id="invoiceForm" method="POST" action="{% url 'knlInvoice:invoice-create' %}">
-      {% csrf_token %}
-
-      <div class="form-group">
-        <label for="inv_number">Invoice Number <span class="required">*</span></label>
-        <input type="text" id="inv_number" name="number" class="form-control" 
-               placeholder="e.g., INV-001-2026" required>
-      </div>
-
-      <div class="form-group">
-        <label for="inv_client">Client <span class="required">*</span></label>
-        <select id="inv_client" name="client" class="form-control" required>
-          <option value="">-- Select Client --</option>
-          {% for client in clients %}
-          <option value="{{ client.id }}">{{ client.clientName }}</option>
-          {% empty %}
-          <option value="">No clients available</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="inv_product">Product/Service</label>
-        <select id="inv_product" name="product" class="form-control">
-          <option value="">-- Select Product --</option>
-          {% for product in products %}
-          <option value="{{ product.id }}">{{ product.title }} (₦{{ product.price|floatformat:0 }})</option>
-          {% empty %}
-          <option value="">No products available</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="inv_dueDate">Due Date</label>
-        <input type="date" id="inv_dueDate" name="dueDate" class="form-control">
-      </div>
-
-      <div class="form-group">
-        <label for="inv_status">Status</label>
-        <select id="inv_status" name="status" class="form-control">
-          <option value="CURRENT">Current</option>
-          <option value="OVERDUE">Overdue</option>
-          <option value="PAID">Paid</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label for="inv_notes">Notes</label>
-        <textarea id="inv_notes" name="notes" class="form-control" 
-                  placeholder="Invoice notes" rows="3"></textarea>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn-secondary" onclick="closeInvoiceModal()">Close</button>
-        <button type="submit" class="btn-primary">Create Invoice</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- ============================================
-     NEW PRODUCT MODAL
-     ============================================ -->
-<div id="productModal" class="modal">
-  <div class="modal-content">
-    <div class="modal-header">
-      <h2>🛒 Create New Product</h2>
-      <button class="close" onclick="closeProductModal()">&times;</button>
-    </div>
-
-    <form id="productForm" method="POST" action="{% url 'knlInvoice:product-create' %}">
-      {% csrf_token %}
-
-      <div class="form-group">
-        <label for="prod_title">Product Name <span class="required">*</span></label>
-        <input type="text" id="prod_title" name="title" class="form-control" 
-               placeholder="e.g., Haulage Service" required>
-      </div>
-
-      <div class="form-group">
-        <label for="prod_description">Description</label>
-        <textarea id="prod_description" name="description" class="form-control" 
-                  placeholder="Product description" rows="3"></textarea>
-      </div>
-
-      <div class="form-row">
-        <div class="form-group">
-          <label for="prod_price">Price (₦) <span class="required">*</span></label>
-          <input type="number" id="prod_price" name="price" class="form-control" 
-                 placeholder="e.g., 150000" step="0.01" required>
-        </div>
-        <div class="form-group">
-          <label for="prod_quantity">Quantity</label>
-          <input type="number" id="prod_quantity" name="quantity" class="form-control" 
-                 placeholder="Quantity" step="0.1">
-        </div>
-      </div>
-
-      <div class="form-group">
-        <label for="prod_currency">Currency</label>
-        <select id="prod_currency" name="currency" class="form-control">
-          <option value="N">NGN (₦)</option>
-          <option value="$">USD ($)</option>
-          <option value="€">EUR (€)</option>
-          <option value="£">GBP (£)</option>
-        </select>
-      </div>
-
-      <div class="modal-footer">
-        <button type="button" class="btn-secondary" onclick="closeProductModal()">Close</button>
-        <button type="submit" class="btn-primary">Create Product</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-<!-- ============================================
-     DAY 5: CHART.JS LIBRARY & INITIALIZATION
-     ============================================ -->
 <!-- Chart.js Library -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
 
@@ -1054,79 +707,6 @@
           }
         }
       });
-    }
-  });
-</script>
-
-<!-- MODAL JAVASCRIPT (Existing) -->
-<script>
-  // TRIP MODAL
-  function openTripModal() {
-    document.getElementById('tripModal').classList.add('show');
-  }
-
-  function closeTripModal() {
-    document.getElementById('tripModal').classList.remove('show');
-    document.getElementById('tripForm').reset();
-  }
-
-  // INVOICE MODAL
-  function openInvoiceModal() {
-    document.getElementById('invoiceModal').classList.add('show');
-  }
-
-  function closeInvoiceModal() {
-    document.getElementById('invoiceModal').classList.remove('show');
-    document.getElementById('invoiceForm').reset();
-  }
-
-  // PRODUCT MODAL
-  function openProductModal() {
-    document.getElementById('productModal').classList.add('show');
-  }
-
-  function closeProductModal() {
-    document.getElementById('productModal').classList.remove('show');
-    document.getElementById('productForm').reset();
-  }
-
-  // CLOSE MODAL WHEN CLICKING OUTSIDE
-  window.onclick = function(event) {
-    var tripModal = document.getElementById('tripModal');
-    var invoiceModal = document.getElementById('invoiceModal');
-    var productModal = document.getElementById('productModal');
-    
-    if (event.target == tripModal) {
-      closeTripModal();
-    }
-    if (event.target == invoiceModal) {
-      closeInvoiceModal();
-    }
-    if (event.target == productModal) {
-      closeProductModal();
-    }
-  }
-
-  // PREVENT CLOSE WHEN CLICKING INSIDE MODAL CONTENT
-  document.querySelectorAll('.modal-content').forEach(el => {
-    el.onclick = function(event) {
-      event.stopPropagation();
-    }
-  });
-
-  // SET DEFAULT DATE/TIME
-  document.addEventListener('DOMContentLoaded', function() {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const hours = String(now.getHours()).padStart(2, '0');
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    
-    const datetimeString = `${year}-${month}-${day}T${hours}:${minutes}`;
-    const startDateInput = document.getElementById('startDate');
-    if (startDateInput) {
-      startDateInput.value = datetimeString;
     }
   });
 </script>

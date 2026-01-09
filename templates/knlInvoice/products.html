@@ -221,7 +221,7 @@
 </style>
 {% endblock %}
 
-{% block main %}
+{% block content %}
 <main>
   <!-- Page Header -->
   <div class="page-header">
@@ -273,8 +273,8 @@
               <td>{{ product.quantity|default:"—" }}</td>
               <td>
                 <div class="action-buttons">
-                  <a href="{% url 'knlInvoice:product-update' product.slug %}" class="btn-sm btn-edit">Edit</a>
-                  <a href="{% url 'knlInvoice:product-delete' product.slug %}" class="btn-sm btn-delete">Delete</a>
+                  <a href="{% url 'knlInvoice:product-update' product.pk %}" class="btn-sm btn-edit">Edit</a>
+                  <a href="{% url 'knlInvoice:product-delete' product.pk %}" class="btn-sm btn-delete">Delete</a>
                 </div>
               </td>
             </tr>

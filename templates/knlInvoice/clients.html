@@ -1,12 +1,9 @@
-{% extends 'partials/base.html' %}
-{% load static %}
-
-{% block css %}
+{% extends 'partials/base.html' %} {% load static %} {% block css %}
 <style>
   :root {
-    --kamrate-orange: #FF9500;
-    --kamrate-blue: #001F4D;
-    --kamrate-green: #0D7A3D;
+    --kamrate-orange: #ff9500;
+    --kamrate-blue: #001f4d;
+    --kamrate-green: #0d7a3d;
   }
 
   /* Page Header */
@@ -39,7 +36,7 @@
   }
 
   .page-header .btn:hover {
-    background-color: #E67E00;
+    background-color: #e67e00;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
   }
@@ -82,7 +79,7 @@
   }
 
   .empty-state .btn:hover {
-    background-color: #E67E00;
+    background-color: #e67e00;
     transform: translateY(-3px);
     box-shadow: 0 6px 20px rgba(255, 149, 0, 0.3);
   }
@@ -172,7 +169,7 @@
   }
 
   .btn-edit:hover {
-    background-color: #E67E00;
+    background-color: #e67e00;
   }
 
   /* Modal Styles */
@@ -282,7 +279,7 @@
     font-size: 0.95rem;
     transition: all 0.3s ease;
     box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   }
 
   .form-control:focus {
@@ -318,7 +315,7 @@
   }
 
   .btn-primary:hover {
-    background-color: #E67E00;
+    background-color: #e67e00;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
   }
@@ -366,61 +363,93 @@
     }
   }
 </style>
-{% endblock %}
-
-{% block main %}
+{% endblock %} {% block content %}
 <main>
   <!-- Page Header -->
   <div class="page-header">
     <h1>Clients</h1>
-    <button class="btn" onclick="openClientModal()">+ Add New Client</button>
+    <a href="{% url 'knlInvoice:client-create' %}" class="btn btn-orange">
+      <i class="fas fa-plus"></i>+ Add New Client</a>
   </div>
 
   <!-- Clients Table or Empty State -->
   <div class="clients-table">
     {% if clients %}
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Phone</th>
-            <th>Address</th>
-            <th>State</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for client in clients %}
-          <tr>
-            <td class="client-name">{{ client.clientName }}</td>
-            <td><a href="mailto:{{ client.emailAddress }}" class="client-email">{{ client.emailAddress }}</a></td>
-            <td>{{ client.phoneNumber }}</td>
-            <td>{{ client.addressLine1 }}</td>
-            <td>{{ client.state }}</td>
-            <td>
-              <div class="action-buttons">
-                <a href="{% url 'knlInvoice:client-detail' client.slug %}" class="btn-sm btn-view">View</a>
-                <a href="{% url 'knlInvoice:client-update' client.slug %}" class="btn-sm btn-edit">Edit</a>
-              </div>
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Phone</th>
+          <th>Address</th>
+          <th>State</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for client in clients %}
+        <tr>
+          <td class="client-name">{{ client.clientName }}</td>
+          <td>
+            <a href="mailto:{{ client.emailAddress }}" class="client-email"
+              >{{ client.emailAddress }}</a
+            >
+          </td>
+          <td>{{ client.phoneNumber }}</td>
+          <td>{{ client.addressLine1 }}</td>
+          <td>{{ client.state }}</td>
+          <td>
+            <div class="action-buttons">
+              <a
+                href="{% url 'knlInvoice:client-detail' client.pk %}"
+                class="btn-sm btn-view"
+                >View</a
+              >
+              <a
+                href="{% url 'knlInvoice:client-update' client.pk %}"
+                class="btn-sm btn-edit"
+                >Edit</a
+              >
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
     {% else %}
-      <div class="empty-state">
-        <svg class="empty-state-image" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="100" cy="70" r="30" fill="#FF9500" opacity="0.3"/>
-          <rect x="60" y="110" width="80" height="60" rx="8" fill="#FF9500" opacity="0.2"/>
-          <circle cx="85" cy="140" r="5" fill="#FF9500" opacity="0.5"/>
-          <circle cx="115" cy="140" r="5" fill="#FF9500" opacity="0.5"/>
-          <path d="M 85 155 Q 100 165 115 155" stroke="#FF9500" stroke-width="3" fill="none" opacity="0.5" stroke-linecap="round"/>
-        </svg>
-        <h2>No Clients Yet</h2>
-        <p>Start by adding your first client to get invoicing</p>
-        <button class="btn" onclick="openClientModal()">+ Add First Client</button>
-      </div>
+    <div class="empty-state">
+      <svg
+        class="empty-state-image"
+        viewBox="0 0 200 200"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <circle cx="100" cy="70" r="30" fill="#FF9500" opacity="0.3" />
+        <rect
+          x="60"
+          y="110"
+          width="80"
+          height="60"
+          rx="8"
+          fill="#FF9500"
+          opacity="0.2"
+        />
+        <circle cx="85" cy="140" r="5" fill="#FF9500" opacity="0.5" />
+        <circle cx="115" cy="140" r="5" fill="#FF9500" opacity="0.5" />
+        <path
+          d="M 85 155 Q 100 165 115 155"
+          stroke="#FF9500"
+          stroke-width="3"
+          fill="none"
+          opacity="0.5"
+          stroke-linecap="round"
+        />
+      </svg>
+      <h2>No Clients Yet</h2>
+      <p>Start by adding your first client to get invoicing</p>
+      <a href="{% url 'knlInvoice:client-create' %}" class="btn btn-orange">
+        <i class="fas fa-plus"></i>+ Add First Client</a
+      >
+    </div>
     {% endif %}
   </div>
 </main>
@@ -433,31 +462,63 @@
       <button class="close" onclick="closeClientModal()">&times;</button>
     </div>
 
-    <form id="clientForm" method="POST" action="{% url 'knlInvoice:client-create' %}" enctype="multipart/form-data">
+    <form
+      id="clientForm"
+      method="POST"
+      action="{% url 'knlInvoice:client-create' %}"
+      enctype="multipart/form-data"
+    >
       {% csrf_token %}
 
       <div class="form-group">
-        <label for="clientName">Client Name <span style="color: #d32f2f;">*</span></label>
-        <input type="text" id="clientName" name="clientName" class="form-control" placeholder="Company Name" required>
+        <label for="clientName"
+          >Client Name <span style="color: #d32f2f">*</span></label
+        >
+        <input
+          type="text"
+          id="clientName"
+          name="clientName"
+          class="form-control"
+          placeholder="Company Name"
+          required
+        />
       </div>
 
       <div class="form-group">
         <label for="emailAddress">Email Address</label>
-        <input type="email" id="emailAddress" name="emailAddress" class="form-control" placeholder="email@example.com">
+        <input
+          type="email"
+          id="emailAddress"
+          name="emailAddress"
+          class="form-control"
+          placeholder="email@example.com"
+        />
       </div>
 
       <div class="form-group">
         <label for="phoneNumber">Phone Number</label>
-        <input type="tel" id="phoneNumber" name="phoneNumber" class="form-control" placeholder="+234 123 456 7890">
+        <input
+          type="tel"
+          id="phoneNumber"
+          name="phoneNumber"
+          class="form-control"
+          placeholder="+234 123 456 7890"
+        />
       </div>
 
       <div class="form-group">
         <label for="addressLine1">Address</label>
-        <input type="text" id="addressLine1" name="addressLine1" class="form-control" placeholder="Street Address">
+        <input
+          type="text"
+          id="addressLine1"
+          name="addressLine1"
+          class="form-control"
+          placeholder="Street Address"
+        />
       </div>
 
       <div class="form-group">
-        <label for="state">State <span style="color: #d32f2f;">*</span></label>
+        <label for="state">State <span style="color: #d32f2f">*</span></label>
         <select id="state" name="state" class="form-control" required>
           <option value="">-- Select State --</option>
           <option value="Lagos">Lagos</option>
@@ -501,21 +562,45 @@
 
       <div class="form-group">
         <label for="postalCode">Postal Code</label>
-        <input type="text" id="postalCode" name="postalCode" class="form-control" placeholder="Postal Code">
+        <input
+          type="text"
+          id="postalCode"
+          name="postalCode"
+          class="form-control"
+          placeholder="Postal Code"
+        />
       </div>
 
       <div class="form-group">
         <label for="taxNumber">Tax Number</label>
-        <input type="text" id="taxNumber" name="taxNumber" class="form-control" placeholder="Tax ID / BVN">
+        <input
+          type="text"
+          id="taxNumber"
+          name="taxNumber"
+          class="form-control"
+          placeholder="Tax ID / BVN"
+        />
       </div>
 
       <div class="form-group">
         <label for="clientLogo">Company Logo</label>
-        <input type="file" id="clientLogo" name="clientLogo" class="form-control" accept="image/*">
+        <input
+          type="file"
+          id="clientLogo"
+          name="clientLogo"
+          class="form-control"
+          accept="image/*"
+        />
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="btn-secondary" onclick="closeClientModal()">Close</button>
+        <button
+          type="button"
+          class="btn-secondary"
+          onclick="closeClientModal()"
+        >
+          Close
+        </button>
         <button type="submit" class="btn-primary">Save Client</button>
       </div>
     </form>
@@ -525,27 +610,27 @@
 <script>
   // Open Modal
   function openClientModal() {
-    document.getElementById('clientModal').classList.add('show');
+    document.getElementById("clientModal").classList.add("show");
   }
 
   // Close Modal
   function closeClientModal() {
-    document.getElementById('clientModal').classList.remove('show');
-    document.getElementById('clientForm').reset();
+    document.getElementById("clientModal").classList.remove("show");
+    document.getElementById("clientForm").reset();
   }
 
   // Close modal when clicking outside
-  window.onclick = function(event) {
-    const modal = document.getElementById('clientModal');
+  window.onclick = function (event) {
+    const modal = document.getElementById("clientModal");
     if (event.target == modal) {
       closeClientModal();
     }
-  }
+  };
 
   // Prevent modal close when clicking inside content
-  document.querySelector('.modal-content').onclick = function(event) {
+  document.querySelector(".modal-content").onclick = function (event) {
     event.stopPropagation();
-  }
+  };
 </script>
 
 {% endblock %}

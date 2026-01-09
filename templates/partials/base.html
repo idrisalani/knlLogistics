@@ -7,7 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Kamrate Nigeria Limited - Invoice Management Dashboard">        
     <meta name="author" content="Kamrate Nigeria Limited">
-    <title>Kamrate - Invoice Management System</title>
+    <title>{% block title %}Kamrate - Invoice Management System{% endblock %}</title>
 
     <link rel="canonical" href="">
     <link href="{% static 'assets/css/bootstrap.min.css' %}" rel="stylesheet">
@@ -109,7 +109,7 @@
         bottom: 0;
         left: 0;
         z-index: 100;
-        width: 320px;
+        width: 270px;
         padding: 0;
         overflow-y: auto;
         overflow-x: hidden;
@@ -411,7 +411,7 @@
       </nav>
 
       <!-- MAIN CONTENT -->
-      {% block main %}
+      {% block content %}
       <main>
         <!-- Default main content goes here -->
       </main>

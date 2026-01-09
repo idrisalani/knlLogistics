@@ -1,0 +1,433 @@
+{% extends 'partials/base.html' %} {% load static %} {% block title %}Create
+Client - Kamrate Nigeria Limited{% endblock %} {% block content %}
+
+  <div class="container-fluid mt-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <!-- Page Header -->
+        <div class="mb-4">
+          <h1 class="page-title mb-1">
+            <i class="fas fa-user-tie"></i>
+            {% if form.instance.pk %} Edit Client {% else %} Create New Client
+            {% endif %}
+          </h1>
+          <p class="text-muted">
+            {% if form.instance.pk %} Update client information {% else %} Add a
+            new client to your database {% endif %}
+          </p>
+        </div>
+
+        <!-- Form Card -->
+        <div class="card shadow-sm border-0">
+          <div
+            class="card-header bg-primary text-white py-4"
+            style="background-color: #001f4d !important"
+          >
+            <h5 class="mb-0"><i class="fas fa-edit"></i> Client Information</h5>
+          </div>
+
+          <div class="card-body p-4">
+            {% if form.non_field_errors %}
+            <div
+              class="alert alert-danger alert-dismissible fade show"
+              role="alert"
+            >
+              <strong>Error!</strong>
+              {% for error in form.non_field_errors %}
+              <div>{{ error }}</div>
+              {% endfor %}
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+              ></button>
+            </div>
+            {% endif %}
+
+            <form method="post" id="clientForm">
+              {% csrf_token %}
+
+              <!-- Section 1: Basic Information -->
+              <fieldset class="mb-4">
+                <legend class="fs-5 fw-bold text-dark mb-3">
+                  <i class="fas fa-info-circle" style="color: #ff9500"></i>
+                  Basic Information
+                </legend>
+
+                <div class="mb-3">
+                  <label for="clientName" class="form-label fw-500">
+                    Client Name <span class="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="clientName"
+                    name="clientName"
+                    placeholder="e.g., ABC Transport Limited"
+                    required
+                  />
+                  <small class="text-muted"
+                    >Full name of the client/company</small
+                  >
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="email" class="form-label fw-500">
+                      Email Address <span class="text-danger">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      class="form-control"
+                      id="email"
+                      name="emailAddress"
+                      placeholder="client@example.com"
+                      required
+                    />
+                    <small class="text-muted"
+                      >For invoicing and communication</small
+                    >
+                  </div>
+
+                  <div class="col-md-6 mb-3">
+                    <label for="phone" class="form-label fw-500">
+                      Phone Number <span class="text-danger">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      class="form-control"
+                      id="phone"
+                      name="phoneNumber"
+                      placeholder="+234 812 345 6789"
+                      required
+                    />
+                    <small class="text-muted">Contact phone number</small>
+                  </div>
+                </div>
+              </fieldset>
+
+              <!-- Section 2: Address Information -->
+              <fieldset class="mb-4">
+                <legend class="fs-5 fw-bold text-dark mb-3">
+                  <i class="fas fa-map-marker-alt" style="color: #ff9500"></i>
+                  Address Information
+                </legend>
+
+                <div class="mb-3">
+                  <label for="address" class="form-label fw-500">
+                    Street Address <span class="text-danger">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="address"
+                    name="addressLine1"
+                    placeholder="e.g., 123 Main Street"
+                    required
+                  />
+                  <small class="text-muted">Street address</small>
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="state" class="form-label fw-500">
+                      State <span class="text-danger">*</span>
+                    </label>
+                    <select
+                      class="form-select"
+                      id="state"
+                      name="state"
+                      required
+                    >
+                      <option value="">-- Select State --</option>
+                      <option value="Lagos">Lagos</option>
+                      <option value="Ogun">Ogun</option>
+                      <option value="Osun">Osun</option>
+                      <option value="Oyo">Oyo</option>
+                      <option value="Ekiti">Ekiti</option>
+                      <option value="Ondo">Ondo</option>
+                      <option value="Kogi">Kogi</option>
+                      <option value="Kwara">Kwara</option>
+                      <option value="Niger">Niger</option>
+                      <option value="Abuja">Abuja</option>
+                      <option value="Kaduna">Kaduna</option>
+                      <option value="Katsina">Katsina</option>
+                      <option value="Kano">Kano</option>
+                      <option value="Jigawa">Jigawa</option>
+                      <option value="Sokoto">Sokoto</option>
+                      <option value="Kebbi">Kebbi</option>
+                      <option value="Zamfara">Zamfara</option>
+                      <option value="Bauchi">Bauchi</option>
+                      <option value="Gombe">Gombe</option>
+                      <option value="Yobe">Yobe</option>
+                      <option value="Borno">Borno</option>
+                      <option value="Taraba">Taraba</option>
+                      <option value="Adamawa">Adamawa</option>
+                      <option value="Nasarawa">Nasarawa</option>
+                      <option value="Plateau">Plateau</option>
+                      <option value="Rivers">Rivers</option>
+                      <option value="Bayelsa">Bayelsa</option>
+                      <option value="Delta">Delta</option>
+                      <option value="Edo">Edo</option>
+                      <option value="Abia">Abia</option>
+                      <option value="Enugu">Enugu</option>
+                      <option value="Ebonyi">Ebonyi</option>
+                      <option value="Anambra">Anambra</option>
+                      <option value="Imo">Imo</option>
+                      <option value="Cross River">Cross River</option>
+                      <option value="Akwa Ibom">Akwa Ibom</option>
+                    </select>
+                  </div>
+
+                  <div class="col-md-6 mb-3">
+                    <label for="postalCode" class="form-label fw-500">
+                      Postal Code
+                    </label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="postalCode"
+                      name="postalCode"
+                      placeholder="e.g., 100001"
+                    />
+                    <small class="text-muted">ZIP/Postal code</small>
+                  </div>
+                </div>
+              </fieldset>
+
+              <!-- Section 3: Tax Information -->
+              <fieldset class="mb-4">
+                <legend class="fs-5 fw-bold text-dark mb-3">
+                  <i class="fas fa-receipt" style="color: #ff9500"></i> Tax
+                  Information
+                </legend>
+
+                <div class="mb-3">
+                  <label for="taxNumber" class="form-label fw-500">
+                    Tax ID / TIN
+                  </label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="taxNumber"
+                    name="taxNumber"
+                    placeholder="e.g., 12345-0000-0"
+                  />
+                  <small class="text-muted"
+                    >Tax Identification Number (if available)</small
+                  >
+                </div>
+              </fieldset>
+
+              <!-- Form Actions -->
+              <div class="border-top pt-3 mt-4">
+                <div class="d-flex gap-2">
+                  <button
+                    type="submit"
+                    class="btn btn-lg"
+                    style="
+                      background-color: #001f4d;
+                      color: white;
+                      min-width: 150px;
+                    "
+                  >
+                    <i class="fas fa-save"></i>
+                    {% if form.instance.pk %} Update Client {% else %} Create
+                    Client {% endif %}
+                  </button>
+
+                  <a
+                    href="{% url 'knlInvoice:clients-list' %}"
+                    class="btn btn-secondary btn-lg"
+                  >
+                    <i class="fas fa-times"></i> Cancel
+                  </a>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+<style>
+  /* Form-specific styling to account for sidebar */
+  
+  .container-fluid {
+    max-width: 70%;
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  .page-title {
+    color: #001f4d;
+    font-weight: 700;
+    font-size: 28px;
+    margin-bottom: 10px;
+  }
+
+  .card {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .card-header {
+    background-color: #001f4d !important;
+    color: white;
+    padding: 20px 24px !important;
+  }
+
+  .card-body {
+    padding: 30px;
+  }
+
+  fieldset {
+    border: none;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+
+  legend {
+    width: auto;
+    padding: 0 10px;
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #001f4d;
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .form-control,
+  .form-select {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 12px 15px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+  }
+
+  .form-control:focus,
+  .form-select:focus {
+    border-color: #ff9500;
+    box-shadow: 0 0 0 3px rgba(255, 149, 0, 0.15);
+    outline: none;
+  }
+
+  .input-group-text {
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    padding: 12px 15px;
+  }
+
+  .btn {
+    border-radius: 5px;
+    font-weight: 600;
+    padding: 12px 24px;
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary {
+    background-color: #001f4d;
+    border-color: #001f4d;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: #003d7a;
+    border-color: #003d7a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 31, 77, 0.3);
+  }
+
+  .btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+  }
+
+  .btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+  }
+
+  .text-danger {
+    color: #dc3545;
+  }
+
+  .text-muted {
+    color: #6c757d;
+    font-size: 0.85rem;
+  }
+
+  .alert {
+    border-radius: 5px;
+    margin-bottom: 20px;
+  }
+
+  .mb-3 {
+    margin-bottom: 20px;
+  }
+
+  .mb-4 {
+    margin-bottom: 30px;
+  }
+
+  .row {
+    margin-right: -15px;
+    margin-left: -15px;
+  }
+
+  .col-md-6 {
+    padding-right: 15px;
+    padding-left: 15px;
+  }
+
+  .gap-2 {
+    gap: 12px;
+    display: flex;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 992px) {
+    .col-lg-10 {
+      max-width: 100%;
+      flex: 0 0 100%;
+    }
+    
+    .card-body {
+      padding: 20px;
+    }
+
+    fieldset {
+      padding: 15px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .page-title {
+      font-size: 24px;
+    }
+
+    .card-body {
+      padding: 15px;
+    }
+
+    .col-md-6 {
+      max-width: 100%;
+      flex: 0 0 100%;
+    }
+  }
+</style>
+
+{% endblock %}

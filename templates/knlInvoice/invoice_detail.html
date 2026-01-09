@@ -1,0 +1,214 @@
+{% extends 'partials/base.html' %} {% block main %}
+<main>
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>Invoice #{{ invoice.invoice_number }}</h1>
+    <p>Details and actions for this invoice</p>
+  </div>
+
+  <!-- ← ADD PDF BUTTONS HERE ← -->
+  <!-- Copy one of the button styles above -->
+  <!-- Day 6: Invoice PDF Actions (Card Style) -->
+  <div
+    class="invoice-actions-card"
+    style="
+      background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+      border: 2px solid #ff9500;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 30px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    "
+  >
+    <h3 style="color: #001f4d; margin-bottom: 15px; font-size: 14px">
+      📄 Invoice Actions
+    </h3>
+
+    <div
+      style="
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+      "
+    >
+      <!-- Download PDF -->
+      <a
+        href="{% url 'knlInvoice:invoice-pdf' invoice.id %}"
+        style="
+          background-color: #ff9500;
+          color: white;
+          padding: 12px 16px;
+          text-decoration: none;
+          border-radius: 5px;
+          text-align: center;
+          font-weight: bold;
+          transition: all 0.3s ease;
+          display: block;
+        "
+        onmouseover="this.style.backgroundColor='#E68A00'"
+        onmouseout="this.style.backgroundColor='#FF9500'"
+      >
+        📥 Download PDF
+      </a>
+
+      <!-- View PDF -->
+      <a
+        href="{% url 'knlInvoice:invoice-pdf-preview' invoice.id %}"
+        target="_blank"
+        style="
+          background-color: #2196f3;
+          color: white;
+          padding: 12px 16px;
+          text-decoration: none;
+          border-radius: 5px;
+          text-align: center;
+          font-weight: bold;
+          transition: all 0.3s ease;
+          display: block;
+        "
+        onmouseover="this.style.backgroundColor='#0b7dda'"
+        onmouseout="this.style.backgroundColor='#2196F3'"
+      >
+        👁️ View PDF
+      </a>
+
+      <!-- Email PDF -->
+      <form
+        method="POST"
+        action="{% url 'knlInvoice:invoice-email-pdf' invoice.id %}"
+        style="display: contents"
+      >
+        {% csrf_token %}
+        <button
+          type="submit"
+          style="
+            background-color: #4caf50;
+            color: white;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+          "
+          onmouseover="this.style.backgroundColor='#45a049'"
+          onmouseout="this.style.backgroundColor='#4CAF50'"
+          onclick="return confirm('Email to {{ invoice.client.email }}?');"
+        >
+          📧 Email Invoice
+        </button>
+      </form>
+
+      <!-- Print -->
+      <button
+        onclick="window.print()"
+        style="
+          background-color: #666;
+          color: white;
+          padding: 12px 16px;
+          border: none;
+          border-radius: 5px;
+          font-weight: bold;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        "
+        onmouseover="this.style.backgroundColor='#555'"
+        onmouseout="this.style.backgroundColor='#666'"
+      >
+        🖨️ Print
+      </button>
+    </div>
+  </div>
+
+  <!-- Rest of your invoice detail content -->
+  <div
+    style="
+      background: white;
+      padding: 20px;
+      border-radius: 5px;
+      border: 1px solid #ddd;
+    "
+  >
+    <!-- Invoice Header Info -->
+    <div
+      style="
+        margin-bottom: 20px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #ff9500;
+      "
+    >
+      <h2 style="color: #001f4d">Invoice Details</h2>
+      <p><strong>Invoice Number:</strong> {{ invoice.invoice_number }}</p>
+      <p><strong>Date:</strong> {{ invoice.date_created|date:"d F Y" }}</p>
+      <p><strong>Client:</strong> {{ invoice.client.clientName }}</p>
+      <p>
+        <strong>Amount:</strong>
+        <span style="font-size: 18px; font-weight: bold; color: #ff9500"
+          >₦{{ invoice.total }}</span
+        >
+      </p>
+    </div>
+
+    <!-- Client Details -->
+    <div style="margin-bottom: 20px">
+      <h3 style="color: #001f4d">Bill To</h3>
+      <p>{{ invoice.client.clientName }}</p>
+      {% if invoice.client.email %}
+      <p>{{ invoice.client.email }}</p>
+      {% endif %} {% if invoice.client.phone %}
+      <p>{{ invoice.client.phone }}</p>
+      {% endif %}
+    </div>
+
+    <!-- Items Table -->
+    <div style="margin-bottom: 20px">
+      <h3 style="color: #001f4d">Items</h3>
+      <table style="width: 100%; border-collapse: collapse">
+        <thead style="background-color: #001f4d; color: white">
+          <tr>
+            <th style="padding: 10px; text-align: left">Description</th>
+            <th style="padding: 10px; text-align: center">Quantity</th>
+            <th style="padding: 10px; text-align: right">Unit Price</th>
+            <th style="padding: 10px; text-align: right">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in invoice.invoiceitem_set.all %}
+          <tr style="border-bottom: 1px solid #ddd">
+            <td style="padding: 10px">{{ item.product.title }}</td>
+            <td style="padding: 10px; text-align: center">
+              {{ item.quantity|default:1 }}
+            </td>
+            <td style="padding: 10px; text-align: right">
+              ₦{{ item.unit_price|default:item.product.price }}
+            </td>
+            <td style="padding: 10px; text-align: right">
+              ₦{{ item.get_line_total|default:item.product.price }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Totals -->
+    <div style="text-align: right; margin-bottom: 20px">
+      <p><strong>Subtotal:</strong> ₦{{ invoice.subtotal|default:0 }}</p>
+      {% if invoice.tax_amount %}
+      <p><strong>Tax:</strong> ₦{{ invoice.tax_amount }}</p>
+      {% endif %}
+      <p
+        style="
+          font-size: 18px;
+          font-weight: bold;
+          color: #ff9500;
+          padding-top: 10px;
+          border-top: 2px solid #ff9500;
+        "
+      >
+        TOTAL: ₦{{ invoice.total }}
+      </p>
+    </div>
+  </div>
+</main>
+{% endblock %}
