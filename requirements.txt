@@ -1,6 +1,6 @@
 Django==4.2.0
 Pillow==11.3.0
-django-crispy-forms==2.1
+django-crispy-forms==2.3
 crispy-bootstrap5==2024.10
 psycopg2-binary==2.9.9
 python-decouple==3.8
