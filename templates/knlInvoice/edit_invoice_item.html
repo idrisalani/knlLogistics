@@ -1,0 +1,303 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %}Edit Item - Kamrate Nigeria Limited{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid mt-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <!-- Page Header -->
+      <div class="mb-4">
+        <h1 class="page-title mb-1">
+          <i class="fas fa-edit"></i> Edit Line Item
+        </h1>
+        <p class="text-muted">
+          Invoice: <strong>{{ invoice.invoice_number }}</strong> | 
+          Client: <strong>{{ invoice.client.clientName }}</strong>
+        </p>
+      </div>
+
+      <!-- Form Card -->
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white py-4" style="background-color: #001f4d !important;">
+          <h5 class="mb-0"><i class="fas fa-shopping-cart"></i> Item Details</h5>
+        </div>
+
+        <div class="card-body p-4">
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>Error!</strong>
+            {% for error in form.non_field_errors %}
+            <div>{{ error }}</div>
+            {% endfor %}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+          </div>
+          {% endif %}
+
+          <form method="post" id="itemForm">
+            {% csrf_token %}
+
+            <!-- Section 1: Product Selection -->
+            <fieldset class="mb-4">
+              <legend class="fs-5 fw-bold text-dark mb-3">
+                <i class="fas fa-box" style="color: #ff9500"></i> Product
+              </legend>
+
+              <div class="mb-3">
+                <label for="product" class="form-label fw-500">
+                  Product <span class="text-muted">(Optional)</span>
+                </label>
+                <select class="form-select" id="product" name="product">
+                  <option value="">-- Select Product --</option>
+                  {% for product in products %}
+                  <option value="{{ product.id }}" {% if invoice_item.product.id == product.id %}selected{% endif %}>
+                    {{ product.title }} (₦{{ product.price }})
+                  </option>
+                  {% endfor %}
+                </select>
+                <small class="text-muted">Link to your product catalog (auto-fills price)</small>
+              </div>
+            </fieldset>
+
+            <!-- Section 2: Item Details -->
+            <fieldset class="mb-4">
+              <legend class="fs-5 fw-bold text-dark mb-3">
+                <i class="fas fa-receipt" style="color: #ff9500"></i> Item Information
+              </legend>
+
+              <div class="mb-3">
+                <label for="description" class="form-label fw-500">
+                  Description <span class="text-danger">*</span>
+                </label>
+                <textarea 
+                  class="form-control" 
+                  id="description" 
+                  name="description" 
+                  rows="3" 
+                  placeholder="e.g., Professional welding service for truck repair"
+                  required>{{ invoice_item.description }}</textarea>
+                <small class="text-muted">What is this item/service for?</small>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="quantity" class="form-label fw-500">
+                    Quantity <span class="text-danger">*</span>
+                  </label>
+                  <input 
+                    type="number" 
+                    class="form-control" 
+                    id="quantity" 
+                    name="quantity" 
+                    placeholder="1" 
+                    step="0.01" 
+                    value="{{ invoice_item.quantity }}"
+                    required 
+                  />
+                  <small class="text-muted">Number of units</small>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label for="unit_price" class="form-label fw-500">
+                    Unit Price (₦) <span class="text-danger">*</span>
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text">₦</span>
+                    <input 
+                      type="number" 
+                      class="form-control" 
+                      id="unit_price" 
+                      name="unit_price" 
+                      placeholder="5000" 
+                      step="0.01" 
+                      value="{{ invoice_item.unit_price }}"
+                      required 
+                    />
+                  </div>
+                  <small class="text-muted">Price per unit</small>
+                </div>
+              </div>
+
+              <!-- Line Total Preview -->
+              <div class="alert alert-light border" role="alert">
+                <div class="d-flex justify-content-between">
+                  <span><strong>Line Total:</strong></span>
+                  <span id="lineTotal" style="color: #FF9500; font-weight: 600;">
+                    ₦{{ invoice_item.get_total|floatformat:2 }}
+                  </span>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Form Actions -->
+            <div class="border-top pt-3 mt-4">
+              <div class="d-flex gap-2">
+                <button 
+                  type="submit" 
+                  class="btn btn-lg" 
+                  style="background-color: #001f4d; color: white; min-width: 150px;">
+                  <i class="fas fa-save"></i> Update Item
+                </button>
+
+                <a 
+                  href="{% url 'knlInvoice:invoice-detail' invoice.pk %}" 
+                  class="btn btn-secondary btn-lg">
+                  <i class="fas fa-times"></i> Cancel
+                </a>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Help Text -->
+      <div class="alert alert-info mt-4" role="alert">
+        <i class="fas fa-lightbulb"></i>
+        <strong>Tip:</strong> You can link items to products from your catalog. The quantity and price will be calculated automatically.
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+  .page-title {
+    color: #001f4d;
+    font-weight: 700;
+    font-size: 28px;
+    margin-bottom: 10px;
+  }
+
+  fieldset {
+    border: none;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+
+  legend {
+    width: auto;
+    padding: 0 10px;
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #001f4d;
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .form-control,
+  .form-select {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 12px 15px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+  }
+
+  .form-control:focus,
+  .form-select:focus {
+    border-color: #ff9500;
+    box-shadow: 0 0 0 3px rgba(255, 149, 0, 0.15);
+    outline: none;
+  }
+
+  .input-group-text {
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    padding: 12px 15px;
+  }
+
+  .btn {
+    border-radius: 5px;
+    font-weight: 600;
+    padding: 12px 24px;
+    transition: all 0.3s ease;
+  }
+
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+  }
+
+  .btn-secondary:hover {
+    background-color: #5a6268;
+    border-color: #545b62;
+  }
+
+  .text-danger {
+    color: #dc3545;
+  }
+
+  .text-muted {
+    color: #6c757d;
+    font-size: 0.85rem;
+  }
+
+  .card {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+  }
+
+  .gap-2 {
+    gap: 10px;
+    display: flex;
+  }
+
+  /* Auto-calculate line total */
+  #lineTotal {
+    font-size: 1.2rem;
+  }
+</style>
+
+<script>
+  // Real-time line total calculation
+  document.getElementById('quantity').addEventListener('input', updateLineTotal);
+  document.getElementById('unit_price').addEventListener('input', updateLineTotal);
+
+  function updateLineTotal() {
+    const quantity = parseFloat(document.getElementById('quantity').value) || 0;
+    const unitPrice = parseFloat(document.getElementById('unit_price').value) || 0;
+    const total = quantity * unitPrice;
+    
+    const formatter = new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: 'NGN',
+      minimumFractionDigits: 2,
+    });
+    
+    document.getElementById('lineTotal').textContent = formatter.format(total);
+  }
+
+  // Auto-fill price when product is selected
+  document.getElementById('product').addEventListener('change', function() {
+    const selectedOption = this.options[this.selectedIndex];
+    if (selectedOption.value) {
+      // Extract price from option text (e.g., "Product Name (₦5000)")
+      const text = selectedOption.text;
+      const priceMatch = text.match(/₦([\d,]+)/);
+      if (priceMatch) {
+        const price = parseFloat(priceMatch[1].replace(',', ''));
+        document.getElementById('unit_price').value = price;
+        updateLineTotal();
+      }
+    }
+  });
+</script>
+
+{% endblock %}

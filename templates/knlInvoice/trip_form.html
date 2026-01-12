@@ -1,238 +1,275 @@
-{% extends 'partials/base.html' %} {% load static %} {% block title %}Create
-Trip - Kamrate Nigeria Limited{% endblock %} {% block content %}
+{% extends 'partials/base.html' %}
+{% load static %}
 
-  <div class="container-fluid mt-5">
-    <div class="row justify-content-center">
-      <div class="col-lg-10">
-        <!-- Page Header -->
-        <div class="mb-4">
-          <h1 class="page-title mb-1">
-            <i class="fas fa-truck"></i>
-            {% if form.instance.pk %} Edit Trip {% else %} Create New Trip {%
-            endif %}
-          </h1>
-          <p class="text-muted">
-            {% if form.instance.pk %} Update trip details and information {%
-            else %} Create a new truck trip record {% endif %}
-          </p>
+{% block title %}{% if form.instance.pk %}Edit Trip{% else %}Create Trip{% endif %} - Kamrate Nigeria Limited{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid mt-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <!-- Page Header -->
+      <div class="mb-4">
+        <h1 class="page-title mb-1">
+          <i class="fas fa-truck"></i>
+          {% if form.instance.pk %} Edit Trip {% else %} Create New Trip {% endif %}
+        </h1>
+        <p class="text-muted">
+          {% if form.instance.pk %} Update trip details and information {% else %} Create a new truck trip record {% endif %}
+        </p>
+      </div>
+
+      <!-- Form Card -->
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white py-4" style="background-color: #001f4d !important">
+          <h5 class="mb-0"><i class="fas fa-edit"></i> Trip Information</h5>
         </div>
 
-        <!-- Form Card -->
-        <div class="card shadow-sm border-0">
-          <div
-            class="card-header bg-primary text-white py-4"
-            style="background-color: #001f4d !important"
-          >
-            <h5 class="mb-0"><i class="fas fa-edit"></i> Trip Information</h5>
+        <div class="card-body p-4">
+          
+          <!-- Display Non-Field Errors -->
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong><i class="fas fa-exclamation-circle"></i> Error!</strong>
+            {% for error in form.non_field_errors %}
+            <div>{{ error }}</div>
+            {% endfor %}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
           </div>
+          {% endif %}
 
-          <div class="card-body p-4">
-            {% if form.non_field_errors %}
-            <div
-              class="alert alert-danger alert-dismissible fade show"
-              role="alert"
-            >
-              <strong>Error!</strong>
-              {% for error in form.non_field_errors %}
-              <div>{{ error }}</div>
-              {% endfor %}
-              <button
-                type="button"
-                class="btn-close"
-                data-bs-dismiss="alert"
-              ></button>
-            </div>
-            {% endif %}
+          <form method="post" id="tripForm">
+            {% csrf_token %}
 
-            <form method="post" id="tripForm">
-              {% csrf_token %}
+            <!-- Section 1: Trip Details -->
+            <fieldset class="mb-4">
+              <legend class="fs-5 fw-bold text-dark mb-3">
+                <i class="fas fa-receipt" style="color: #ff9500"></i> Trip Details
+              </legend>
 
-              <!-- Section 1: Trip Details -->
-              <fieldset class="mb-4">
-                <legend class="fs-5 fw-bold text-dark mb-3">
-                  <i class="fas fa-receipt" style="color: #ff9500"></i> Trip
-                  Details
-                </legend>
-
-                <div class="mb-3">
-                  <label for="tripNumber" class="form-label fw-500">
-                    Trip Number <span class="text-danger">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="tripNumber"
-                    name="trip_number"
-                    placeholder="e.g., TRIP-001-2026"
-                    required
-                  />
-                  <small class="text-muted">Unique trip identifier</small>
-                </div>
-
-                <div class="mb-3">
-                  <label for="truck" class="form-label fw-500">
-                    Truck <span class="text-danger">*</span>
-                  </label>
-                  <select class="form-select" id="truck" name="truck" required>
-                    <option value="">-- Select Truck --</option>
-                    {% for truck in trucks %}
-                    <option value="{{ truck.id }}">
-                      {{ truck.plate_number }} - {{ truck.model }}
-                    </option>
+              <!-- Trip Number Field -->
+              <div class="mb-3">
+                <label for="{{ form.tripNumber.id_for_label }}" class="form-label fw-500">
+                  Trip Number <span class="text-danger">*</span>
+                </label>
+                
+                {% if form.tripNumber.errors %}
+                  {{ form.tripNumber }}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.tripNumber.errors %}
+                      {{ error }}
                     {% endfor %}
-                  </select>
-                  <small class="text-muted">Vehicle for this trip</small>
-                </div>
-              </fieldset>
-
-              <!-- Section 2: Route Information -->
-              <fieldset class="mb-4">
-                <legend class="fs-5 fw-bold text-dark mb-3">
-                  <i class="fas fa-map-marker-alt" style="color: #ff9500"></i>
-                  Route Information
-                </legend>
-
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label for="origin" class="form-label fw-500">
-                      Origin <span class="text-danger">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="origin"
-                      name="origin"
-                      placeholder="e.g., Lagos"
-                      required
-                    />
-                    <small class="text-muted">Starting location</small>
                   </div>
+                {% else %}
+                  {{ form.tripNumber }}
+                {% endif %}
+                
+                <small class="text-muted">Unique trip identifier</small>
+              </div>
 
-                  <div class="col-md-6 mb-3">
-                    <label for="destination" class="form-label fw-500">
-                      Destination <span class="text-danger">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="destination"
-                      name="destination"
-                      placeholder="e.g., Port Harcourt"
-                      required
-                    />
-                    <small class="text-muted">Destination location</small>
+              <!-- Truck Field -->
+              <div class="mb-3">
+                <label for="{{ form.truck.id_for_label }}" class="form-label fw-500">
+                  Truck <span class="text-danger">*</span>
+                </label>
+                
+                {% if form.truck.errors %}
+                  {{ form.truck }}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.truck.errors %}
+                      {{ error }}
+                    {% endfor %}
                   </div>
-                </div>
+                {% else %}
+                  {{ form.truck }}
+                {% endif %}
+                
+                <small class="text-muted">Vehicle for this trip</small>
+              </div>
+            </fieldset>
 
-                <div class="mb-3">
-                  <label for="distance" class="form-label fw-500">
-                    Distance (km) <span class="text-danger">*</span>
+            <!-- Section 2: Route Information -->
+            <fieldset class="mb-4">
+              <legend class="fs-5 fw-bold text-dark mb-3">
+                <i class="fas fa-map-marker-alt" style="color: #ff9500"></i> Route Information
+              </legend>
+
+              <div class="row">
+                <!-- Origin Field -->
+                <div class="col-md-6 mb-3">
+                  <label for="{{ form.origin.id_for_label }}" class="form-label fw-500">
+                    Origin <span class="text-danger">*</span>
                   </label>
-                  <div class="input-group">
-                    <input
-                      type="number"
-                      class="form-control"
-                      id="distance"
-                      name="distance"
-                      placeholder="400"
-                      step="0.1"
-                      required
-                    />
-                    <span class="input-group-text">km</span>
-                  </div>
-                  <small class="text-muted">Distance in kilometers</small>
+                  
+                  {% if form.origin.errors %}
+                    {{ form.origin }}
+                    <div class="invalid-feedback d-block">
+                      <i class="fas fa-exclamation-triangle"></i>
+                      {% for error in form.origin.errors %}
+                        {{ error }}
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    {{ form.origin }}
+                  {% endif %}
+                  
+                  <small class="text-muted">Starting location</small>
                 </div>
-              </fieldset>
 
-              <!-- Section 3: Financial Details -->
-              <fieldset class="mb-4">
-                <legend class="fs-5 fw-bold text-dark mb-3">
-                  <i class="fas fa-coins" style="color: #ff9500"></i> Financial
-                  Details
-                </legend>
-
-                <div class="mb-3">
-                  <label for="revenue" class="form-label fw-500">
-                    Revenue (₦) <span class="text-danger">*</span>
+                <!-- Destination Field -->
+                <div class="col-md-6 mb-3">
+                  <label for="{{ form.destination.id_for_label }}" class="form-label fw-500">
+                    Destination <span class="text-danger">*</span>
                   </label>
-                  <div class="input-group">
-                    <span class="input-group-text">₦</span>
-                    <input
-                      type="number"
-                      class="form-control"
-                      id="revenue"
-                      name="revenue"
-                      placeholder="150000"
-                      step="0.01"
-                      required
-                    />
-                  </div>
-                  <small class="text-muted"
-                    >Trip revenue in Nigerian Naira</small
-                  >
-                </div>
-              </fieldset>
-
-              <!-- Section 4: Additional Information -->
-              <fieldset class="mb-4">
-                <legend class="fs-5 fw-bold text-dark mb-3">
-                  <i class="fas fa-notes-medical" style="color: #ff9500"></i>
-                  Additional Information
-                </legend>
-
-                <div class="mb-3">
-                  <label for="status" class="form-label fw-500"> Status </label>
-                  <select class="form-select" id="status" name="status">
-                    <option value="pending">Pending</option>
-                    <option value="in_progress">In Progress</option>
-                    <option value="completed">Completed</option>
-                    <option value="cancelled">Cancelled</option>
-                  </select>
-                </div>
-
-                <div class="mb-3">
-                  <label for="notes" class="form-label fw-500"> Notes </label>
-                  <textarea
-                    class="form-control"
-                    id="notes"
-                    name="notes"
-                    rows="4"
-                    placeholder="Add any additional notes about the trip..."
-                  ></textarea>
-                </div>
-              </fieldset>
-
-              <!-- Form Actions -->
-              <div class="border-top pt-3 mt-4">
-                <div class="d-flex gap-2">
-                  <button
-                    type="submit"
-                    class="btn btn-lg"
-                    style="
-                      background-color: #001f4d;
-                      color: white;
-                      min-width: 150px;
-                    "
-                  >
-                    <i class="fas fa-save"></i>
-                    {% if form.instance.pk %} Update Trip {% else %} Create Trip
-                    {% endif %}
-                  </button>
-
-                  <a
-                    href="{% url 'knlInvoice:trips-list' %}"
-                    class="btn btn-secondary btn-lg"
-                  >
-                    <i class="fas fa-times"></i> Cancel
-                  </a>
+                  
+                  {% if form.destination.errors %}
+                    {{ form.destination }}
+                    <div class="invalid-feedback d-block">
+                      <i class="fas fa-exclamation-triangle"></i>
+                      {% for error in form.destination.errors %}
+                        {{ error }}
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    {{ form.destination }}
+                  {% endif %}
+                  
+                  <small class="text-muted">Destination location</small>
                 </div>
               </div>
-            </form>
-          </div>
+
+              <!-- Distance Field -->
+              <div class="mb-3">
+                <label for="{{ form.distance.id_for_label }}" class="form-label fw-500">
+                  Distance (km) <span class="text-danger">*</span>
+                </label>
+                
+                <div class="input-group">
+                  {% if form.distance.errors %}
+                    {{ form.distance }}
+                  {% else %}
+                    {{ form.distance }}
+                  {% endif %}
+                  <span class="input-group-text">km</span>
+                </div>
+                
+                {% if form.distance.errors %}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.distance.errors %}
+                      {{ error }}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                
+                <small class="text-muted">Distance in kilometers</small>
+              </div>
+            </fieldset>
+
+            <!-- Section 3: Financial Details -->
+            <fieldset class="mb-4">
+              <legend class="fs-5 fw-bold text-dark mb-3">
+                <i class="fas fa-coins" style="color: #ff9500"></i> Financial Details
+              </legend>
+
+              <!-- Revenue Field -->
+              <div class="mb-3">
+                <label for="{{ form.revenue.id_for_label }}" class="form-label fw-500">
+                  Revenue (₦) <span class="text-danger">*</span>
+                </label>
+                
+                <div class="input-group">
+                  <span class="input-group-text">₦</span>
+                  {% if form.revenue.errors %}
+                    {{ form.revenue }}
+                  {% else %}
+                    {{ form.revenue }}
+                  {% endif %}
+                </div>
+                
+                {% if form.revenue.errors %}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.revenue.errors %}
+                      {{ error }}
+                    {% endfor %}
+                  </div>
+                {% endif %}
+                
+                <small class="text-muted">Trip revenue in Nigerian Naira</small>
+              </div>
+            </fieldset>
+
+            <!-- Section 4: Additional Information -->
+            <fieldset class="mb-4">
+              <legend class="fs-5 fw-bold text-dark mb-3">
+                <i class="fas fa-notes-medical" style="color: #ff9500"></i> Additional Information
+              </legend>
+
+              <!-- Status Field -->
+              <div class="mb-3">
+                <label for="{{ form.status.id_for_label }}" class="form-label fw-500">
+                  Status
+                </label>
+                
+                {% if form.status.errors %}
+                  {{ form.status }}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.status.errors %}
+                      {{ error }}
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  {{ form.status }}
+                {% endif %}
+              </div>
+
+              <!-- Notes Field -->
+              <div class="mb-3">
+                <label for="{{ form.notes.id_for_label }}" class="form-label fw-500">
+                  Notes
+                </label>
+                
+                {% if form.notes.errors %}
+                  {{ form.notes }}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.notes.errors %}
+                      {{ error }}
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  {{ form.notes }}
+                {% endif %}
+              </div>
+            </fieldset>
+
+            <!-- Form Actions -->
+            <div class="border-top pt-3 mt-4">
+              <div class="d-flex gap-2">
+                <button
+                  type="submit"
+                  class="btn btn-lg"
+                  style="background-color: #001f4d; color: white; min-width: 150px"
+                >
+                  <i class="fas fa-save"></i>
+                  {% if form.instance.pk %} Update Trip {% else %} Create Trip {% endif %}
+                </button>
+
+                <a href="{% url 'knlInvoice:trips-list' %}" class="btn btn-secondary btn-lg">
+                  <i class="fas fa-times"></i> Cancel
+                </a>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   </div>
+</div>
 
 <style>
   /* Form-specific styling to account for sidebar */
@@ -297,6 +334,7 @@ Trip - Kamrate Nigeria Limited{% endblock %} {% block content %}
     padding: 12px 15px;
     font-size: 0.95rem;
     transition: all 0.3s ease;
+    width: 100%;
   }
 
   .form-control:focus,
@@ -306,10 +344,36 @@ Trip - Kamrate Nigeria Limited{% endblock %} {% block content %}
     outline: none;
   }
 
+  /* Error styling */
+  .form-control.is-invalid,
+  .form-select.is-invalid {
+    border-color: #dc3545;
+    background-image: none;
+  }
+
+  .form-control.is-invalid:focus,
+  .form-select.is-invalid:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+  }
+
+  .invalid-feedback {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    display: block;
+    font-weight: 500;
+  }
+
   .input-group-text {
     background-color: #f8f9fa;
     border: 1px solid #ddd;
     padding: 12px 15px;
+  }
+
+  .input-group .form-control,
+  .input-group .form-select {
+    margin-bottom: 0;
   }
 
   .btn {
@@ -355,6 +419,12 @@ Trip - Kamrate Nigeria Limited{% endblock %} {% block content %}
   .alert {
     border-radius: 5px;
     margin-bottom: 20px;
+    border: none;
+  }
+
+  .alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
   }
 
   .mb-3 {
@@ -412,5 +482,4 @@ Trip - Kamrate Nigeria Limited{% endblock %} {% block content %}
   }
 </style>
 
-{% endif %}
 {% endblock %}

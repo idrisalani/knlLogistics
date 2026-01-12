@@ -314,16 +314,24 @@ class ProductForm(forms.ModelForm):
 # ============================================
 
 class InvoiceForm(forms.ModelForm):
-    """Form for creating and editing invoices (FIXED)"""
+    """Form for creating and editing invoices (COMPLETE)"""
     class Meta:
         model = Invoice
         fields = [
             'invoice_number',
+            'title',                    # ✅ ADDED - Brief description
             'client',
             'issue_date',
             'due_date',
+            'subtotal',                 # ✅ ADDED - Before tax
             'tax_rate',
+            'tax_amount',               # ✅ ADDED - Calculated tax
+            'total',                    # ✅ ADDED - Final total
             'paymentTerms',
+            'payment_method',           # ✅ ADDED - Payment method
+            'amount_paid',              # ✅ ADDED - Payment tracking
+            'outstanding_amount',       # ✅ ADDED - Remaining balance
+            'status',                   # ✅ ADDED - Invoice status
             'notes',
         ]
         widgets = {
@@ -331,6 +339,10 @@ class InvoiceForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Invoice Number (e.g., INV-001-2026)',
                 'required': True
+            }),
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Brief description of invoice',
             }),
             'client': forms.Select(attrs={
                 'class': 'form-control',
@@ -344,7 +356,12 @@ class InvoiceForm(forms.ModelForm):
             'due_date': forms.DateInput(attrs={
                 'class': 'form-control',
                 'type': 'date',
-                'required': True
+            }),
+            'subtotal': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0.00',
+                'step': '0.01',
+                'readonly': True,  # Auto-calculated from line items
             }),
             'tax_rate': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -352,18 +369,45 @@ class InvoiceForm(forms.ModelForm):
                 'step': '0.01',
                 'value': '7.5',
             }),
-            'paymentTerms': forms.TextInput(attrs={
+            'tax_amount': forms.NumberInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'Payment Terms (e.g., 14 days)',
-                'value': '14 days',
+                'placeholder': '0.00',
+                'step': '0.01',
+                'readonly': True,  # Auto-calculated
+            }),
+            'total': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0.00',
+                'step': '0.01',
+                'readonly': True,  # Auto-calculated
+            }),
+            'paymentTerms': forms.Select(attrs={
+                'class': 'form-control',
+            }),
+            'payment_method': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Bank Transfer, Cash',
+            }),
+            'amount_paid': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0.00',
+                'step': '0.01',
+            }),
+            'outstanding_amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0.00',
+                'step': '0.01',
+                'readonly': True,  # Auto-calculated
+            }),
+            'status': forms.Select(attrs={
+                'class': 'form-control',
             }),
             'notes': forms.Textarea(attrs={
                 'class': 'form-control',
-                'placeholder': 'Invoice Notes',
+                'placeholder': 'Additional notes about the invoice',
                 'rows': 3
             }),
         }
-
 
 class InvoiceItemForm(forms.ModelForm):
     """Form for adding line items to invoices (NEW)"""

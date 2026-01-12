@@ -1,256 +1,239 @@
-{% extends 'partials/base.html' %} {% load static %} {% block title %}Create
-Client - Kamrate Nigeria Limited{% endblock %} {% block content %}
+{% extends 'partials/base.html' %}
+{% load static %}
 
-  <div class="container-fluid mt-5">
-    <div class="row justify-content-center">
-      <div class="col-lg-10">
-        <!-- Page Header -->
-        <div class="mb-4">
-          <h1 class="page-title mb-1">
-            <i class="fas fa-user-tie"></i>
-            {% if form.instance.pk %} Edit Client {% else %} Create New Client
-            {% endif %}
-          </h1>
-          <p class="text-muted">
-            {% if form.instance.pk %} Update client information {% else %} Add a
-            new client to your database {% endif %}
-          </p>
+{% block title %}Create Client - Kamrate Nigeria Limited{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid mt-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <!-- Page Header -->
+      <div class="mb-4">
+        <h1 class="page-title mb-1">
+          <i class="fas fa-user-tie"></i>
+          {% if form.instance.pk %} Edit Client {% else %} Create New Client {% endif %}
+        </h1>
+        <p class="text-muted">
+          {% if form.instance.pk %} Update client information {% else %} Add a new client to your database {% endif %}
+        </p>
+      </div>
+
+      <!-- Form Card -->
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white py-4" style="background-color: #001f4d !important">
+          <h5 class="mb-0"><i class="fas fa-edit"></i> Client Information</h5>
         </div>
 
-        <!-- Form Card -->
-        <div class="card shadow-sm border-0">
-          <div
-            class="card-header bg-primary text-white py-4"
-            style="background-color: #001f4d !important"
-          >
-            <h5 class="mb-0"><i class="fas fa-edit"></i> Client Information</h5>
+        <div class="card-body p-4">
+          
+          <!-- Display Non-Field Errors -->
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong><i class="fas fa-exclamation-circle"></i> Error!</strong>
+            {% for error in form.non_field_errors %}
+            <div>{{ error }}</div>
+            {% endfor %}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
           </div>
+          {% endif %}
 
-          <div class="card-body p-4">
-            {% if form.non_field_errors %}
-            <div
-              class="alert alert-danger alert-dismissible fade show"
-              role="alert"
-            >
-              <strong>Error!</strong>
-              {% for error in form.non_field_errors %}
-              <div>{{ error }}</div>
-              {% endfor %}
-              <button
-                type="button"
-                class="btn-close"
-                data-bs-dismiss="alert"
-              ></button>
-            </div>
-            {% endif %}
+          <form method="post" id="clientForm">
+            {% csrf_token %}
 
-            <form method="post" id="clientForm">
-              {% csrf_token %}
+            <!-- Section 1: Basic Information -->
+            <fieldset class="mb-4">
+              <legend class="fs-5 fw-bold text-dark mb-3">
+                <i class="fas fa-info-circle" style="color: #ff9500"></i> Basic Information
+              </legend>
 
-              <!-- Section 1: Basic Information -->
-              <fieldset class="mb-4">
-                <legend class="fs-5 fw-bold text-dark mb-3">
-                  <i class="fas fa-info-circle" style="color: #ff9500"></i>
-                  Basic Information
-                </legend>
+              <!-- Client Name Field -->
+              <div class="mb-3">
+                <label for="{{ form.clientName.id_for_label }}" class="form-label fw-500">
+                  Client Name <span class="text-danger">*</span>
+                </label>
+                
+                {% if form.clientName.errors %}
+                  {{ form.clientName }}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.clientName.errors %}
+                      {{ error }}
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  {{ form.clientName }}
+                {% endif %}
+                
+                <small class="text-muted">Full name of the client/company</small>
+              </div>
 
-                <div class="mb-3">
-                  <label for="clientName" class="form-label fw-500">
-                    Client Name <span class="text-danger">*</span>
+              <div class="row">
+                <!-- Email Field -->
+                <div class="col-md-6 mb-3">
+                  <label for="{{ form.emailAddress.id_for_label }}" class="form-label fw-500">
+                    Email Address <span class="text-danger">*</span>
                   </label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="clientName"
-                    name="clientName"
-                    placeholder="e.g., ABC Transport Limited"
-                    required
-                  />
-                  <small class="text-muted"
-                    >Full name of the client/company</small
-                  >
+                  
+                  {% if form.emailAddress.errors %}
+                    {{ form.emailAddress }}
+                    <div class="invalid-feedback d-block">
+                      <i class="fas fa-exclamation-triangle"></i>
+                      {% for error in form.emailAddress.errors %}
+                        {{ error }}
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    {{ form.emailAddress }}
+                  {% endif %}
+                  
+                  <small class="text-muted">For invoicing and communication</small>
                 </div>
 
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label for="email" class="form-label fw-500">
-                      Email Address <span class="text-danger">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      class="form-control"
-                      id="email"
-                      name="emailAddress"
-                      placeholder="client@example.com"
-                      required
-                    />
-                    <small class="text-muted"
-                      >For invoicing and communication</small
-                    >
-                  </div>
-
-                  <div class="col-md-6 mb-3">
-                    <label for="phone" class="form-label fw-500">
-                      Phone Number <span class="text-danger">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      class="form-control"
-                      id="phone"
-                      name="phoneNumber"
-                      placeholder="+234 812 345 6789"
-                      required
-                    />
-                    <small class="text-muted">Contact phone number</small>
-                  </div>
-                </div>
-              </fieldset>
-
-              <!-- Section 2: Address Information -->
-              <fieldset class="mb-4">
-                <legend class="fs-5 fw-bold text-dark mb-3">
-                  <i class="fas fa-map-marker-alt" style="color: #ff9500"></i>
-                  Address Information
-                </legend>
-
-                <div class="mb-3">
-                  <label for="address" class="form-label fw-500">
-                    Street Address <span class="text-danger">*</span>
+                <!-- Phone Field -->
+                <div class="col-md-6 mb-3">
+                  <label for="{{ form.phoneNumber.id_for_label }}" class="form-label fw-500">
+                    Phone Number <span class="text-danger">*</span>
                   </label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="address"
-                    name="addressLine1"
-                    placeholder="e.g., 123 Main Street"
-                    required
-                  />
-                  <small class="text-muted">Street address</small>
-                </div>
-
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label for="state" class="form-label fw-500">
-                      State <span class="text-danger">*</span>
-                    </label>
-                    <select
-                      class="form-select"
-                      id="state"
-                      name="state"
-                      required
-                    >
-                      <option value="">-- Select State --</option>
-                      <option value="Lagos">Lagos</option>
-                      <option value="Ogun">Ogun</option>
-                      <option value="Osun">Osun</option>
-                      <option value="Oyo">Oyo</option>
-                      <option value="Ekiti">Ekiti</option>
-                      <option value="Ondo">Ondo</option>
-                      <option value="Kogi">Kogi</option>
-                      <option value="Kwara">Kwara</option>
-                      <option value="Niger">Niger</option>
-                      <option value="Abuja">Abuja</option>
-                      <option value="Kaduna">Kaduna</option>
-                      <option value="Katsina">Katsina</option>
-                      <option value="Kano">Kano</option>
-                      <option value="Jigawa">Jigawa</option>
-                      <option value="Sokoto">Sokoto</option>
-                      <option value="Kebbi">Kebbi</option>
-                      <option value="Zamfara">Zamfara</option>
-                      <option value="Bauchi">Bauchi</option>
-                      <option value="Gombe">Gombe</option>
-                      <option value="Yobe">Yobe</option>
-                      <option value="Borno">Borno</option>
-                      <option value="Taraba">Taraba</option>
-                      <option value="Adamawa">Adamawa</option>
-                      <option value="Nasarawa">Nasarawa</option>
-                      <option value="Plateau">Plateau</option>
-                      <option value="Rivers">Rivers</option>
-                      <option value="Bayelsa">Bayelsa</option>
-                      <option value="Delta">Delta</option>
-                      <option value="Edo">Edo</option>
-                      <option value="Abia">Abia</option>
-                      <option value="Enugu">Enugu</option>
-                      <option value="Ebonyi">Ebonyi</option>
-                      <option value="Anambra">Anambra</option>
-                      <option value="Imo">Imo</option>
-                      <option value="Cross River">Cross River</option>
-                      <option value="Akwa Ibom">Akwa Ibom</option>
-                    </select>
-                  </div>
-
-                  <div class="col-md-6 mb-3">
-                    <label for="postalCode" class="form-label fw-500">
-                      Postal Code
-                    </label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="postalCode"
-                      name="postalCode"
-                      placeholder="e.g., 100001"
-                    />
-                    <small class="text-muted">ZIP/Postal code</small>
-                  </div>
-                </div>
-              </fieldset>
-
-              <!-- Section 3: Tax Information -->
-              <fieldset class="mb-4">
-                <legend class="fs-5 fw-bold text-dark mb-3">
-                  <i class="fas fa-receipt" style="color: #ff9500"></i> Tax
-                  Information
-                </legend>
-
-                <div class="mb-3">
-                  <label for="taxNumber" class="form-label fw-500">
-                    Tax ID / TIN
-                  </label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="taxNumber"
-                    name="taxNumber"
-                    placeholder="e.g., 12345-0000-0"
-                  />
-                  <small class="text-muted"
-                    >Tax Identification Number (if available)</small
-                  >
-                </div>
-              </fieldset>
-
-              <!-- Form Actions -->
-              <div class="border-top pt-3 mt-4">
-                <div class="d-flex gap-2">
-                  <button
-                    type="submit"
-                    class="btn btn-lg"
-                    style="
-                      background-color: #001f4d;
-                      color: white;
-                      min-width: 150px;
-                    "
-                  >
-                    <i class="fas fa-save"></i>
-                    {% if form.instance.pk %} Update Client {% else %} Create
-                    Client {% endif %}
-                  </button>
-
-                  <a
-                    href="{% url 'knlInvoice:clients-list' %}"
-                    class="btn btn-secondary btn-lg"
-                  >
-                    <i class="fas fa-times"></i> Cancel
-                  </a>
+                  
+                  {% if form.phoneNumber.errors %}
+                    {{ form.phoneNumber }}
+                    <div class="invalid-feedback d-block">
+                      <i class="fas fa-exclamation-triangle"></i>
+                      {% for error in form.phoneNumber.errors %}
+                        {{ error }}
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    {{ form.phoneNumber }}
+                  {% endif %}
+                  
+                  <small class="text-muted">Contact phone number</small>
                 </div>
               </div>
-            </form>
-          </div>
+            </fieldset>
+
+            <!-- Section 2: Address Information -->
+            <fieldset class="mb-4">
+              <legend class="fs-5 fw-bold text-dark mb-3">
+                <i class="fas fa-map-marker-alt" style="color: #ff9500"></i> Address Information
+              </legend>
+
+              <!-- Address Line 1 Field -->
+              <div class="mb-3">
+                <label for="{{ form.addressLine1.id_for_label }}" class="form-label fw-500">
+                  Street Address <span class="text-danger">*</span>
+                </label>
+                
+                {% if form.addressLine1.errors %}
+                  {{ form.addressLine1 }}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.addressLine1.errors %}
+                      {{ error }}
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  {{ form.addressLine1 }}
+                {% endif %}
+                
+                <small class="text-muted">Street address</small>
+              </div>
+
+              <div class="row">
+                <!-- State Field -->
+                <div class="col-md-6 mb-3">
+                  <label for="{{ form.state.id_for_label }}" class="form-label fw-500">
+                    State <span class="text-danger">*</span>
+                  </label>
+                  
+                  {% if form.state.errors %}
+                    {{ form.state }}
+                    <div class="invalid-feedback d-block">
+                      <i class="fas fa-exclamation-triangle"></i>
+                      {% for error in form.state.errors %}
+                        {{ error }}
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    {{ form.state }}
+                  {% endif %}
+                </div>
+
+                <!-- Postal Code Field -->
+                <div class="col-md-6 mb-3">
+                  <label for="{{ form.postalCode.id_for_label }}" class="form-label fw-500">
+                    Postal Code
+                  </label>
+                  
+                  {% if form.postalCode.errors %}
+                    {{ form.postalCode }}
+                    <div class="invalid-feedback d-block">
+                      <i class="fas fa-exclamation-triangle"></i>
+                      {% for error in form.postalCode.errors %}
+                        {{ error }}
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    {{ form.postalCode }}
+                  {% endif %}
+                  
+                  <small class="text-muted">ZIP/Postal code</small>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Section 3: Tax Information -->
+            <fieldset class="mb-4">
+              <legend class="fs-5 fw-bold text-dark mb-3">
+                <i class="fas fa-receipt" style="color: #ff9500"></i> Tax Information
+              </legend>
+
+              <!-- Tax Number Field -->
+              <div class="mb-3">
+                <label for="{{ form.taxNumber.id_for_label }}" class="form-label fw-500">
+                  Tax ID / TIN
+                </label>
+                
+                {% if form.taxNumber.errors %}
+                  {{ form.taxNumber }}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.taxNumber.errors %}
+                      {{ error }}
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  {{ form.taxNumber }}
+                {% endif %}
+                
+                <small class="text-muted">Tax Identification Number (if available)</small>
+              </div>
+            </fieldset>
+
+            <!-- Form Actions -->
+            <div class="border-top pt-3 mt-4">
+              <div class="d-flex gap-2">
+                <button
+                  type="submit"
+                  class="btn btn-lg"
+                  style="background-color: #001f4d; color: white; min-width: 150px"
+                >
+                  <i class="fas fa-save"></i>
+                  {% if form.instance.pk %} Update Client {% else %} Create Client {% endif %}
+                </button>
+
+                <a href="{% url 'knlInvoice:clients-list' %}" class="btn btn-secondary btn-lg">
+                  <i class="fas fa-times"></i> Cancel
+                </a>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   </div>
-
+</div>
 
 <style>
   /* Form-specific styling to account for sidebar */
@@ -315,6 +298,7 @@ Client - Kamrate Nigeria Limited{% endblock %} {% block content %}
     padding: 12px 15px;
     font-size: 0.95rem;
     transition: all 0.3s ease;
+    width: 100%;
   }
 
   .form-control:focus,
@@ -322,6 +306,43 @@ Client - Kamrate Nigeria Limited{% endblock %} {% block content %}
     border-color: #ff9500;
     box-shadow: 0 0 0 3px rgba(255, 149, 0, 0.15);
     outline: none;
+  }
+
+  /* Error styling */
+  .form-control.is-invalid,
+  .form-select.is-invalid {
+    border-color: #dc3545;
+    background-image: none;
+  }
+
+  .form-control.is-invalid:focus,
+  .form-select.is-invalid:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+  }
+
+  .invalid-feedback {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    display: block;
+    font-weight: 500;
+  }
+
+  .alert {
+    border-radius: 5px;
+    margin-bottom: 20px;
+    border: none;
+  }
+
+  .alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+
+  .alert-success {
+    background-color: #d4edda;
+    color: #155724;
   }
 
   .input-group-text {
@@ -368,11 +389,6 @@ Client - Kamrate Nigeria Limited{% endblock %} {% block content %}
   .text-muted {
     color: #6c757d;
     font-size: 0.85rem;
-  }
-
-  .alert {
-    border-radius: 5px;
-    margin-bottom: 20px;
   }
 
   .mb-3 {

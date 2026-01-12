@@ -1,205 +1,222 @@
-{% extends 'partials/base.html' %} {% load static %} {% block title %}Create
-Product - Kamrate Nigeria Limited{% endblock %} {% block content %}
+{% extends 'partials/base.html' %}
+{% load static %}
 
-  <div class="container-fluid mt-5">
-    <div class="row justify-content-center">
-      <div class="col-lg-10">
-        <!-- Page Header -->
-        <div class="mb-4">
-          <h1 class="page-title mb-1">
-            <i class="fas fa-shopping-cart"></i>
-            {% if form.instance.pk %} Edit Product {% else %} Create New Product
-            {% endif %}
-          </h1>
-          <p class="text-muted">
-            {% if form.instance.pk %} Update product details {% else %} Add a
-            new product or service to your catalog {% endif %}
-          </p>
+{% block title %}{% if form.instance.pk %}Edit Product{% else %}Create Product{% endif %} - Kamrate Nigeria Limited{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid mt-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <!-- Page Header -->
+      <div class="mb-4">
+        <h1 class="page-title mb-1">
+          <i class="fas fa-shopping-cart"></i>
+          {% if form.instance.pk %} Edit Product {% else %} Create New Product {% endif %}
+        </h1>
+        <p class="text-muted">
+          {% if form.instance.pk %} Update product details {% else %} Add a new product or service to your catalog {% endif %}
+        </p>
+      </div>
+
+      <!-- Form Card -->
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white py-4" style="background-color: #001f4d !important">
+          <h5 class="mb-0"><i class="fas fa-edit"></i> Product Information</h5>
         </div>
 
-        <!-- Form Card -->
-        <div class="card shadow-sm border-0">
-          <div
-            class="card-header bg-primary text-white py-4"
-            style="background-color: #001f4d !important"
-          >
-            <h5 class="mb-0">
-              <i class="fas fa-edit"></i> Product Information
-            </h5>
+        <div class="card-body p-4">
+          
+          <!-- Display Non-Field Errors -->
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong><i class="fas fa-exclamation-circle"></i> Error!</strong>
+            {% for error in form.non_field_errors %}
+            <div>{{ error }}</div>
+            {% endfor %}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
           </div>
+          {% endif %}
 
-          <div class="card-body p-4">
-            {% if form.non_field_errors %}
-            <div
-              class="alert alert-danger alert-dismissible fade show"
-              role="alert"
-            >
-              <strong>Error!</strong>
-              {% for error in form.non_field_errors %}
-              <div>{{ error }}</div>
-              {% endfor %}
-              <button
-                type="button"
-                class="btn-close"
-                data-bs-dismiss="alert"
-              ></button>
-            </div>
-            {% endif %}
+          <form method="post" id="productForm">
+            {% csrf_token %}
 
-            <form method="post" id="productForm">
-              {% csrf_token %}
+            <!-- Section 1: Basic Information -->
+            <fieldset class="mb-4">
+              <legend class="fs-5 fw-bold text-dark mb-3">
+                <i class="fas fa-info-circle" style="color: #ff9500"></i> Basic Information
+              </legend>
 
-              <!-- Section 1: Basic Information -->
-              <fieldset class="mb-4">
-                <legend class="fs-5 fw-bold text-dark mb-3">
-                  <i class="fas fa-info-circle" style="color: #ff9500"></i>
-                  Basic Information
-                </legend>
+              <!-- Product Name Field -->
+              <div class="mb-3">
+                <label for="{{ form.title.id_for_label }}" class="form-label fw-500">
+                  Product Name <span class="text-danger">*</span>
+                </label>
+                
+                {% if form.title.errors %}
+                  {{ form.title }}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.title.errors %}
+                      {{ error }}
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  {{ form.title }}
+                {% endif %}
+                
+                <small class="text-muted">Name of the product or service</small>
+              </div>
 
-                <div class="mb-3">
-                  <label for="productName" class="form-label fw-500">
-                    Product Name <span class="text-danger">*</span>
+              <!-- Description Field -->
+              <div class="mb-3">
+                <label for="{{ form.description.id_for_label }}" class="form-label fw-500">
+                  Description
+                </label>
+                
+                {% if form.description.errors %}
+                  {{ form.description }}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.description.errors %}
+                      {{ error }}
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  {{ form.description }}
+                {% endif %}
+                
+                <small class="text-muted">Optional detailed description</small>
+              </div>
+            </fieldset>
+
+            <!-- Section 2: Pricing -->
+            <fieldset class="mb-4">
+              <legend class="fs-5 fw-bold text-dark mb-3">
+                <i class="fas fa-tag" style="color: #ff9500"></i> Pricing & Stock
+              </legend>
+
+              <div class="row">
+                <!-- Price Field -->
+                <div class="col-md-6 mb-3">
+                  <label for="{{ form.price.id_for_label }}" class="form-label fw-500">
+                    Price (₦) <span class="text-danger">*</span>
                   </label>
-                  <input
-                    type="text"
-                    class="form-control"
-                    id="productName"
-                    name="title"
-                    placeholder="e.g., Container Haulage Service"
-                    required
-                  />
-                  <small class="text-muted"
-                    >Name of the product or service</small
-                  >
-                </div>
-
-                <div class="mb-3">
-                  <label for="description" class="form-label fw-500">
-                    Description
-                  </label>
-                  <textarea
-                    class="form-control"
-                    id="description"
-                    name="description"
-                    rows="4"
-                    placeholder="Provide details about the product or service..."
-                  ></textarea>
-                  <small class="text-muted"
-                    >Optional detailed description</small
-                  >
-                </div>
-              </fieldset>
-
-              <!-- Section 2: Pricing -->
-              <fieldset class="mb-4">
-                <legend class="fs-5 fw-bold text-dark mb-3">
-                  <i class="fas fa-tag" style="color: #ff9500"></i> Pricing &
-                  Stock
-                </legend>
-
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label for="price" class="form-label fw-500">
-                      Price (₦) <span class="text-danger">*</span>
-                    </label>
-                    <div class="input-group">
-                      <span class="input-group-text">₦</span>
-                      <input
-                        type="number"
-                        class="form-control"
-                        id="price"
-                        name="price"
-                        placeholder="150000"
-                        step="0.01"
-                        required
-                      />
+                  
+                  <div class="input-group">
+                    <span class="input-group-text">₦</span>
+                    {% if form.price.errors %}
+                      {{ form.price }}
+                    {% else %}
+                      {{ form.price }}
+                    {% endif %}
+                  </div>
+                  
+                  {% if form.price.errors %}
+                    <div class="invalid-feedback d-block">
+                      <i class="fas fa-exclamation-triangle"></i>
+                      {% for error in form.price.errors %}
+                        {{ error }}
+                      {% endfor %}
                     </div>
-                    <small class="text-muted">Price in Nigerian Naira</small>
-                  </div>
-
-                  <div class="col-md-6 mb-3">
-                    <label for="quantity" class="form-label fw-500">
-                      Quantity
-                    </label>
-                    <input
-                      type="number"
-                      class="form-control"
-                      id="quantity"
-                      name="quantity"
-                      placeholder="0"
-                      step="1"
-                      value="0"
-                    />
-                    <small class="text-muted">Available quantity</small>
-                  </div>
+                  {% endif %}
+                  
+                  <small class="text-muted">Price in Nigerian Naira</small>
                 </div>
 
-                <div class="mb-3">
-                  <label for="currency" class="form-label fw-500">
-                    Currency
+                <!-- Quantity Field -->
+                <div class="col-md-6 mb-3">
+                  <label for="{{ form.quantity.id_for_label }}" class="form-label fw-500">
+                    Quantity
                   </label>
-                  <select class="form-select" id="currency" name="currency">
-                    <option value="NGN">NGN (₦) - Nigerian Naira</option>
-                    <option value="USD">USD ($) - US Dollar</option>
-                    <option value="EUR">EUR (€) - Euro</option>
-                  </select>
-                </div>
-              </fieldset>
-
-              <!-- Section 3: Category -->
-              <fieldset class="mb-4">
-                <legend class="fs-5 fw-bold text-dark mb-3">
-                  <i class="fas fa-folder" style="color: #ff9500"></i> Category
-                </legend>
-
-                <div class="mb-3">
-                  <label for="category" class="form-label fw-500">
-                    Category
-                  </label>
-                  <select class="form-select" id="category" name="category">
-                    <option value="">-- Select Category --</option>
-                    <option value="haulage">Haulage Service</option>
-                    <option value="vehicle_parts">Vehicle Parts</option>
-                    <option value="labor">Labor Services</option>
-                    <option value="insurance">Insurance Products</option>
-                    <option value="operational">Operational Charges</option>
-                    <option value="other">Other</option>
-                  </select>
-                  <small class="text-muted">Classify the product/service</small>
-                </div>
-              </fieldset>
-
-              <!-- Form Actions -->
-              <div class="border-top pt-3 mt-4">
-                <div class="d-flex gap-2">
-                  <button
-                    type="submit"
-                    class="btn btn-lg"
-                    style="
-                      background-color: #001f4d;
-                      color: white;
-                      min-width: 150px;
-                    "
-                  >
-                    <i class="fas fa-save"></i>
-                    {% if form.instance.pk %} Update Product {% else %} Create
-                    Product {% endif %}
-                  </button>
-
-                  <a
-                    href="{% url 'knlInvoice:products-list' %}"
-                    class="btn btn-secondary btn-lg"
-                  >
-                    <i class="fas fa-times"></i> Cancel
-                  </a>
+                  
+                  {% if form.quantity.errors %}
+                    {{ form.quantity }}
+                    <div class="invalid-feedback d-block">
+                      <i class="fas fa-exclamation-triangle"></i>
+                      {% for error in form.quantity.errors %}
+                        {{ error }}
+                      {% endfor %}
+                    </div>
+                  {% else %}
+                    {{ form.quantity }}
+                  {% endif %}
+                  
+                  <small class="text-muted">Available quantity</small>
                 </div>
               </div>
-            </form>
-          </div>
+
+              <!-- Currency Field -->
+              <div class="mb-3">
+                <label for="{{ form.currency.id_for_label }}" class="form-label fw-500">
+                  Currency
+                </label>
+                
+                {% if form.currency.errors %}
+                  {{ form.currency }}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.currency.errors %}
+                      {{ error }}
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  {{ form.currency }}
+                {% endif %}
+              </div>
+            </fieldset>
+
+            <!-- Section 3: Category -->
+            <fieldset class="mb-4">
+              <legend class="fs-5 fw-bold text-dark mb-3">
+                <i class="fas fa-folder" style="color: #ff9500"></i> Category
+              </legend>
+
+              <!-- Category Field -->
+              <div class="mb-3">
+                <label for="{{ form.category.id_for_label }}" class="form-label fw-500">
+                  Category
+                </label>
+                
+                {% if form.category.errors %}
+                  {{ form.category }}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.category.errors %}
+                      {{ error }}
+                    {% endfor %}
+                  </div>
+                {% else %}
+                  {{ form.category }}
+                {% endif %}
+                
+                <small class="text-muted">Classify the product/service</small>
+              </div>
+            </fieldset>
+
+            <!-- Form Actions -->
+            <div class="border-top pt-3 mt-4">
+              <div class="d-flex gap-2">
+                <button
+                  type="submit"
+                  class="btn btn-lg"
+                  style="background-color: #001f4d; color: white; min-width: 150px"
+                >
+                  <i class="fas fa-save"></i>
+                  {% if form.instance.pk %} Update Product {% else %} Create Product {% endif %}
+                </button>
+
+                <a href="{% url 'knlInvoice:products-list' %}" class="btn btn-secondary btn-lg">
+                  <i class="fas fa-times"></i> Cancel
+                </a>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   </div>
+</div>
 
 <style>
   /* Form-specific styling to account for sidebar */
@@ -264,6 +281,7 @@ Product - Kamrate Nigeria Limited{% endblock %} {% block content %}
     padding: 12px 15px;
     font-size: 0.95rem;
     transition: all 0.3s ease;
+    width: 100%;
   }
 
   .form-control:focus,
@@ -273,10 +291,36 @@ Product - Kamrate Nigeria Limited{% endblock %} {% block content %}
     outline: none;
   }
 
+  /* Error styling */
+  .form-control.is-invalid,
+  .form-select.is-invalid {
+    border-color: #dc3545;
+    background-image: none;
+  }
+
+  .form-control.is-invalid:focus,
+  .form-select.is-invalid:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+  }
+
+  .invalid-feedback {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    display: block;
+    font-weight: 500;
+  }
+
   .input-group-text {
     background-color: #f8f9fa;
     border: 1px solid #ddd;
     padding: 12px 15px;
+  }
+
+  .input-group .form-control,
+  .input-group .form-select {
+    margin-bottom: 0;
   }
 
   .btn {
@@ -322,6 +366,12 @@ Product - Kamrate Nigeria Limited{% endblock %} {% block content %}
   .alert {
     border-radius: 5px;
     margin-bottom: 20px;
+    border: none;
+  }
+
+  .alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
   }
 
   .mb-3 {

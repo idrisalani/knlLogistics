@@ -20,21 +20,23 @@ Including another URLconf
 #     path('admin/', admin.site.urls),
 # ]
 
-
 """
 URL configuration for knlLogistics project.
+
+This file routes all URLs to the appropriate views.
 """
+
 from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    # Admin
+    # Admin interface
     path('admin/', admin.site.urls),
     
-    # Include knlInvoice app URLs at ROOT level
-    # This makes index at http://127.0.0.1:8000/
+    # Include all knlInvoice app URLs at root level
+    # This makes the index page accessible at http://localhost:8000/
     path('', include('knlInvoice.urls')),
 ]
 

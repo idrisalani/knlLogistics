@@ -1,214 +1,762 @@
-{% extends 'partials/base.html' %} {% block main %}
-<main>
-  <!-- Page Header -->
-  <div class="page-header">
-    <h1>Invoice #{{ invoice.invoice_number }}</h1>
-    <p>Details and actions for this invoice</p>
-  </div>
+{% extends 'partials/base.html' %}
+{% load static %}
 
-  <!-- ← ADD PDF BUTTONS HERE ← -->
-  <!-- Copy one of the button styles above -->
-  <!-- Day 6: Invoice PDF Actions (Card Style) -->
-  <div
-    class="invoice-actions-card"
-    style="
-      background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
-      border: 2px solid #ff9500;
-      border-radius: 8px;
+{% block title %}Invoice {{ invoice.invoice_number }} - Kamrate Nigeria Limited{% endblock %}
+
+{% block css %}
+<style>
+  /* ===== ROOT COLORS ===== */
+  :root {
+    --kamrate-orange: #FF9500;
+    --kamrate-blue: #001F4D;
+    --kamrate-green: #0D7A3D;
+    --border-color: #e0e0e0;
+  }
+
+  /* ===== CONTAINER STYLING ===== */
+  .container-fluid {
+    max-width: 60%;
+    padding-right: 20px;
+    padding-left: 20px;
+  }
+
+  /* ===== PAGE HEADER ===== */
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 0 15px 0;
+    border-bottom: 3px solid var(--kamrate-orange);
+    margin-bottom: 30px;
+  }
+
+  .page-title {
+    color: var(--kamrate-blue);
+    font-weight: 700;
+    font-size: 28px;
+    margin: 0 0 5px 0;
+  }
+
+  .page-header p {
+    margin: 0;
+    color: #6c757d;
+    font-size: 0.95rem;
+  }
+
+  /* ===== CARD STYLING ===== */
+  .card {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+  }
+
+  .card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  }
+
+  .card-header {
+    background-color: var(--kamrate-blue) !important;
+    color: white;
+    padding: 20px 24px !important;
+    border-bottom: none;
+  }
+
+  .card-header h5 {
+    margin: 0;
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  .card-body {
+    padding: 30px;
+    background-color: #ffffff;
+  }
+
+  .card-body p {
+    margin-bottom: 10px;
+  }
+
+  .card-body p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* ===== ACTIONS CARD ===== */
+  .invoice-actions-card {
+    background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+    border: 2px solid var(--kamrate-orange);
+    border-radius: 12px;
+    padding: 25px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .invoice-actions-card h3 {
+    color: var(--kamrate-blue);
+    margin-bottom: 15px;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* ===== BUTTON STYLING ===== */
+  .btn {
+    border-radius: 8px;
+    font-weight: 700;
+    padding: 12px 24px;
+    transition: all 0.3s ease;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+  }
+
+  .btn-primary {
+    background-color: var(--kamrate-blue);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: #003d7a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 31, 77, 0.3);
+  }
+
+  .btn-light {
+    background-color: white;
+    color: var(--kamrate-blue);
+    border: 1px solid var(--border-color);
+  }
+
+  .btn-light:hover {
+    background-color: #f8f9fa;
+    border-color: var(--kamrate-orange);
+  }
+
+  .btn-sm {
+    padding: 6px 12px;
+    font-size: 0.85rem;
+  }
+
+  .btn-outline-primary {
+    color: var(--kamrate-blue);
+    border: 2px solid var(--kamrate-blue);
+    background-color: transparent;
+  }
+
+  .btn-outline-primary:hover {
+    background-color: var(--kamrate-blue);
+    color: white;
+  }
+
+  .btn-outline-danger {
+    color: #dc3545;
+    border: 2px solid #dc3545;
+    background-color: transparent;
+  }
+
+  .btn-outline-danger:hover {
+    background-color: #dc3545;
+    color: white;
+  }
+
+  .btn-outline-secondary {
+    color: var(--kamrate-blue);
+    border: 2px solid var(--kamrate-blue);
+    background-color: transparent;
+  }
+
+  .btn-outline-secondary:hover {
+    background-color: var(--kamrate-blue);
+    color: white;
+  }
+
+  /* ===== TABS STYLING ===== */
+  .nav-tabs {
+    border-bottom: 3px solid var(--kamrate-orange);
+    margin-bottom: 30px;
+  }
+
+  .nav-tabs .nav-link {
+    color: var(--kamrate-blue);
+    font-weight: 700;
+    border: none;
+    border-bottom: 3px solid transparent;
+    padding: 12px 20px;
+    transition: all 0.3s ease;
+  }
+
+  .nav-tabs .nav-link:hover {
+    color: var(--kamrate-orange);
+    border-bottom-color: var(--kamrate-orange);
+  }
+
+  .nav-tabs .nav-link.active {
+    color: white;
+    background-color: var(--kamrate-orange);
+    border-bottom-color: var(--kamrate-orange);
+  }
+
+  /* ===== TABLE STYLING ===== */
+  .table {
+    margin: 0;
+    border-collapse: collapse;
+  }
+
+  .table thead {
+    background-color: #f8f9fa;
+  }
+
+  .table th {
+    padding: 15px;
+    text-align: left;
+    font-weight: 800;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid var(--border-color);
+    color: var(--kamrate-blue);
+  }
+
+  .table td {
+    padding: 15px;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+  }
+
+  .table tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+
+  .table tbody tr:last-child td {
+    border-bottom: none;
+  }
+
+  .text-center {
+    text-align: center;
+  }
+
+  .text-right {
+    text-align: right;
+  }
+
+  .text-muted {
+    color: #6c757d;
+    font-size: 0.85rem;
+  }
+
+  /* ===== SUMMARY SECTION ===== */
+  .summary-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    padding: 30px;
+    background-color: #f8f9fa;
+    border-top: 2px solid var(--border-color);
+  }
+
+  .summary-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 15px;
+  }
+
+  .summary-row:last-child {
+    border-top: 2px solid #ddd;
+    padding-top: 10px;
+    margin-bottom: 0;
+  }
+
+  .summary-label {
+    font-weight: 600;
+    color: #333;
+  }
+
+  .summary-value {
+    text-align: right;
+    font-weight: 700;
+  }
+
+  /* ===== BADGE STYLING ===== */
+  .badge {
+    display: inline-block;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-paid {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  .badge-pending {
+    background-color: #e3f2fd;
+    color: #1565c0;
+  }
+
+  .badge-overdue {
+    background-color: #ffebee;
+    color: #c62828;
+  }
+
+  .badge-sent {
+    background-color: #e3f2fd;
+    color: #1565c0;
+  }
+
+  .badge-draft {
+    background-color: #f5f5f5;
+    color: #616161;
+  }
+
+  /* ===== ALERT STYLING ===== */
+  .alert {
+    border-radius: 8px;
+    border: none;
+    padding: 20px;
+    margin: 20px 0;
+  }
+
+  .alert-info {
+    background-color: #e3f2fd;
+    color: #1565c0;
+  }
+
+  .alert-info a {
+    color: #0d47a1;
+    font-weight: 700;
+    text-decoration: underline;
+  }
+
+  .alert-info a:hover {
+    text-decoration: none;
+  }
+
+  /* ===== ROW & COLUMN ===== */
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-right: -15px;
+    margin-left: -15px;
+  }
+
+  .col-lg-12 {
+    padding-right: 15px;
+    padding-left: 15px;
+    flex: 0 0 100%;
+  }
+
+  .col-md-6 {
+    padding-right: 15px;
+    padding-left: 15px;
+  }
+
+  /* ===== RESPONSIVE DESIGN ===== */
+  @media (max-width: 992px) {
+    .summary-section {
+      grid-template-columns: 1fr;
+    }
+
+    .card-body {
       padding: 20px;
-      margin-bottom: 30px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    "
-  >
-    <h3 style="color: #001f4d; margin-bottom: 15px; font-size: 14px">
-      📄 Invoice Actions
-    </h3>
+    }
 
-    <div
-      style="
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 10px;
-      "
-    >
-      <!-- Download PDF -->
-      <a
-        href="{% url 'knlInvoice:invoice-pdf' invoice.id %}"
-        style="
-          background-color: #ff9500;
-          color: white;
-          padding: 12px 16px;
-          text-decoration: none;
-          border-radius: 5px;
-          text-align: center;
-          font-weight: bold;
-          transition: all 0.3s ease;
-          display: block;
-        "
-        onmouseover="this.style.backgroundColor='#E68A00'"
-        onmouseout="this.style.backgroundColor='#FF9500'"
-      >
-        📥 Download PDF
-      </a>
+    .page-title {
+      font-size: 24px;
+    }
 
-      <!-- View PDF -->
-      <a
-        href="{% url 'knlInvoice:invoice-pdf-preview' invoice.id %}"
-        target="_blank"
-        style="
-          background-color: #2196f3;
-          color: white;
-          padding: 12px 16px;
-          text-decoration: none;
-          border-radius: 5px;
-          text-align: center;
-          font-weight: bold;
-          transition: all 0.3s ease;
-          display: block;
-        "
-        onmouseover="this.style.backgroundColor='#0b7dda'"
-        onmouseout="this.style.backgroundColor='#2196F3'"
-      >
-        👁️ View PDF
-      </a>
+    .col-md-6 {
+      flex: 0 0 100%;
+      max-width: 100%;
+    }
+  }
 
-      <!-- Email PDF -->
-      <form
-        method="POST"
-        action="{% url 'knlInvoice:invoice-email-pdf' invoice.id %}"
-        style="display: contents"
-      >
-        {% csrf_token %}
-        <button
-          type="submit"
-          style="
-            background-color: #4caf50;
+  @media (max-width: 768px) {
+    .page-header {
+      flex-direction: column;
+      gap: 15px;
+      align-items: flex-start;
+    }
+
+    .summary-section {
+      grid-template-columns: 1fr;
+      padding: 20px;
+    }
+
+    .card-body {
+      padding: 15px;
+    }
+
+    .table {
+      font-size: 0.9rem;
+    }
+
+    .table th,
+    .table td {
+      padding: 10px;
+    }
+
+    .btn {
+      padding: 10px 16px;
+      font-size: 0.9rem;
+      width: 100%;
+    }
+
+    .invoice-actions-card {
+      padding: 15px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid mt-3 mb-5" style="padding-top: 20px; padding-bottom: 40px;">
+  <div class="row">
+    <div class="col-lg-12">
+      
+      <!-- Page Header with better spacing -->
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">
+            <i class="fas fa-file-invoice-dollar"></i> {{ invoice.invoice_number }}
+          </h1>
+          <p>
+            Invoice for {{ invoice.client.clientName }}
+          </p>
+        </div>
+        <div>
+          <span class="badge" style="
+            background-color: 
+              {% if invoice.status == 'paid' %}#0D7A3D
+              {% elif invoice.status == 'overdue' %}#DC3545
+              {% elif invoice.status == 'pending' %}#FF9500
+              {% else %}#6c757d{% endif %};
+            padding: 8px 12px;
+          ">
+            {{ invoice.get_status_display|upper }}
+          </span>
+        </div>
+      </div>
+
+      <!-- PDF ACTIONS CARD -->
+      <div class="invoice-actions-card">
+        <h3>📄 Invoice Actions</h3>
+
+        <div style="
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+          gap: 10px;
+        ">
+          <!-- Download PDF -->
+          <a href="{% url 'knlInvoice:invoice-pdf' invoice.pk %}" class="btn" style="
+            background-color: #ff9500;
             color: white;
-            padding: 12px 16px;
-            border: none;
-            border-radius: 5px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
           "
-          onmouseover="this.style.backgroundColor='#45a049'"
-          onmouseout="this.style.backgroundColor='#4CAF50'"
-          onclick="return confirm('Email to {{ invoice.client.email }}?');"
-        >
-          📧 Email Invoice
-        </button>
-      </form>
+          onmouseover="this.style.backgroundColor='#E68A00'"
+          onmouseout="this.style.backgroundColor='#FF9500'">
+            📥 Download PDF
+          </a>
 
-      <!-- Print -->
-      <button
-        onclick="window.print()"
-        style="
-          background-color: #666;
-          color: white;
-          padding: 12px 16px;
-          border: none;
-          border-radius: 5px;
-          font-weight: bold;
-          cursor: pointer;
-          transition: all 0.3s ease;
-        "
-        onmouseover="this.style.backgroundColor='#555'"
-        onmouseout="this.style.backgroundColor='#666'"
-      >
-        🖨️ Print
-      </button>
+          <!-- View PDF -->
+          <a href="{% url 'knlInvoice:invoice-pdf-preview' invoice.pk %}" target="_blank" class="btn" style="
+            background-color: #2196f3;
+            color: white;
+          "
+          onmouseover="this.style.backgroundColor='#0b7dda'"
+          onmouseout="this.style.backgroundColor='#2196F3'">
+            👁️ View PDF
+          </a>
+
+          <!-- Email PDF -->
+          <form method="POST" action="{% url 'knlInvoice:invoice-email-pdf' invoice.pk %}" style="display: contents;">
+            {% csrf_token %}
+            <button type="submit" class="btn" style="
+              background-color: #4caf50;
+              color: white;
+            "
+            onmouseover="this.style.backgroundColor='#45a049'"
+            onmouseout="this.style.backgroundColor='#4CAF50'"
+            onclick="return confirm('Email to {{ invoice.client.emailAddress }}?');">
+              📧 Email Invoice
+            </button>
+          </form>
+
+          <!-- Print -->
+          <button onclick="window.print()" class="btn" style="
+            background-color: #666;
+            color: white;
+          "
+          onmouseover="this.style.backgroundColor='#555'"
+          onmouseout="this.style.backgroundColor='#666'">
+            🖨️ Print
+          </button>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <ul class="nav nav-tabs" id="invoiceTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="items-tab" data-bs-toggle="tab" data-bs-target="#items" type="button" role="tab">
+            <i class="fas fa-list"></i> Line Items
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="details-tab" data-bs-toggle="tab" data-bs-target="#details" type="button" role="tab">
+            <i class="fas fa-info-circle"></i> Invoice Details
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments" type="button" role="tab">
+            <i class="fas fa-credit-card"></i> Payments
+          </button>
+        </li>
+      </ul>
+
+      <!-- Tab Content -->
+      <div class="tab-content" id="invoiceTabContent">
+        
+        <!-- TAB 1: LINE ITEMS -->
+        <div class="tab-pane fade show active" id="items" role="tabpanel">
+          <div class="card shadow-sm mb-4">
+            <div class="card-header">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h5>
+                  <i class="fas fa-shopping-cart"></i> Line Items
+                </h5>
+                <a href="{% url 'knlInvoice:add-invoice-item' invoice.pk %}" class="btn btn-sm btn-light">
+                  <i class="fas fa-plus"></i> Add Item
+                </a>
+              </div>
+            </div>
+
+            <div class="card-body p-0">
+              {% if items %}
+                <div class="table-responsive">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Description</th>
+                        <th class="text-center">Quantity</th>
+                        <th class="text-right">Unit Price</th>
+                        <th class="text-right">Total</th>
+                        <th class="text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for item in items %}
+                      <tr>
+                        <td>
+                          <strong>{{ item.description }}</strong>
+                          {% if item.product %}
+                            <br><small class="text-muted">Product: {{ item.product.title }}</small>
+                          {% endif %}
+                        </td>
+                        <td class="text-center">{{ item.quantity }}</td>
+                        <td class="text-right">₦{{ item.unit_price|floatformat:2 }}</td>
+                        <td class="text-right">
+                          <strong>₦{{ item.total|floatformat:2 }}</strong>
+                        </td>
+                        <td class="text-center">
+                          <a href="{% url 'knlInvoice:edit-invoice-item' invoice.pk item.pk %}" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-edit"></i>
+                          </a>
+                          <form method="post" action="{% url 'knlInvoice:delete-invoice-item' invoice.pk item.pk %}" style="display: inline;" onsubmit="return confirm('Delete this item?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                              <i class="fas fa-trash"></i>
+                            </button>
+                          </form>
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Summary Section -->
+                <div class="summary-section">
+                  <div></div>
+                  <div>
+                    <div class="summary-row">
+                      <div class="summary-label">Subtotal:</div>
+                      <div class="summary-value">₦{{ invoice.subtotal|floatformat:2 }}</div>
+                    </div>
+                    <div class="summary-row">
+                      <div class="summary-label">Tax ({{ invoice.tax_rate|floatformat:1 }}%):</div>
+                      <div class="summary-value">₦{{ invoice.tax_amount|floatformat:2 }}</div>
+                    </div>
+                    <div class="summary-row">
+                      <div class="summary-label"><h5 style="margin: 0;">Total:</h5></div>
+                      <div class="summary-value" style="color: #FF9500; font-size: 1.2rem;">₦{{ invoice.total|floatformat:2 }}</div>
+                    </div>
+                  </div>
+                </div>
+              {% else %}
+                <div class="alert alert-info">
+                  <i class="fas fa-info-circle"></i> No items added yet.
+                  <a href="{% url 'knlInvoice:add-invoice-item' invoice.pk %}">Add your first item</a>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 2: INVOICE DETAILS -->
+        <div class="tab-pane fade" id="details" role="tabpanel">
+          <div class="card shadow-sm">
+            <div class="card-header">
+              <h5>
+                <i class="fas fa-file-alt"></i> Invoice Information
+              </h5>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-6">
+                  <p><strong>Invoice Number:</strong> {{ invoice.invoice_number }}</p>
+                  <p><strong>Date Created:</strong> {{ invoice.date_created|date:"d M Y" }}</p>
+                  <p><strong>Status:</strong> 
+                    <span class="badge badge-{{ invoice.status }}">
+                      {{ invoice.get_status_display }}
+                    </span>
+                  </p>
+                </div>
+                <div class="col-md-6">
+                  <p><strong>Client:</strong> {{ invoice.client.clientName }}</p>
+                  <p><strong>Email:</strong> {{ invoice.client.emailAddress }}</p>
+                  <p><strong>Phone:</strong> {{ invoice.client.phoneNumber }}</p>
+                </div>
+              </div>
+              
+              <hr style="margin: 20px 0;">
+
+              <div class="row">
+                <div class="col-md-6">
+                  <p><strong>Issue Date:</strong> {{ invoice.issue_date|date:"d M Y" }}</p>
+                  <p><strong>Due Date:</strong> {{ invoice.due_date|date:"d M Y" }}</p>
+                </div>
+                <div class="col-md-6">
+                  <p><strong>Payment Terms:</strong> {{ invoice.paymentTerms|default:"Not specified" }}</p>
+                  <p><strong>Amount:</strong> <span style="
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: #ff9500;
+                  ">₦{{ invoice.total|floatformat:2 }}</span></p>
+                </div>
+              </div>
+              
+              {% if invoice.notes %}
+              <div class="mt-4">
+                <strong>Notes:</strong>
+                <p class="text-muted" style="margin-top: 8px;">{{ invoice.notes }}</p>
+              </div>
+              {% endif %}
+
+              <div class="mt-4 pt-4" style="border-top: 1px solid #ddd;">
+                <a href="{% url 'knlInvoice:invoice-update' invoice.pk %}" class="btn btn-primary">
+                  <i class="fas fa-edit"></i> Edit Invoice
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TAB 3: PAYMENTS -->
+        <div class="tab-pane fade" id="payments" role="tabpanel">
+          <div class="card shadow-sm">
+            <div class="card-header">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h5>
+                  <i class="fas fa-credit-card"></i> Payment History
+                </h5>
+                <a href="{% url 'knlInvoice:record-payment' invoice.pk %}" class="btn btn-sm btn-light">
+                  <i class="fas fa-plus"></i> Record Payment
+                </a>
+              </div>
+            </div>
+
+            <div class="card-body p-0">
+              {% if payments %}
+                <div class="table-responsive">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                        <th>Reference</th>
+                        <th class="text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for payment in payments %}
+                      <tr>
+                        <td>{{ payment.payment_date|date:"d M Y" }}</td>
+                        <td><strong>₦{{ payment.amount|floatformat:2 }}</strong></td>
+                        <td>{{ payment.get_payment_method_display }}</td>
+                        <td>{{ payment.reference_number|default:"—" }}</td>
+                        <td class="text-center">
+                          <form method="post" action="{% url 'knlInvoice:delete-payment' payment.pk %}" style="display: inline;" onsubmit="return confirm('Delete this payment?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                              <i class="fas fa-trash"></i>
+                            </button>
+                          </form>
+                        </td>
+                      </tr>
+                      {% endfor %}
+                    </tbody>
+                  </table>
+                </div>
+
+                <!-- Payment Summary -->
+                <div class="summary-section">
+                  <div></div>
+                  <div>
+                    <div class="summary-row">
+                      <div class="summary-label">Total Amount:</div>
+                      <div class="summary-value">₦{{ invoice.total|floatformat:2 }}</div>
+                    </div>
+                    <div class="summary-row">
+                      <div class="summary-label">Paid:</div>
+                      <div class="summary-value">₦{{ invoice.amount_paid|floatformat:2 }}</div>
+                    </div>
+                    <div class="summary-row">
+                      <div class="summary-label"><h5 style="margin: 0;">Outstanding:</h5></div>
+                      <div class="summary-value" style="color: {% if invoice.outstanding_amount <= 0 %}#0D7A3D{% else %}#DC3545{% endif %}; font-size: 1.1rem;">
+                        ₦{{ invoice.outstanding_amount|floatformat:2 }}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              {% else %}
+                <div class="alert alert-info" style="margin: 0;">
+                  <i class="fas fa-info-circle"></i> No payments recorded yet.
+                  <a href="{% url 'knlInvoice:record-payment' invoice.pk %}">Record first payment</a>
+                </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="margin-top: 40px; display: flex; gap: 10px;">
+        <a href="{% url 'knlInvoice:invoices-list' %}" class="btn btn-outline-secondary">
+          <i class="fas fa-arrow-left"></i> Back to Invoices
+        </a>
+      </div>
+
     </div>
   </div>
+</div>
 
-  <!-- Rest of your invoice detail content -->
-  <div
-    style="
-      background: white;
-      padding: 20px;
-      border-radius: 5px;
-      border: 1px solid #ddd;
-    "
-  >
-    <!-- Invoice Header Info -->
-    <div
-      style="
-        margin-bottom: 20px;
-        padding-bottom: 20px;
-        border-bottom: 2px solid #ff9500;
-      "
-    >
-      <h2 style="color: #001f4d">Invoice Details</h2>
-      <p><strong>Invoice Number:</strong> {{ invoice.invoice_number }}</p>
-      <p><strong>Date:</strong> {{ invoice.date_created|date:"d F Y" }}</p>
-      <p><strong>Client:</strong> {{ invoice.client.clientName }}</p>
-      <p>
-        <strong>Amount:</strong>
-        <span style="font-size: 18px; font-weight: bold; color: #ff9500"
-          >₦{{ invoice.total }}</span
-        >
-      </p>
-    </div>
-
-    <!-- Client Details -->
-    <div style="margin-bottom: 20px">
-      <h3 style="color: #001f4d">Bill To</h3>
-      <p>{{ invoice.client.clientName }}</p>
-      {% if invoice.client.email %}
-      <p>{{ invoice.client.email }}</p>
-      {% endif %} {% if invoice.client.phone %}
-      <p>{{ invoice.client.phone }}</p>
-      {% endif %}
-    </div>
-
-    <!-- Items Table -->
-    <div style="margin-bottom: 20px">
-      <h3 style="color: #001f4d">Items</h3>
-      <table style="width: 100%; border-collapse: collapse">
-        <thead style="background-color: #001f4d; color: white">
-          <tr>
-            <th style="padding: 10px; text-align: left">Description</th>
-            <th style="padding: 10px; text-align: center">Quantity</th>
-            <th style="padding: 10px; text-align: right">Unit Price</th>
-            <th style="padding: 10px; text-align: right">Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for item in invoice.invoiceitem_set.all %}
-          <tr style="border-bottom: 1px solid #ddd">
-            <td style="padding: 10px">{{ item.product.title }}</td>
-            <td style="padding: 10px; text-align: center">
-              {{ item.quantity|default:1 }}
-            </td>
-            <td style="padding: 10px; text-align: right">
-              ₦{{ item.unit_price|default:item.product.price }}
-            </td>
-            <td style="padding: 10px; text-align: right">
-              ₦{{ item.get_line_total|default:item.product.price }}
-            </td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    </div>
-
-    <!-- Totals -->
-    <div style="text-align: right; margin-bottom: 20px">
-      <p><strong>Subtotal:</strong> ₦{{ invoice.subtotal|default:0 }}</p>
-      {% if invoice.tax_amount %}
-      <p><strong>Tax:</strong> ₦{{ invoice.tax_amount }}</p>
-      {% endif %}
-      <p
-        style="
-          font-size: 18px;
-          font-weight: bold;
-          color: #ff9500;
-          padding-top: 10px;
-          border-top: 2px solid #ff9500;
-        "
-      >
-        TOTAL: ₦{{ invoice.total }}
-      </p>
-    </div>
-  </div>
-</main>
 {% endblock %}

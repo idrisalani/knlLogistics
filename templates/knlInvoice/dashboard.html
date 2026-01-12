@@ -18,7 +18,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 35px;
+    margin-bottom: 30px;
     padding-bottom: 20px;
     border-bottom: 3px solid var(--kamrate-orange);
   }
@@ -39,6 +39,42 @@
   .header-actions {
     display: flex;
     gap: 12px;
+  }
+
+  /* ===== FILTER CONTROLS ===== */
+  .filter-controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 25px;
+    padding: 15px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+  }
+
+  .filter-controls .btn-filter {
+    padding: 8px 16px;
+    background-color: white;
+    color: var(--kamrate-blue);
+    border: 2px solid var(--kamrate-blue);
+    border-radius: 6px;
+    font-weight: 700;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+  }
+
+  .filter-controls .btn-filter:hover {
+    background-color: var(--kamrate-blue);
+    color: white;
+  }
+
+  .filter-controls .btn-filter.active {
+    background-color: var(--kamrate-orange);
+    color: white;
+    border-color: var(--kamrate-orange);
   }
 
   /* ===== BUTTONS ===== */
@@ -66,14 +102,14 @@
   /* ===== STATS CONTAINER ===== */
   .stats-container {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 18px;
     margin-bottom: 30px;
   }
 
   .stat-card {
     background: white;
-    padding: 28px;
+    padding: 22px;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     border-left: 5px solid var(--kamrate-orange);
@@ -87,16 +123,16 @@
 
   .stat-card h3 {
     color: #999;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     text-transform: uppercase;
-    margin: 0 0 15px 0;
+    margin: 0 0 12px 0;
     letter-spacing: 1px;
     font-weight: 700;
   }
 
   .stat-value {
     color: var(--kamrate-blue);
-    font-size: 2.2rem;
+    font-size: 1.8rem;
     font-weight: 800;
     margin: 0;
     line-height: 1;
@@ -126,20 +162,20 @@
 
   .section-header h2 {
     color: var(--kamrate-blue);
-    font-size: 1.5rem;
+    font-size: 1.4rem;
     font-weight: 800;
     margin: 0;
   }
 
   .section-header .btn-small {
-    padding: 8px 18px;
+    padding: 8px 16px;
     background-color: var(--kamrate-orange);
     color: white;
     border: none;
     border-radius: 6px;
     font-weight: 700;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     transition: all 0.3s ease;
     text-decoration: none;
     display: inline-block;
@@ -171,16 +207,16 @@
   }
 
   .table-container th {
-    padding: 16px 15px;
+    padding: 15px;
     text-align: left;
     font-weight: 800;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     text-transform: uppercase;
     letter-spacing: 1px;
   }
 
   .table-container td {
-    padding: 16px 15px;
+    padding: 15px;
     border-bottom: 1px solid var(--border-color);
     color: #333;
   }
@@ -193,13 +229,46 @@
     border-bottom: none;
   }
 
+  /* ===== CHARTS GRID ===== */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+    gap: 25px;
+    margin-bottom: 40px;
+  }
+
+  .chart-container {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .chart-container h3 {
+    color: var(--kamrate-blue);
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin: 0 0 20px 0;
+  }
+
+  .chart-container canvas {
+    max-width: 100%;
+  }
+
+  .chart-note {
+    text-align: center;
+    color: #999;
+    margin-top: 12px;
+    font-size: 0.85rem;
+  }
+
   /* ===== STATUS BADGES ===== */
   .badge {
     display: inline-block;
     padding: 6px 12px;
     border-radius: 6px;
     font-weight: 700;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     text-transform: uppercase;
   }
 
@@ -218,30 +287,25 @@
     color: #c62828;
   }
 
-  .badge-sent {
-    background-color: #f3e5f5;
-    color: #6a1b9a;
-  }
-
-  .badge-completed {
+  .badge-profitable {
     background-color: #e8f5e9;
     color: #2e7d32;
   }
 
-  .badge-in-progress {
-    background-color: #fff3e0;
-    color: #ff9800;
+  .badge-loss {
+    background-color: #ffebee;
+    color: #c62828;
   }
 
-  .badge-planned {
-    background-color: #e3f2fd;
-    color: #1976d2;
+  .badge-break-even {
+    background-color: #fff3e0;
+    color: #ff9800;
   }
 
   /* ===== EMPTY STATE ===== */
   .empty-state {
     text-align: center;
-    padding: 60px 20px;
+    padding: 50px 20px;
   }
 
   .empty-state-icon {
@@ -251,15 +315,15 @@
 
   .empty-state h3 {
     color: var(--kamrate-blue);
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     font-weight: 800;
     margin: 15px 0 10px 0;
   }
 
   .empty-state p {
     color: #666;
-    font-size: 1rem;
-    margin-bottom: 25px;
+    font-size: 0.95rem;
+    margin-bottom: 20px;
   }
 
   .empty-state .btn-action {
@@ -269,7 +333,7 @@
   /* ===== RESPONSIVE DESIGN ===== */
   @media (max-width: 768px) {
     .stats-container {
-      grid-template-columns: 1fr;
+      grid-template-columns: repeat(2, 1fr);
     }
 
     .page-header {
@@ -298,27 +362,49 @@
     }
 
     .stat-value {
-      font-size: 1.8rem;
+      font-size: 1.5rem;
+    }
+
+    .charts-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .filter-controls {
+      flex-direction: column;
+    }
+
+    .filter-controls .btn-filter {
+      width: 100%;
     }
   }
 </style>
 {% endblock %}
 
 {% block content %}
-<main>
+<main style="padding: 20px 0; max-width: 1400px; margin: 0 auto;">
+  
   <!-- PAGE HEADER -->
   <div class="page-header">
     <div>
       <h1>📊 Dashboard</h1>
-      <p>Welcome back, {{ user.first_name|default:user.username }}!</p>
+      <p>Welcome back, {{ user.first_name|default:user.username }}! Business overview & analytics</p>
     </div>
   </div>
 
-  <!-- PRIMARY STATS (4 Cards) -->
+  <!-- TIME PERIOD FILTERS (PHASE 4) -->
+  <div class="filter-controls">
+    <a href="?period=7d" class="btn-filter {% if period == '7d' %}active{% endif %}">Last 7 Days</a>
+    <a href="?period=30d" class="btn-filter {% if period == '30d' %}active{% endif %}">Last 30 Days</a>
+    <a href="?period=90d" class="btn-filter {% if period == '90d' %}active{% endif %}">Last 90 Days</a>
+    <a href="?period=12m" class="btn-filter {% if period == '12m' %}active{% endif %}">Last Year</a>
+    <a href="?period=all" class="btn-filter {% if period == 'all' %}active{% endif %}">All Time</a>
+  </div>
+
+  <!-- PRIMARY STATS (4 Cards) - FIXED FIELD NAMES -->
   <div class="stats-container">
     <div class="stat-card">
       <h3>Total Invoices</h3>
-      <p class="stat-value">{{ total_invoices }}</p>
+      <p class="stat-value">{{ total_invoices|default:0 }}</p>
     </div>
     <div class="stat-card positive">
       <h3>Total Revenue</h3>
@@ -326,7 +412,7 @@
     </div>
     <div class="stat-card">
       <h3>Total Trips</h3>
-      <p class="stat-value">{{ total_trips }}</p>
+      <p class="stat-value">{{ total_trips|default:0 }}</p>
     </div>
     <div class="stat-card positive">
       <h3>Total Profit</h3>
@@ -350,11 +436,11 @@
   <div class="stats-container" style="margin-bottom: 30px;">
     <div class="stat-card">
       <h3>Pending Invoices</h3>
-      <p class="stat-value">{{ pending_invoices }}</p>
+      <p class="stat-value">{{ pending_invoices|default:0 }}</p>
     </div>
     <div class="stat-card">
       <h3>Overdue Invoices</h3>
-      <p class="stat-value">{{ overdue_invoices }}</p>
+      <p class="stat-value">{{ overdue_invoices|default:0 }}</p>
     </div>
     <div class="stat-card positive">
       <h3>Outstanding Amount</h3>
@@ -366,34 +452,60 @@
     </div>
   </div>
 
-  <!-- DAY 5: ANALYTICS SECTION WITH CHARTS -->
+  <!-- ANALYTICS & CHARTS SECTION -->
   <div class="section">
     <div class="section-header">
       <h2>📈 Analytics & Trends</h2>
     </div>
 
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 30px; margin-bottom: 40px;">
-      <!-- REVENUE TREND CHART -->
-      <div class="table-container" style="padding: 20px;">
-        <h3 style="color: #001F4D; margin-top: 0; margin-bottom: 20px;">Revenue Trend (Last 6 Months)</h3>
+    <div class="charts-grid">
+      <!-- REVENUE TREND CHART (12 MONTHS) -->
+      <div class="chart-container">
+        <h3>Revenue Trend (Last 12 Months)</h3>
         <canvas id="revenueChart" height="80"></canvas>
-        <p style="text-align: center; color: #999; margin-top: 15px; font-size: 0.85rem;">
-          📊 Track revenue performance over time
-        </p>
+        <p class="chart-note">📊 Track revenue performance over time</p>
       </div>
 
       <!-- STATUS BREAKDOWN CHART -->
-      <div class="table-container" style="padding: 20px;">
-        <h3 style="color: #001F4D; margin-top: 0; margin-bottom: 20px;">Invoice Status Breakdown</h3>
+      <div class="chart-container">
+        <h3>Invoice Status Breakdown</h3>
         <canvas id="statusChart" height="80"></canvas>
-        <p style="text-align: center; color: #999; margin-top: 15px; font-size: 0.85rem;">
-          📊 Invoice status distribution
-        </p>
+        <p class="chart-note">📊 Invoice status distribution</p>
       </div>
     </div>
   </div>
 
-  <!-- CLIENTS SECTION (NEW - FORM PAGE LINK) -->
+  <!-- TRIP PROFITABILITY SECTION -->
+  <div class="section">
+    <div class="section-header">
+      <h2>🚚 Top Profitable Trips</h2>
+    </div>
+
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Trip #</th>
+            <th>Revenue</th>
+            <th>Expenses</th>
+            <th>Profit</th>
+            <th>Margin %</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody id="tripProfitabilityTable">
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 20px; color: #999;">
+              Loading trip data...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- CLIENTS SECTION -->
   <div class="section">
     <div class="section-header">
       <h2>👥 Recent Clients</h2>
@@ -419,7 +531,7 @@
               <td>{{ client.emailAddress }}</td>
               <td>{{ client.phoneNumber }}</td>
               <td>{{ client.state|default:"—" }}</td>
-              <td>{{ client.dateCreated|date:"d M Y"|default:client.date_created|date:"d M Y" }}</td>
+              <td>{{ client.date_created|date:"d M Y" }}</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -437,7 +549,7 @@
     {% endif %}
   </div>
 
-  <!-- INVOICES SECTION (FORM PAGE LINK) -->
+  <!-- INVOICES SECTION - FIXED FIELD NAMES -->
   <div class="section">
     <div class="section-header">
       <h2>📄 Recent Invoices</h2>
@@ -459,18 +571,18 @@
           <tbody>
             {% for invoice in invoices %}
             <tr>
-              <td><strong>{{ invoice.invoice_number|default:invoice.number }}</strong></td>
+              <td><strong>{{ invoice.invoice_number }}</strong></td>
               <td>{{ invoice.client.clientName }}</td>
-              <td><strong>₦{{ invoice.total|default:invoice.product.price|floatformat:0 }}</strong></td>
+              <td><strong>₦{{ invoice.total|floatformat:0 }}</strong></td>
               <td>
-                {% if invoice.status == 'PAID' or invoice.status == 'paid' %}
+                {% if invoice.status == 'paid' %}
                   <span class="badge badge-paid">✓ Paid</span>
-                {% elif invoice.status == 'OVERDUE' or invoice.status == 'overdue' %}
+                {% elif invoice.status == 'overdue' %}
                   <span class="badge badge-overdue">⚠ Overdue</span>
-                {% elif invoice.status == 'SENT' or invoice.status == 'sent' %}
-                  <span class="badge badge-sent">→ Sent</span>
+                {% elif invoice.status == 'sent' %}
+                  <span class="badge badge-pending">→ Sent</span>
                 {% else %}
-                  <span class="badge badge-pending">⏳ Pending</span>
+                  <span class="badge badge-pending">⏳ {{ invoice.get_status_display }}</span>
                 {% endif %}
               </td>
               <td>{{ invoice.date_created|date:"d M Y" }}</td>
@@ -484,14 +596,14 @@
         <div class="empty-state">
           <div class="empty-state-icon">📄</div>
           <h3>No Invoices Yet</h3>
-          <p>Create your first invoice to get started</p>
+          <p>Create your first invoice with line items to get started</p>
           <a href="{% url 'knlInvoice:invoice-create' %}" class="btn-action">+ Create Invoice</a>
         </div>
       </div>
     {% endif %}
   </div>
 
-  <!-- PRODUCTS SECTION (FORM PAGE LINK) -->
+  <!-- PRODUCTS SECTION -->
   <div class="section">
     <div class="section-header">
       <h2>🛒 Recent Products / Services</h2>
@@ -515,8 +627,8 @@
             <tr>
               <td><strong>{{ product.title }}</strong></td>
               <td>{{ product.description|truncatewords:5|default:"—" }}</td>
-              <td>{{ product.price|floatformat:0 }}</td>
-              <td>{{ product.get_currency_display|default:"NGN" }}</td>
+              <td>₦{{ product.price|floatformat:0 }}</td>
+              <td>{{ product.currency|default:"NGN" }}</td>
               <td>{{ product.date_created|date:"d M Y" }}</td>
             </tr>
             {% endfor %}
@@ -528,14 +640,14 @@
         <div class="empty-state">
           <div class="empty-state-icon">🛒</div>
           <h3>No Products Yet</h3>
-          <p>Create your first product to start invoicing</p>
+          <p>Create products/services to add to your invoices</p>
           <a href="{% url 'knlInvoice:product-create' %}" class="btn-action">+ Create Product</a>
         </div>
       </div>
     {% endif %}
   </div>
 
-  <!-- TRIPS SECTION (FORM PAGE LINK) -->
+  <!-- TRIPS SECTION -->
   <div class="section">
     <div class="section-header">
       <h2>🚚 Recent Trips</h2>
@@ -563,12 +675,12 @@
               <td>{{ trip.truck.plateNumber }}</td>
               <td><strong>₦{{ trip.revenue|floatformat:0 }}</strong></td>
               <td>
-                {% if trip.status == 'COMPLETED' %}
-                  <span class="badge badge-completed">✓ Completed</span>
-                {% elif trip.status == 'IN_PROGRESS' %}
-                  <span class="badge badge-in-progress">⏳ In Progress</span>
-                {% elif trip.status == 'PLANNED' %}
-                  <span class="badge badge-planned">📅 Planned</span>
+                {% if trip.status == 'completed' %}
+                  <span class="badge badge-paid">✓ Completed</span>
+                {% elif trip.status == 'in_progress' %}
+                  <span class="badge badge-pending">⏳ In Progress</span>
+                {% elif trip.status == 'pending' %}
+                  <span class="badge badge-pending">📅 Pending</span>
                 {% else %}
                   <span class="badge badge-overdue">⚠ Cancelled</span>
                 {% endif %}
@@ -590,6 +702,7 @@
       </div>
     {% endif %}
   </div>
+
 </main>
 
 <!-- Chart.js Library -->
@@ -600,15 +713,15 @@
   document.addEventListener('DOMContentLoaded', function() {
     
     // ===== GET DATA FROM DJANGO CONTEXT =====
-    const monthlyRevenue = {{ monthly_revenue|safe }};
-    const monthNames = {{ months_names|safe }};
-    const paidCount = {{ paid_count }};
-    const pendingCount = {{ pending_count }};
-    const overdueCount = {{ overdue_count }};
+    const monthlyRevenue = {{ monthly_revenue|safe|default:"[]" }};
+    const monthNames = {{ months_names|safe|default:"[]" }};
+    const paidCount = {{ paid_count|default:0 }};
+    const pendingCount = {{ pending_count|default:0 }};
+    const overdueCount = {{ overdue_count|default:0 }};
     
-    // ===== REVENUE TREND CHART =====
+    // ===== REVENUE TREND CHART (12 MONTHS) =====
     const revenueCtx = document.getElementById('revenueChart');
-    if (revenueCtx) {
+    if (revenueCtx && monthlyRevenue.length > 0) {
       new Chart(revenueCtx, {
         type: 'line',
         data: {
@@ -671,14 +784,14 @@
 
     // ===== STATUS BREAKDOWN CHART =====
     const statusCtx = document.getElementById('statusChart');
-    if (statusCtx) {
+    if (statusCtx && (paidCount > 0 || pendingCount > 0 || overdueCount > 0)) {
       new Chart(statusCtx, {
         type: 'doughnut',
         data: {
           labels: ['Paid', 'Pending', 'Overdue'],
           datasets: [{
             data: [paidCount, pendingCount, overdueCount],
-            backgroundColor: ['#4CAF50', '#2196F3', '#F44336'],
+            backgroundColor: ['#0D7A3D', '#FF9500', '#DC3545'],
             borderColor: 'white',
             borderWidth: 3,
           }]
@@ -708,6 +821,51 @@
         }
       });
     }
+
+    // ===== TRIP PROFITABILITY TABLE =====
+    const period = new URLSearchParams(window.location.search).get('period') || '12m';
+    fetch(`/api/trip-profitability/?period=${period}`)
+      .then(response => response.json())
+      .then(data => {
+        const table = document.getElementById('tripProfitabilityTable');
+        if (data.trips && data.trips.length > 0) {
+          table.innerHTML = data.trips.map((trip, index) => `
+            <tr>
+              <td><strong>${index + 1}</strong></td>
+              <td><strong>${trip.trip_number}</strong></td>
+              <td>₦${trip.revenue.toLocaleString('en-NG', {minimumFractionDigits: 0})}</td>
+              <td>₦${trip.expenses.toLocaleString('en-NG', {minimumFractionDigits: 0})}</td>
+              <td style="color: ${trip.profit > 0 ? '#0D7A3D' : trip.profit < 0 ? '#DC3545' : '#FFC107'};">
+                <strong>₦${trip.profit.toLocaleString('en-NG', {minimumFractionDigits: 0})}</strong>
+              </td>
+              <td>${trip.margin.toFixed(1)}%</td>
+              <td>
+                <span class="badge badge-${trip.status}">
+                  ${trip.status === 'profitable' ? '✅ Profitable' : trip.status === 'loss' ? '❌ Loss' : '⚠️ Break Even'}
+                </span>
+              </td>
+            </tr>
+          `).join('');
+        } else {
+          table.innerHTML = `
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 20px; color: #999;">
+                No trip data available for this period
+              </td>
+            </tr>
+          `;
+        }
+      })
+      .catch(error => {
+        console.error('Error loading trip profitability data:', error);
+        document.getElementById('tripProfitabilityTable').innerHTML = `
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 20px; color: #999;">
+              Unable to load trip data
+            </td>
+          </tr>
+        `;
+      });
   });
 </script>
 

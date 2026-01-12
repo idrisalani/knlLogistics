@@ -1,249 +1,402 @@
-{% extends 'partials/base.html' %} {% load static %} {% block title %}Create
-Invoice - Kamrate Nigeria Limited{% endblock %} {% block content %}
+{% extends 'partials/base.html' %}
+{% load static %}
 
-  <div class="container-fluid mt-5">
-    <div class="row justify-content-center">
-      <div class="col-lg-10">
-        <!-- Page Header -->
-        <div class="mb-4">
-          <h1 class="page-title mb-1">
-            <i class="fas fa-file-invoice"></i>
-            {% if form.instance.pk %} Edit Invoice {% else %} Create New Invoice
-            {% endif %}
-          </h1>
-          <p class="text-muted">
-            {% if form.instance.pk %} Update invoice details {% else %} Create a
-            new invoice for your client {% endif %}
-          </p>
+{% block title %}{% if form.instance.pk %}Edit Invoice{% else %}Create Invoice{% endif %} - Kamrate Nigeria Limited{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid mt-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-12">
+      <!-- Page Header -->
+      <div class="mb-4">
+        <h1 class="page-title mb-1">
+          <i class="fas fa-file-invoice"></i>
+          {% if form.instance.pk %} Edit Invoice {% else %} Create New Invoice {% endif %}
+        </h1>
+        <p class="text-muted">
+          {% if form.instance.pk %} Update invoice details {% else %} Create a new invoice for your client {% endif %}
+        </p>
+      </div>
+
+      <!-- Form Card -->
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white py-4" style="background-color: #001f4d !important">
+          <h5 class="mb-0"><i class="fas fa-edit"></i> Invoice Information</h5>
         </div>
 
-        <!-- Form Card -->
-        <div class="card shadow-sm border-0">
-          <div
-            class="card-header bg-primary text-white py-4"
-            style="background-color: #001f4d !important"
-          >
-            <h5 class="mb-0">
-              <i class="fas fa-edit"></i> Invoice Information
-            </h5>
+        <div class="card-body p-4">
+          
+          <!-- Display Non-Field Errors -->
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong><i class="fas fa-exclamation-circle"></i> Error!</strong>
+            {% for error in form.non_field_errors %}
+            <div>{{ error }}</div>
+            {% endfor %}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
           </div>
+          {% endif %}
 
-          <div class="card-body p-4">
-            {% if form.non_field_errors %}
-            <div
-              class="alert alert-danger alert-dismissible fade show"
-              role="alert"
-            >
-              <strong>Error!</strong>
-              {% for error in form.non_field_errors %}
-              <div>{{ error }}</div>
-              {% endfor %}
-              <button
-                type="button"
-                class="btn-close"
-                data-bs-dismiss="alert"
-              ></button>
-            </div>
-            {% endif %}
+          <form method="post" id="invoiceForm">
+            {% csrf_token %}
 
-            <form method="post" id="invoiceForm">
-              {% csrf_token %}
+            <!-- Section 1: Invoice Details -->
+            <fieldset class="mb-4">
+              <legend class="fs-5 fw-bold text-dark mb-3">
+                <i class="fas fa-receipt" style="color: #ff9500"></i> Invoice Details
+              </legend>
 
-              <!-- Section 1: Invoice Details -->
-              <fieldset class="mb-4">
-                <legend class="fs-5 fw-bold text-dark mb-3">
-                  <i class="fas fa-receipt" style="color: #ff9500"></i> Invoice
-                  Details
-                </legend>
-
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label for="invoiceNumber" class="form-label fw-500">
-                      Invoice Number <span class="text-danger">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="invoiceNumber"
-                      name="invoice_number"
-                      placeholder="e.g., INV-001-2026"
-                      required
-                    />
-                    <small class="text-muted">Unique invoice identifier</small>
-                  </div>
-
-                  <div class="col-md-6 mb-3">
-                    <label for="referenceNumber" class="form-label fw-500">
-                      Reference Number
-                    </label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="referenceNumber"
-                      name="reference_number"
-                      placeholder="e.g., REF-12345"
-                    />
-                    <small class="text-muted">Optional reference</small>
-                  </div>
-                </div>
-
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label for="issueDate" class="form-label fw-500">
-                      Invoice Date <span class="text-danger">*</span>
-                    </label>
-                    <input
-                      type="date"
-                      class="form-control"
-                      id="issueDate"
-                      name="issue_date"
-                      required
-                    />
-                  </div>
-
-                  <div class="col-md-6 mb-3">
-                    <label for="dueDate" class="form-label fw-500">
-                      Due Date
-                    </label>
-                    <input
-                      type="date"
-                      class="form-control"
-                      id="dueDate"
-                      name="due_date"
-                    />
-                  </div>
-                </div>
-              </fieldset>
-
-              <!-- Section 2: Client Information -->
-              <fieldset class="mb-4">
-                <legend class="fs-5 fw-bold text-dark mb-3">
-                  <i class="fas fa-user" style="color: #ff9500"></i> Client
-                  Information
-                </legend>
-
-                <div class="mb-3">
-                  <label for="client" class="form-label fw-500">
-                    Client <span class="text-danger">*</span>
+              <div class="row">
+                <!-- Invoice Number Field -->
+                <div class="col-md-6 mb-3">
+                  <label for="id_invoice_number" class="form-label fw-500">
+                    Invoice Number <span class="text-danger">*</span>
                   </label>
-                  <select
-                    class="form-select"
-                    id="client"
-                    name="client"
-                    required
-                  >
-                    <option value="">-- Select Client --</option>
-                    {% for client in clients %}
-                    <option value="{{ client.id }}">
-                      {{ client.clientName }}
-                    </option>
-                    {% endfor %}
-                  </select>
-                  <small class="text-muted"
-                    >Select existing client or create new</small
-                  >
-                </div>
-              </fieldset>
-
-              <!-- Section 3: Pricing -->
-              <fieldset class="mb-4">
-                <legend class="fs-5 fw-bold text-dark mb-3">
-                  <i class="fas fa-tag" style="color: #ff9500"></i> Pricing &
-                  Tax
-                </legend>
-
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label for="taxRate" class="form-label fw-500">
-                      Tax Rate (%)
-                    </label>
-                    <input
-                      type="number"
-                      class="form-control"
-                      id="taxRate"
-                      name="tax_rate"
-                      placeholder="7.5"
-                      step="0.01"
-                      value="7.5"
-                    />
-                    <small class="text-muted"
-                      >VAT percentage (default: 7.5%)</small
-                    >
+                  {{ form.invoice_number }}
+                  {% if form.invoice_number.errors %}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.invoice_number.errors %}{{ error }}{% endfor %}
                   </div>
+                  {% endif %}
+                  <small class="text-muted">Unique invoice identifier</small>
+                </div>
 
-                  <div class="col-md-6 mb-3">
-                    <label for="paymentTerms" class="form-label fw-500">
-                      Payment Terms
-                    </label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="paymentTerms"
-                      name="paymentTerms"
-                      placeholder="e.g., 14 days"
-                      value="14 days"
-                    />
-                    <small class="text-muted">Payment duration</small>
+                <!-- Title Field (Reference/Description) -->
+                <div class="col-md-6 mb-3">
+                  <label for="id_title" class="form-label fw-500">
+                    Invoice Title
+                  </label>
+                  {{ form.title }}
+                  {% if form.title.errors %}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.title.errors %}{{ error }}{% endfor %}
                   </div>
-                </div>
-              </fieldset>
-
-              <!-- Section 4: Additional Information -->
-              <fieldset class="mb-4">
-                <legend class="fs-5 fw-bold text-dark mb-3">
-                  <i class="fas fa-notes-medical" style="color: #ff9500"></i>
-                  Additional Information
-                </legend>
-
-                <div class="mb-3">
-                  <label for="notes" class="form-label fw-500"> Notes </label>
-                  <textarea
-                    class="form-control"
-                    id="notes"
-                    name="notes"
-                    rows="4"
-                    placeholder="Add any additional notes or special instructions..."
-                  ></textarea>
-                </div>
-              </fieldset>
-
-              <!-- Form Actions -->
-              <div class="border-top pt-3 mt-4">
-                <div class="d-flex gap-2">
-                  <button
-                    type="submit"
-                    class="btn btn-lg"
-                    style="
-                      background-color: #001f4d;
-                      color: white;
-                      min-width: 150px;
-                    "
-                  >
-                    <i class="fas fa-save"></i>
-                    {% if form.instance.pk %} Update Invoice {% else %} Create
-                    Invoice {% endif %}
-                  </button>
-
-                  <a
-                    href="{% url 'knlInvoice:invoices-list' %}"
-                    class="btn btn-secondary btn-lg"
-                  >
-                    <i class="fas fa-times"></i> Cancel
-                  </a>
+                  {% endif %}
+                  <small class="text-muted">Brief description of invoice</small>
                 </div>
               </div>
-            </form>
-          </div>
+
+              <!-- Invoice Date & Due Date -->
+              <div class="row">
+                <!-- Invoice Date (Issue Date) -->
+                <div class="col-md-6 mb-3">
+                  <label for="id_issue_date" class="form-label fw-500">
+                    Invoice Date <span class="text-danger">*</span>
+                  </label>
+                  {{ form.issue_date }}
+                  {% if form.issue_date.errors %}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.issue_date.errors %}{{ error }}{% endfor %}
+                  </div>
+                  {% endif %}
+                  <small class="text-muted">Date invoice was issued</small>
+                </div>
+
+                <!-- Due Date -->
+                <div class="col-md-6 mb-3">
+                  <label for="id_due_date" class="form-label fw-500">
+                    Due Date
+                  </label>
+                  {{ form.due_date }}
+                  {% if form.due_date.errors %}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.due_date.errors %}{{ error }}{% endfor %}
+                  </div>
+                  {% endif %}
+                  <small class="text-muted">Payment deadline</small>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Section 2: Client Information -->
+            <fieldset class="mb-4">
+              <legend class="fs-5 fw-bold text-dark mb-3">
+                <i class="fas fa-user" style="color: #ff9500"></i> Client Information
+              </legend>
+
+              <!-- Client Field -->
+              <div class="mb-3">
+                <label for="id_client" class="form-label fw-500">
+                  Client <span class="text-danger">*</span>
+                </label>
+                {{ form.client }}
+                {% if form.client.errors %}
+                <div class="invalid-feedback d-block">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  {% for error in form.client.errors %}{{ error }}{% endfor %}
+                </div>
+                {% endif %}
+                <small class="text-muted">Select existing client or create new</small>
+              </div>
+            </fieldset>
+
+            <!-- Section 3: LINE ITEMS (NEW) -->
+            <fieldset class="mb-4">
+              <legend class="fs-5 fw-bold text-dark mb-3">
+                <i class="fas fa-shopping-cart" style="color: #ff9500"></i> Invoice Items
+              </legend>
+
+              <!-- Items Table -->
+              <div class="table-responsive">
+                <table class="table table-bordered" id="itemsTable">
+                  <thead style="background-color: #001f4d; color: white;">
+                    <tr>
+                      <th width="35%">Description / Product</th>
+                      <th width="15%">Quantity</th>
+                      <th width="15%">Unit Price</th>
+                      <th width="15%">Total</th>
+                      <th width="10%">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="itemsBody">
+                    <!-- Items will be added here dynamically -->
+                    <tr class="item-row">
+                      <td>
+                        <select class="form-control product-select" name="product" onchange="updateItemFromProduct(this)">
+                          <option value="">-- Select Product or Add Custom --</option>
+                          {% for product in products %}
+                          <option value="{{ product.id }}" data-price="{{ product.price }}">{{ product.title }}</option>
+                          {% endfor %}
+                        </select>
+                        <textarea class="form-control mt-2 description" name="description" placeholder="Item description (or product name)" rows="2"></textarea>
+                      </td>
+                      <td>
+                        <input type="number" class="form-control quantity" name="quantity" value="1" min="1" step="0.01" onchange="calculateRowTotal(this)">
+                      </td>
+                      <td>
+                        <input type="number" class="form-control unit-price" name="unit_price" value="0.00" min="0" step="0.01" onchange="calculateRowTotal(this)">
+                      </td>
+                      <td>
+                        <input type="text" class="form-control row-total" value="₦0.00" readonly style="background-color: #f0f0f0;">
+                      </td>
+                      <td>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeItemRow(this)">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Add Item Button -->
+              <div class="mb-3">
+                <button type="button" class="btn btn-success" onclick="addItemRow()">
+                  <i class="fas fa-plus"></i> Add Item
+                </button>
+              </div>
+
+              <!-- Error message if no items -->
+              <div id="noItemsAlert" class="alert alert-warning d-none">
+                <i class="fas fa-exclamation-circle"></i> Please add at least one item to the invoice.
+              </div>
+            </fieldset>
+
+            <!-- Section 4: Pricing & Tax (UPDATED with auto-calculation) -->
+            <fieldset class="mb-4">
+              <legend class="fs-5 fw-bold text-dark mb-3">
+                <i class="fas fa-tag" style="color: #ff9500"></i> Pricing & Tax
+              </legend>
+
+              <div class="row">
+                <!-- Subtotal Field (Read-only - Auto-calculated) -->
+                <div class="col-md-6 mb-3">
+                  <label for="id_subtotal" class="form-label fw-500">
+                    Subtotal (Auto-calculated)
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text">₦</span>
+                    {{ form.subtotal }}
+                  </div>
+                  <small class="text-muted">Sum of all line items</small>
+                </div>
+
+                <!-- Tax Rate Field -->
+                <div class="col-md-6 mb-3">
+                  <label for="id_tax_rate" class="form-label fw-500">
+                    Tax Rate (%)
+                  </label>
+                  {{ form.tax_rate }}
+                  {% if form.tax_rate.errors %}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.tax_rate.errors %}{{ error }}{% endfor %}
+                  </div>
+                  {% endif %}
+                  <small class="text-muted">VAT percentage (default: 7.5%)</small>
+                </div>
+              </div>
+
+              <div class="row">
+                <!-- Tax Amount Field (Read-only - Auto-calculated) -->
+                <div class="col-md-6 mb-3">
+                  <label for="id_tax_amount" class="form-label fw-500">
+                    Tax Amount (Auto-calculated)
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text">₦</span>
+                    {{ form.tax_amount }}
+                  </div>
+                  <small class="text-muted">Calculated based on subtotal and tax rate</small>
+                </div>
+
+                <!-- Total Field (Read-only - Auto-calculated) -->
+                <div class="col-md-6 mb-3">
+                  <label for="id_total" class="form-label fw-500">
+                    Total Amount (Auto-calculated)
+                  </label>
+                  <div class="input-group">
+                    <span class="input-group-text">₦</span>
+                    {{ form.total }}
+                  </div>
+                  <small class="text-muted">Subtotal + Tax Amount</small>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Section 5: Payment Information -->
+            <fieldset class="mb-4">
+              <legend class="fs-5 fw-bold text-dark mb-3">
+                <i class="fas fa-money-bill" style="color: #ff9500"></i> Payment Information
+              </legend>
+
+              <div class="row">
+                <!-- Payment Terms Field -->
+                <div class="col-md-6 mb-3">
+                  <label for="id_paymentTerms" class="form-label fw-500">
+                    Payment Terms
+                  </label>
+                  {{ form.paymentTerms }}
+                  {% if form.paymentTerms.errors %}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.paymentTerms.errors %}{{ error }}{% endfor %}
+                  </div>
+                  {% endif %}
+                  <small class="text-muted">Payment duration</small>
+                </div>
+
+                <!-- Payment Method Field -->
+                <div class="col-md-6 mb-3">
+                  <label for="id_payment_method" class="form-label fw-500">
+                    Payment Method
+                  </label>
+                  {{ form.payment_method }}
+                  {% if form.payment_method.errors %}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.payment_method.errors %}{{ error }}{% endfor %}
+                  </div>
+                  {% endif %}
+                  <small class="text-muted">Preferred payment method</small>
+                </div>
+              </div>
+
+              <div class="row">
+                <!-- Amount Paid Field -->
+                <div class="col-md-6 mb-3">
+                  <label for="id_amount_paid" class="form-label fw-500">
+                    Amount Paid
+                  </label>
+                  {{ form.amount_paid }}
+                  {% if form.amount_paid.errors %}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.amount_paid.errors %}{{ error }}{% endfor %}
+                  </div>
+                  {% endif %}
+                  <small class="text-muted">Amount already paid</small>
+                </div>
+
+                <!-- Outstanding Amount Field -->
+                <div class="col-md-6 mb-3">
+                  <label for="id_outstanding_amount" class="form-label fw-500">
+                    Outstanding Amount
+                  </label>
+                  {{ form.outstanding_amount }}
+                  {% if form.outstanding_amount.errors %}
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    {% for error in form.outstanding_amount.errors %}{{ error }}{% endfor %}
+                  </div>
+                  {% endif %}
+                  <small class="text-muted">Amount still owed</small>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Section 6: Status & Notes -->
+            <fieldset class="mb-4">
+              <legend class="fs-5 fw-bold text-dark mb-3">
+                <i class="fas fa-clipboard" style="color: #ff9500"></i> Status & Additional Information
+              </legend>
+
+              <!-- Status Field -->
+              <div class="mb-3">
+                <label for="id_status" class="form-label fw-500">
+                  Status
+                </label>
+                {{ form.status }}
+                {% if form.status.errors %}
+                <div class="invalid-feedback d-block">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  {% for error in form.status.errors %}{{ error }}{% endfor %}
+                </div>
+                {% endif %}
+                <small class="text-muted">Invoice status</small>
+              </div>
+
+              <!-- Notes Field -->
+              <div class="mb-3">
+                <label for="id_notes" class="form-label fw-500">
+                  Notes
+                </label>
+                {{ form.notes }}
+                {% if form.notes.errors %}
+                <div class="invalid-feedback d-block">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  {% for error in form.notes.errors %}{{ error }}{% endfor %}
+                </div>
+                {% endif %}
+                <small class="text-muted">Additional notes about the invoice</small>
+              </div>
+            </fieldset>
+
+            <!-- Form Actions -->
+            <div class="border-top pt-3 mt-4">
+              <div class="d-flex gap-2">
+                <button
+                  type="submit"
+                  class="btn btn-lg"
+                  style="background-color: #001f4d; color: white; min-width: 150px"
+                  onclick="validateItems(event)"
+                >
+                  <i class="fas fa-save"></i>
+                  {% if form.instance.pk %} Update Invoice {% else %} Create Invoice {% endif %}
+                </button>
+
+                <a href="{% url 'knlInvoice:invoices-list' %}" class="btn btn-secondary btn-lg">
+                  <i class="fas fa-times"></i> Cancel
+                </a>
+              </div>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   </div>
+</div>
 
 <style>
   /* Form-specific styling to account for sidebar */
   
   .container-fluid {
-    max-width: 70%;
+    max-width: 60%;
     padding-right: 20px;
     padding-left: 20px;
   }
@@ -302,6 +455,7 @@ Invoice - Kamrate Nigeria Limited{% endblock %} {% block content %}
     padding: 12px 15px;
     font-size: 0.95rem;
     transition: all 0.3s ease;
+    width: 100%;
   }
 
   .form-control:focus,
@@ -309,6 +463,27 @@ Invoice - Kamrate Nigeria Limited{% endblock %} {% block content %}
     border-color: #ff9500;
     box-shadow: 0 0 0 3px rgba(255, 149, 0, 0.15);
     outline: none;
+  }
+
+  /* Error styling */
+  .form-control.is-invalid,
+  .form-select.is-invalid {
+    border-color: #dc3545;
+    background-image: none;
+  }
+
+  .form-control.is-invalid:focus,
+  .form-select.is-invalid:focus {
+    border-color: #dc3545;
+    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
+  }
+
+  .invalid-feedback {
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    display: block;
+    font-weight: 500;
   }
 
   .input-group-text {
@@ -348,6 +523,23 @@ Invoice - Kamrate Nigeria Limited{% endblock %} {% block content %}
     border-color: #545b62;
   }
 
+  .btn-success {
+    background-color: #0d7a3d;
+    border-color: #0d7a3d;
+    color: white;
+  }
+
+  .btn-success:hover {
+    background-color: #0a5e32;
+    border-color: #0a5e32;
+  }
+
+  .btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+  }
+
   .text-danger {
     color: #dc3545;
   }
@@ -360,6 +552,17 @@ Invoice - Kamrate Nigeria Limited{% endblock %} {% block content %}
   .alert {
     border-radius: 5px;
     margin-bottom: 20px;
+    border: none;
+  }
+
+  .alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+
+  .alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
   }
 
   .mb-3 {
@@ -385,6 +588,31 @@ Invoice - Kamrate Nigeria Limited{% endblock %} {% block content %}
     display: flex;
   }
 
+  /* Items table styling */
+  .table {
+    margin-bottom: 0;
+  }
+
+  .table-bordered {
+    border: 1px solid #ddd;
+  }
+
+  .table-bordered thead th {
+    border-bottom: 2px solid #001f4d;
+  }
+
+  .table-bordered td {
+    border-color: #ddd;
+  }
+
+  .item-row {
+    background-color: white;
+  }
+
+  .item-row:hover {
+    background-color: #f9f9f9;
+  }
+
   /* Responsive adjustments */
   @media (max-width: 992px) {
     .col-lg-10 {
@@ -398,6 +626,10 @@ Invoice - Kamrate Nigeria Limited{% endblock %} {% block content %}
 
     fieldset {
       padding: 15px;
+    }
+
+    .table-responsive {
+      font-size: 0.85rem;
     }
   }
 
@@ -414,7 +646,162 @@ Invoice - Kamrate Nigeria Limited{% endblock %} {% block content %}
       max-width: 100%;
       flex: 0 0 100%;
     }
+
+    .container-fluid {
+      max-width: 100%;
+    }
   }
 </style>
+
+<!-- JAVASCRIPT FOR LINE ITEMS CALCULATION -->
+<script>
+// Add a new item row
+function addItemRow() {
+    const itemsBody = document.getElementById('itemsBody');
+    const newRow = document.createElement('tr');
+    newRow.className = 'item-row';
+    newRow.innerHTML = `
+        <td>
+            <select class="form-control product-select" name="product" onchange="updateItemFromProduct(this)">
+                <option value="">-- Select Product or Add Custom --</option>
+                {% for product in products %}
+                <option value="{{ product.id }}" data-price="{{ product.price }}">{{ product.title }}</option>
+                {% endfor %}
+            </select>
+            <textarea class="form-control mt-2 description" name="description" placeholder="Item description (or product name)" rows="2"></textarea>
+        </td>
+        <td>
+            <input type="number" class="form-control quantity" name="quantity" value="1" min="1" step="0.01" onchange="calculateRowTotal(this)">
+        </td>
+        <td>
+            <input type="number" class="form-control unit-price" name="unit_price" value="0.00" min="0" step="0.01" onchange="calculateRowTotal(this)">
+        </td>
+        <td>
+            <input type="text" class="form-control row-total" value="₦0.00" readonly style="background-color: #f0f0f0;">
+        </td>
+        <td>
+            <button type="button" class="btn btn-sm btn-danger" onclick="removeItemRow(this)">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    `;
+    itemsBody.appendChild(newRow);
+}
+
+// Remove an item row
+function removeItemRow(button) {
+    const itemsBody = document.getElementById('itemsBody');
+    if (itemsBody.children.length > 1) {
+        button.closest('tr').remove();
+        calculateTotals();
+    } else {
+        alert('Invoice must have at least one item!');
+    }
+}
+
+// Update item from selected product
+function updateItemFromProduct(select) {
+    const row = select.closest('tr');
+    const price = select.options[select.selectedIndex].dataset.price;
+    const productName = select.options[select.selectedIndex].text;
+    
+    if (price) {
+        row.querySelector('.unit-price').value = parseFloat(price).toFixed(2);
+        row.querySelector('.description').value = productName;
+        calculateRowTotal(select);
+    }
+}
+
+// Calculate single row total
+function calculateRowTotal(input) {
+    const row = input.closest('tr');
+    const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
+    const unitPrice = parseFloat(row.querySelector('.unit-price').value) || 0;
+    const total = quantity * unitPrice;
+    
+    row.querySelector('.row-total').value = '₦' + total.toFixed(2);
+    
+    // Recalculate invoice totals
+    calculateTotals();
+}
+
+// Calculate invoice totals (subtotal, tax, total)
+function calculateTotals() {
+    const itemsBody = document.getElementById('itemsBody');
+    let subtotal = 0;
+    
+    // Sum all row totals
+    const rows = itemsBody.querySelectorAll('.item-row');
+    rows.forEach(row => {
+        const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
+        const unitPrice = parseFloat(row.querySelector('.unit-price').value) || 0;
+        subtotal += (quantity * unitPrice);
+    });
+    
+    // Get tax rate
+    const taxRateInput = document.getElementById('id_tax_rate');
+    const taxRate = parseFloat(taxRateInput.value) || 0;
+    
+    // Calculate tax and total
+    const taxAmount = subtotal * (taxRate / 100);
+    const total = subtotal + taxAmount;
+    
+    // Update form fields
+    document.getElementById('id_subtotal').value = subtotal.toFixed(2);
+    document.getElementById('id_tax_amount').value = taxAmount.toFixed(2);
+    document.getElementById('id_total').value = total.toFixed(2);
+    
+    // Update outstanding amount
+    const amountPaid = parseFloat(document.getElementById('id_amount_paid').value) || 0;
+    const outstanding = total - amountPaid;
+    document.getElementById('id_outstanding_amount').value = outstanding.toFixed(2);
+}
+
+// Validate items before form submission
+function validateItems(event) {
+    const itemsBody = document.getElementById('itemsBody');
+    const rows = itemsBody.querySelectorAll('.item-row');
+    
+    if (rows.length === 0) {
+        event.preventDefault();
+        document.getElementById('noItemsAlert').classList.remove('d-none');
+        return false;
+    }
+    
+    // Check if any row is empty
+    let hasEmptyRow = false;
+    rows.forEach(row => {
+        const description = row.querySelector('.description').value.trim();
+        const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
+        const unitPrice = parseFloat(row.querySelector('.unit-price').value) || 0;
+        
+        if (!description || quantity <= 0 || unitPrice <= 0) {
+            hasEmptyRow = true;
+        }
+    });
+    
+    if (hasEmptyRow) {
+        event.preventDefault();
+        alert('Please fill in all item details (description, quantity, and price)');
+        return false;
+    }
+    
+    document.getElementById('noItemsAlert').classList.add('d-none');
+    return true;
+}
+
+// Listen for tax rate changes to recalculate
+document.addEventListener('DOMContentLoaded', function() {
+    const taxRateInput = document.getElementById('id_tax_rate');
+    if (taxRateInput) {
+        taxRateInput.addEventListener('change', calculateTotals);
+    }
+    
+    const amountPaidInput = document.getElementById('id_amount_paid');
+    if (amountPaidInput) {
+        amountPaidInput.addEventListener('change', calculateTotals);
+    }
+});
+</script>
 
 {% endblock %}

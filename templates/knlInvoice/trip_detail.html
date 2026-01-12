@@ -1,0 +1,336 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %}Trip {{ trip.tripNumber }} - Kamrate Nigeria Limited{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid mt-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-12">
+      <!-- Page Header -->
+      <div class="page-header mb-4">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <h1 class="page-title mb-1">
+              <i class="fas fa-truck"></i> {{ trip.tripNumber }}
+            </h1>
+            <p class="text-muted">Trip Details & Profitability Analysis</p>
+          </div>
+          <div>
+            <a href="{% url 'knlInvoice:trip-update' trip.pk %}" class="btn btn-primary btn-sm">
+              <i class="fas fa-edit"></i> Edit Trip
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Trip Summary Cards -->
+      <div class="row mb-4">
+        <!-- Trip Info Card -->
+        <div class="col-md-3">
+          <div class="card shadow-sm border-0">
+            <div class="card-body">
+              <p class="text-muted mb-2"><i class="fas fa-calendar"></i> Trip Date</p>
+              <p class="fs-5 fw-bold">{{ trip.startDate|date:"d M Y" }}</p>
+              <hr>
+              <p class="text-muted mb-2"><i class="fas fa-map-marker-alt"></i> Route</p>
+              <p class="fs-5 fw-bold">{{ trip.startLocation }} → {{ trip.endLocation }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Revenue Card -->
+        <div class="col-md-3">
+          <div class="card shadow-sm border-0" style="border-left: 5px solid #0D7A3D;">
+            <div class="card-body">
+              <p class="text-muted mb-2"><i class="fas fa-money-bill-wave"></i> Total Revenue</p>
+              <p class="fs-4 fw-bold" style="color: #0D7A3D;">₦{{ total_revenue|floatformat:2 }}</p>
+              <hr>
+              <p class="text-muted text-sm">From invoices</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Expenses Card -->
+        <div class="col-md-3">
+          <div class="card shadow-sm border-0" style="border-left: 5px solid #FF9500;">
+            <div class="card-body">
+              <p class="text-muted mb-2"><i class="fas fa-receipt"></i> Total Expenses</p>
+              <p class="fs-4 fw-bold" style="color: #FF9500;">₦{{ total_expenses|floatformat:2 }}</p>
+              <hr>
+              <p class="text-muted text-sm">{{ expenses.count }} expense{{ expenses.count|pluralize }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profit Card -->
+        <div class="col-md-3">
+          <div class="card shadow-sm border-0" style="border-left: 5px solid {% if profit > 0 %}#0D7A3D{% elif profit < 0 %}#DC3545{% else %}#FFC107{% endif %};">
+            <div class="card-body">
+              <p class="text-muted mb-2"><i class="fas fa-chart-line"></i> Net Profit</p>
+              <p class="fs-4 fw-bold" style="color: {% if profit > 0 %}#0D7A3D{% elif profit < 0 %}#DC3545{% else %}#FFC107{% endif %};">
+                ₦{{ profit|floatformat:2 }}
+              </p>
+              <hr>
+              <p class="text-muted text-sm">
+                Margin: <strong>{{ profit_margin|floatformat:1 }}%</strong>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profitability Chart -->
+      <div class="row mb-4">
+        <div class="col-lg-6">
+          <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white" style="background-color: #001f4d !important;">
+              <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Revenue vs Expenses</h5>
+            </div>
+            <div class="card-body">
+              <div class="row text-center">
+                <div class="col-6">
+                  <p class="text-muted mb-2">Revenue</p>
+                  <p class="fs-5 fw-bold" style="color: #0D7A3D;">₦{{ total_revenue|floatformat:0 }}</p>
+                </div>
+                <div class="col-6">
+                  <p class="text-muted mb-2">Expenses</p>
+                  <p class="fs-5 fw-bold" style="color: #FF9500;">₦{{ total_expenses|floatformat:0 }}</p>
+                </div>
+              </div>
+              <div class="progress" style="height: 30px; margin-top: 20px;">
+                <div class="progress-bar" style="background-color: #0D7A3D; width: {% if total_revenue > 0 %}{{ total_revenue|add:0|mul:100|div:total_revenue|add:total_expenses }}{% else %}0{% endif %}%;">
+                  <span style="color: white; font-weight: bold;">Revenue</span>
+                </div>
+                <div class="progress-bar" style="background-color: #FF9500; width: {% if total_revenue > 0 %}{{ total_expenses|mul:100|div:total_revenue|add:total_expenses }}{% else %}0{% endif %}%;">
+                  <span style="color: white; font-weight: bold;">Expenses</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Profitability Status -->
+        <div class="col-lg-6">
+          <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white" style="background-color: #001f4d !important;">
+              <h5 class="mb-0"><i class="fas fa-gauge"></i> Profitability Status</h5>
+            </div>
+            <div class="card-body text-center">
+              {% if profit > 0 %}
+                <i class="fas fa-smile" style="font-size: 48px; color: #0D7A3D; margin-bottom: 15px;"></i>
+                <p class="fs-5 text-success fw-bold">This trip is PROFITABLE! ✅</p>
+                <p class="text-muted">You earned ₦{{ profit|floatformat:2 }} after all expenses.</p>
+              {% elif profit < 0 %}
+                <i class="fas fa-frown" style="font-size: 48px; color: #DC3545; margin-bottom: 15px;"></i>
+                <p class="fs-5 text-danger fw-bold">This trip resulted in a LOSS ❌</p>
+                <p class="text-muted">You lost ₦{{ profit|abs|floatformat:2 }} on this trip.</p>
+              {% else %}
+                <i class="fas fa-meh" style="font-size: 48px; color: #FFC107; margin-bottom: 15px;"></i>
+                <p class="fs-5 text-warning fw-bold">Break Even ⚠️</p>
+                <p class="text-muted">Revenue equals expenses. No profit or loss.</p>
+              {% endif %}
+              
+              <hr>
+              
+              <div class="row mt-3">
+                <div class="col-6">
+                  <p class="text-muted mb-1">Profit Margin</p>
+                  <p class="fs-6 fw-bold">{{ profit_margin|floatformat:1 }}%</p>
+                </div>
+                <div class="col-6">
+                  <p class="text-muted mb-1">Return on Revenue</p>
+                  <p class="fs-6 fw-bold">
+                    {% if total_revenue > 0 %}
+                      {{ profit|mul:100|div:total_revenue|floatformat:1 }}%
+                    {% else %}
+                      0%
+                    {% endif %}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Expenses Section -->
+      <div class="card shadow-sm border-0 mb-4">
+        <div class="card-header bg-primary text-white py-4" style="background-color: #001f4d !important;">
+          <div class="d-flex justify-content-between align-items-center">
+            <h5 class="mb-0"><i class="fas fa-receipt"></i> Expenses</h5>
+            <a href="{% url 'knlInvoice:expense-create' trip.pk %}" class="btn btn-sm btn-light">
+              <i class="fas fa-plus"></i> Add Expense
+            </a>
+          </div>
+        </div>
+
+        <div class="card-body p-0">
+          {% if expenses %}
+            <!-- Expense Category Summary -->
+            <div class="row p-4" style="background-color: #f8f9fa; border-bottom: 1px solid #ddd;">
+              <div class="col-md-12">
+                <p class="fw-bold mb-3">Expenses by Category:</p>
+                <div class="row">
+                  {% for category, amount in expense_categories.items %}
+                  <div class="col-md-3 mb-2">
+                    <span class="badge" style="background-color: #FF9500; padding: 8px 12px;">
+                      {{ category }}: ₦{{ amount|floatformat:2 }}
+                    </span>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+
+            <!-- Expenses Table -->
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead style="background-color: #f8f9fa;">
+                  <tr>
+                    <th>Date</th>
+                    <th>Category</th>
+                    <th>Description</th>
+                    <th class="text-right">Amount</th>
+                    <th class="text-center">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for expense in expenses %}
+                  <tr>
+                    <td>{{ expense.expense_date|date:"d M Y" }}</td>
+                    <td>
+                      <span class="badge" style="background-color: #FF9500; color: white;">
+                        {{ expense.get_category_display }}
+                      </span>
+                    </td>
+                    <td>
+                      <strong>{{ expense.description }}</strong>
+                      {% if expense.notes %}
+                        <br><small class="text-muted">{{ expense.notes }}</small>
+                      {% endif %}
+                    </td>
+                    <td class="text-right"><strong>₦{{ expense.amount|floatformat:2 }}</strong></td>
+                    <td class="text-center">
+                      <a href="{% url 'knlInvoice:edit-expense' trip.pk expense.pk %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-edit"></i>
+                      </a>
+                      <form method="post" action="{% url 'knlInvoice:delete-expense' trip.pk expense.pk %}" style="display: inline;" onsubmit="return confirm('Delete this expense?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                          <i class="fas fa-trash"></i>
+                        </button>
+                      </form>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Totals Row -->
+            <div class="row p-4" style="background-color: #f8f9fa; border-top: 1px solid #ddd;">
+              <div class="col-md-8"></div>
+              <div class="col-md-4">
+                <div class="row">
+                  <div class="col-6"><strong>Total Expenses:</strong></div>
+                  <div class="col-6 text-right"><h5 class="mb-0" style="color: #FF9500;">₦{{ total_expenses|floatformat:2 }}</h5></div>
+                </div>
+              </div>
+            </div>
+          {% else %}
+            <div class="alert alert-info m-4" role="alert">
+              <i class="fas fa-info-circle"></i> No expenses recorded yet.
+              <a href="{% url 'knlInvoice:expense-create' trip.pk %}">Add your first expense</a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="d-flex gap-2">
+        <a href="{% url 'knlInvoice:trips-list' %}" class="btn btn-outline-secondary">
+          <i class="fas fa-arrow-left"></i> Back to Trips
+        </a>
+        <a href="{% url 'knlInvoice:trip-update' trip.pk %}" class="btn btn-primary">
+          <i class="fas fa-edit"></i> Edit Trip
+        </a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 15px;
+    border-bottom: 3px solid #FF9500;
+  }
+
+  .page-title {
+    color: #001f4d;
+    font-weight: 700;
+    font-size: 28px;
+    margin-bottom: 10px;
+  }
+
+  .card {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+  }
+
+  .table {
+    margin: 0;
+  }
+
+  .table tbody tr:hover {
+    background-color: #f8f9fa;
+  }
+
+  .badge {
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-outline-primary {
+    color: #001f4d;
+    border-color: #001f4d;
+  }
+
+  .btn-outline-primary:hover {
+    background-color: #001f4d;
+    border-color: #001f4d;
+    color: white;
+  }
+
+  .gap-2 {
+    gap: 10px;
+    display: flex;
+  }
+
+  .text-right {
+    text-align: right;
+  }
+
+  .text-center {
+    text-align: center;
+  }
+
+  .text-muted {
+    color: #6c757d;
+  }
+
+  .progress-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+</style>
+
+{% endblock %}

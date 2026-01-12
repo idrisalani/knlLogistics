@@ -1,7 +1,7 @@
 {% extends 'partials/base.html' %}
 {% load static %}
 
-{% block title %}Record Payment - Kamrate Nigeria Limited{% endblock %}
+{% block title %}Edit Payment - Kamrate Nigeria Limited{% endblock %}
 
 {% block content %}
 
@@ -11,7 +11,7 @@
       <!-- Page Header -->
       <div class="mb-4">
         <h1 class="page-title mb-1">
-          <i class="fas fa-credit-card"></i> Record Payment
+          <i class="fas fa-edit"></i> Edit Payment
         </h1>
         <p class="text-muted">
           Invoice: <strong>{{ invoice.invoice_number }}</strong> | 
@@ -19,47 +19,45 @@
         </p>
       </div>
 
-      <!-- Invoice Summary Card -->
+      <!-- Original Payment Info Card -->
       <div class="card mb-4" style="border-left: 5px solid #FF9500; background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);">
         <div class="card-body">
           <div class="row">
             <div class="col-md-6">
-              <p><strong>Invoice Total:</strong></p>
-              <p style="font-size: 24px; color: #001f4d; font-weight: bold;">
-                ₦{{ invoice.total|floatformat:2 }}
+              <p><strong>Original Payment Amount:</strong></p>
+              <p style="font-size: 20px; color: #001f4d; font-weight: bold;">
+                ₦{{ payment.amount|floatformat:2 }}
               </p>
             </div>
-            <div class="col-md-6 text-right">
-              <p><strong>Amount Paid:</strong></p>
-              <p style="font-size: 24px; color: #0D7A3D; font-weight: bold;">
-                ₦{{ invoice.amount_paid|floatformat:2 }}
+            <div class="col-md-6">
+              <p><strong>Payment Date:</strong></p>
+              <p style="font-size: 16px; color: #666;">
+                {{ payment.payment_date|date:"d M Y" }}
               </p>
             </div>
           </div>
           <hr style="border-top: 2px dashed #ddd; margin: 15px 0;">
           <div class="row">
             <div class="col-md-6">
-              <p><strong>Outstanding Balance:</strong></p>
-              <p style="font-size: 20px; color: #DC3545; font-weight: bold;">
-                ₦{{ invoice.outstanding_balance|floatformat:2 }}
+              <p><strong>Payment Method:</strong></p>
+              <p style="font-size: 14px; color: #666;">
+                {{ payment.get_payment_method_display }}
               </p>
             </div>
-            <div class="col-md-6 text-right">
-              <p><strong>Payment Progress:</strong></p>
-              <div class="progress" style="height: 25px; margin-top: 5px;">
-                <div class="progress-bar" style="background-color: #0D7A3D; width: {% if invoice.total > 0 %}{{ invoice.amount_paid|add:0|mul:100|div:invoice.total }}{% else %}0{% endif %}%;">
-                  {{ invoice.amount_paid|add:0|mul:100|div:invoice.total|floatformat:0 }}%
-                </div>
-              </div>
+            <div class="col-md-6">
+              <p><strong>Reference Number:</strong></p>
+              <p style="font-size: 14px; color: #666;">
+                {{ payment.reference_number|default:"—" }}
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Payment Form Card -->
+      <!-- Edit Payment Form Card -->
       <div class="card shadow-sm border-0">
         <div class="card-header bg-primary text-white py-4" style="background-color: #001f4d !important;">
-          <h5 class="mb-0"><i class="fas fa-money-bill-wave"></i> Payment Details</h5>
+          <h5 class="mb-0"><i class="fas fa-money-bill-wave"></i> Update Payment Details</h5>
         </div>
 
         <div class="card-body p-4">
@@ -96,11 +94,12 @@
                     placeholder="50000" 
                     step="0.01" 
                     min="0.01"
+                    value="{{ payment.amount }}"
                     required 
                   />
                 </div>
                 <small class="text-muted">
-                  Outstanding balance: ₦{{ invoice.outstanding_balance|floatformat:2 }}
+                  Change the payment amount if needed
                 </small>
               </div>
 
@@ -127,7 +126,7 @@
                     class="form-control" 
                     id="payment_date" 
                     name="payment_date" 
-                    value="{% now 'Y-m-d' %}"
+                    value="{{ payment.payment_date|date:'Y-m-d' }}"
                     required 
                   />
                   <small class="text-muted">When was the payment made?</small>
@@ -139,11 +138,11 @@
                   </label>
                   <select class="form-select" id="payment_method" name="payment_method" required>
                     <option value="">-- Select Method --</option>
-                    <option value="bank_transfer">🏦 Bank Transfer</option>
-                    <option value="cash">💵 Cash</option>
-                    <option value="check">📋 Check</option>
-                    <option value="card">💳 Card</option>
-                    <option value="mobile_money">📱 Mobile Money</option>
+                    <option value="bank_transfer" {% if payment.payment_method == 'bank_transfer' %}selected{% endif %}>🏦 Bank Transfer</option>
+                    <option value="cash" {% if payment.payment_method == 'cash' %}selected{% endif %}>💵 Cash</option>
+                    <option value="check" {% if payment.payment_method == 'check' %}selected{% endif %}>📋 Check</option>
+                    <option value="card" {% if payment.payment_method == 'card' %}selected{% endif %}>💳 Card</option>
+                    <option value="mobile_money" {% if payment.payment_method == 'mobile_money' %}selected{% endif %}>📱 Mobile Money</option>
                   </select>
                   <small class="text-muted">How was payment made?</small>
                 </div>
@@ -159,6 +158,7 @@
                   id="reference_number" 
                   name="reference_number" 
                   placeholder="e.g., TRF001234, CHK456789"
+                  value="{{ payment.reference_number|default:'' }}"
                 />
                 <small class="text-muted">Bank reference, check number, or transaction ID</small>
               </div>
@@ -172,8 +172,7 @@
                   id="notes" 
                   name="notes" 
                   rows="3" 
-                  placeholder="e.g., Partial payment for Trip #123, Final settlement">
-                </textarea>
+                  placeholder="Add any additional notes about this payment">{{ payment.notes|default:'' }}</textarea>
                 <small class="text-muted">Add any additional notes about this payment</small>
               </div>
             </fieldset>
@@ -185,7 +184,7 @@
                   type="submit" 
                   class="btn btn-lg" 
                   style="background-color: #001f4d; color: white; min-width: 150px;">
-                  <i class="fas fa-save"></i> Record Payment
+                  <i class="fas fa-save"></i> Update Payment
                 </button>
 
                 <a 
@@ -193,6 +192,14 @@
                   class="btn btn-secondary btn-lg">
                   <i class="fas fa-times"></i> Cancel
                 </a>
+
+                <!-- Delete Button -->
+                <form method="post" action="{% url 'knlInvoice:delete-payment' payment.pk %}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this payment? This action cannot be undone.');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-danger btn-lg">
+                    <i class="fas fa-trash"></i> Delete
+                  </button>
+                </form>
               </div>
             </div>
           </form>
@@ -202,7 +209,7 @@
       <!-- Help Text -->
       <div class="alert alert-info mt-4" role="alert">
         <i class="fas fa-lightbulb"></i>
-        <strong>Tip:</strong> Enter the exact payment amount received. The system will automatically update the invoice status once full payment is recorded. You can record multiple partial payments.
+        <strong>Tip:</strong> Edit this payment record to correct details. The invoice status will be automatically updated based on the new payment amount.
       </div>
 
     </div>
@@ -286,6 +293,17 @@
     border-color: #545b62;
   }
 
+  .btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+  }
+
+  .btn-danger:hover {
+    background-color: #c82333;
+    border-color: #bd2130;
+  }
+
   .text-danger {
     color: #dc3545;
   }
@@ -295,19 +313,10 @@
     font-size: 0.85rem;
   }
 
-  .text-right {
-    text-align: right;
-  }
-
   .card {
     border-radius: 8px;
     overflow: hidden;
     border: 1px solid #e0e0e0;
-  }
-
-  .progress {
-    background-color: #e9ecef;
-    border-radius: 4px;
   }
 
   .gap-2 {
@@ -337,24 +346,18 @@
   // Real-time amount validation
   document.getElementById('amount').addEventListener('input', function() {
     const amount = parseFloat(this.value) || 0;
-    const outstanding = {{ invoice.outstanding_balance|floatformat:2 }};
+    const invoiceTotal = {{ invoice.total|floatformat:2 }};
     const warning = document.getElementById('amountWarning');
     const warningText = document.getElementById('warningText');
 
-    if (amount > outstanding && amount > 0) {
+    if (amount > invoiceTotal && amount > 0) {
       warning.style.display = 'block';
-      warningText.innerHTML = `Payment (₦${amount.toLocaleString('en-NG', {minimumFractionDigits: 2})}) exceeds outstanding balance (₦${outstanding.toLocaleString('en-NG', {minimumFractionDigits: 2})}). This will overpay the invoice.`;
-    } else if (amount === outstanding) {
-      warning.style.display = 'block';
-      warning.className = 'alert alert-success';
-      warningText.innerHTML = `<i class="fas fa-check-circle"></i> This payment will fully settle the invoice!`;
+      warning.className = 'alert alert-warning';
+      warningText.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Payment (₦${amount.toLocaleString('en-NG', {minimumFractionDigits: 2})}) exceeds invoice total (₦${invoiceTotal.toLocaleString('en-NG', {minimumFractionDigits: 2})}).`;
     } else {
       warning.style.display = 'none';
     }
   });
-
-  // Set default date to today
-  document.getElementById('payment_date').valueAsDate = new Date();
 </script>
 
 {% endblock %}

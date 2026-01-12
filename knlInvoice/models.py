@@ -4,6 +4,7 @@ from django.utils import timezone
 from django.urls import reverse
 from uuid import uuid4
 from django.contrib.auth.models import User
+from django.db.models import Sum
 
 
 class Truck(models.Model):
@@ -50,71 +51,180 @@ class Truck(models.Model):
 
 
 class Trip(models.Model):
-    """Model to track individual truck trips"""
-    
     STATUS_CHOICES = [
-        ('PLANNED', 'Planned'),
-        ('IN_PROGRESS', 'In Progress'),
-        ('COMPLETED', 'Completed'),
-        ('CANCELLED', 'Cancelled'),
+        ('pending', 'Pending'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
     ]
     
-    tripNumber = models.CharField(max_length=50, unique=True)  # e.g., TRIP-001-2026
-    truck = models.ForeignKey(Truck, on_delete=models.CASCADE, related_name='trips')
-    origin = models.CharField(max_length=100)  # e.g., Lagos
-    destination = models.CharField(max_length=100)  # e.g., Port Harcourt
-    distance = models.FloatField()  # Kilometers
+    # ========== USER FIELD (NEW) ==========
+    user = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='trips',
+        null=True,
+        blank=True,
+        help_text="User who owns this trip"
+    )
     
-    startDate = models.DateTimeField()
-    endDate = models.DateTimeField(null=True, blank=True)
-    status = models.CharField(choices=STATUS_CHOICES, default='PLANNED', max_length=50)
+    # ========== BASIC INFORMATION ==========
+    tripNumber = models.CharField(
+        max_length=20, 
+        unique=True,
+        help_text="Unique trip identifier e.g., TRIP-001-2026"
+    )
+    uniqueId = models.CharField(
+        max_length=50, 
+        unique=True, 
+        null=True, 
+        blank=True
+    )
+    truck = models.ForeignKey(
+        'Truck', 
+        on_delete=models.CASCADE,
+        help_text="Vehicle assigned to this trip"
+    )
     
-    cargoDescription = models.TextField(null=True, blank=True)
-    cargoWeight = models.FloatField(null=True, blank=True)  # Tons
+    # ========== ROUTE INFORMATION ==========
+    origin = models.CharField(
+        max_length=255,
+        help_text="Starting location e.g., Lagos"
+    )
+    destination = models.CharField(
+        max_length=255,
+        help_text="Destination location e.g., Port Harcourt"
+    )
+    distance = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2,
+        help_text="Distance in kilometers"
+    )
     
-    revenue = models.FloatField(default=0)  # Amount earned from this trip
-    notes = models.TextField(null=True, blank=True)
+    # ========== CARGO INFORMATION ==========
+    cargoDescription = models.TextField(
+        blank=True,  # ✅ FIXED: Allow blank
+        default='',  # ✅ FIXED: Default to empty string
+        help_text="Description of cargo being transported"
+    )
+    cargoWeight = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        null=True, 
+        blank=True,
+        help_text="Weight in kilograms"
+    )
     
-    # Utility fields
-    uniqueId = models.CharField(null=True, blank=True, max_length=100)
-    slug = models.SlugField(max_length=500, unique=True, blank=True, null=True)
-    date_created = models.DateTimeField(blank=True, null=True)
-    last_updated = models.DateTimeField(blank=True, null=True)
+    # ========== FINANCIAL INFORMATION ==========
+    revenue = models.DecimalField(
+        max_digits=15, 
+        decimal_places=2,
+        help_text="Trip revenue in Nigerian Naira"
+    )
+    
+    # ========== DATE/TIME FIELDS - WITH TIMEZONE SUPPORT ==========
+    startDate = models.DateTimeField(
+        null=True, 
+        blank=True,
+        help_text="Trip start date and time"
+    )
+    endDate = models.DateTimeField(
+        null=True, 
+        blank=True,
+        help_text="Trip end date and time"
+    )
+    
+    # ========== STATUS & NOTES ==========
+    status = models.CharField(
+        max_length=20, 
+        choices=STATUS_CHOICES, 
+        default='pending',
+        help_text="Current status of the trip"
+    )
+    notes = models.TextField(
+        blank=True,  # ✅ FIXED: Allow blank
+        default='',  # ✅ FIXED: Default to empty string
+        help_text="Additional notes about the trip"
+    )
+    
+    # ========== SYSTEM FIELDS - Auto timezone-aware ==========
+    date_created = models.DateTimeField(
+        auto_now_add=True,  # ✅ This auto-sets on creation
+        help_text="When this trip record was created"
+    )
+    last_updated = models.DateTimeField(
+        auto_now=True,  # ✅ This auto-updates on save
+        help_text="Last time this record was updated"
+    )
+    slug = models.SlugField(
+        unique=True, 
+        null=True, 
+        blank=True,
+        help_text="URL-friendly identifier"
+    )
+    
+    class Meta:
+        ordering = ['-date_created']
+        verbose_name = 'Trip'
+        verbose_name_plural = 'Trips'
+        indexes = [
+            models.Index(fields=['-date_created']),
+            models.Index(fields=['user', '-date_created']),
+        ]
     
     def __str__(self):
         return f"{self.tripNumber} - {self.origin} → {self.destination}"
     
     def get_total_expenses(self):
-        """Calculate total expenses for this trip"""
-        expenses = self.expenses.all()
-        return sum(expense.amount for expense in expenses)
+        """
+        Calculate total expenses for this trip.
+        
+        Returns:
+            float: Sum of all expense amounts for this trip
+        """
+        total = self.expenses.aggregate(
+            total=Sum('amount')
+        )['total']
+        return float(total) if total else 0.0
     
-    def get_profit_loss(self):
-        """Calculate profit or loss for this trip"""
-        return self.revenue - self.get_total_expenses()
+    def get_profit(self):
+        """
+        Calculate profit for this trip.
+        
+        Profit = Revenue - Expenses
+        
+        Returns:
+            float: Profit amount
+        """
+        return float(self.revenue) - self.get_total_expenses()
     
-    def get_profitability_percentage(self):
-        """Calculate profitability percentage"""
-        total_expenses = self.get_total_expenses()
-        if total_expenses == 0:
-            return 0
-        return ((self.revenue - total_expenses) / total_expenses) * 100
+    def get_profit_margin(self):
+        """
+        Calculate profit margin percentage.
+        
+        Profit Margin = (Profit / Revenue) * 100
+        
+        Returns:
+            float: Profit margin percentage
+        """
+        if float(self.revenue) > 0:
+            return (self.get_profit() / float(self.revenue)) * 100
+        return 0.0
+    
+    def is_completed(self):
+        """Check if trip is completed"""
+        return self.status == 'completed'
     
     def is_profitable(self):
-        """Check if trip is profitable"""
-        return self.get_profit_loss() > 0
+        """Check if trip made profit"""
+        return self.get_profit() > 0
     
-    def save(self, *args, **kwargs):
-        if self.date_created is None:
-            self.date_created = timezone.localtime(timezone.now())
-        if self.uniqueId is None:
-            self.uniqueId = str(uuid4()).split('-')[4]
-            self.slug = slugify(f"{self.tripNumber} {self.uniqueId}")
-        
-        self.slug = slugify(f"{self.tripNumber} {self.uniqueId}")
-        self.last_updated = timezone.localtime(timezone.now())
-        super(Trip, self).save(*args, **kwargs)
-
+    @property
+    def duration(self):
+        """Get trip duration if both dates are set"""
+        if self.startDate and self.endDate:
+            return self.endDate - self.startDate
+        return None
 
 class TripExpense(models.Model):
     """Model to track expenses for each trip"""
@@ -162,6 +272,7 @@ class Client(models.Model):
 
     STATES = [
         ('Lagos', 'Lagos'),
+        ('Ogun', 'Ogun'),
         ('Abuja', 'Abuja'),
         ('Kano', 'Kano'),
         ('Kaduna', 'Kaduna'),
@@ -362,12 +473,28 @@ class Invoice(models.Model):
         return self.status == 'paid' or self.outstanding_amount <= 0
     
     def calculate_totals(self):
-        """Recalculate totals from line items"""
-        items = self.items.all()
-        self.subtotal = sum(item.total for item in items)
-        self.tax_amount = self.subtotal * (self.tax_rate / 100)
-        self.total = self.subtotal + self.tax_amount
-        self.outstanding_amount = self.total - self.amount_paid
+        """Recalculate totals from line items - FIXED to handle new invoices without pk"""
+        
+        # ✅ FIXED: Check if invoice has been saved (has primary key)
+        if self.pk is None:
+            # For new invoices that haven't been saved yet, set defaults
+            self.subtotal = 0
+            self.tax_amount = 0
+            self.total = 0
+            self.outstanding_amount = 0
+            return
+        
+        # ✅ For existing invoices, calculate from items
+        try:
+            items = self.items.all()
+            self.subtotal = sum(item.total for item in items)
+            self.tax_amount = self.subtotal * (self.tax_rate / 100)
+            self.total = self.subtotal + self.tax_amount
+            self.outstanding_amount = self.total - self.amount_paid
+        except Exception as e:
+            # If anything goes wrong, just keep existing values
+            print(f"Error calculating totals: {e}")
+            pass
     
     def mark_as_paid(self, amount=None):
         """Mark invoice as paid or partially paid"""
@@ -393,8 +520,15 @@ class Invoice(models.Model):
         self.slug = slugify('{} {}'.format(self.invoice_number, self.uniqueId))
         self.last_updated = timezone.localtime(timezone.now())
         
-        # Calculate totals before saving
-        self.calculate_totals()
+        # ✅ FIXED: Only calculate totals if this is an EXISTING invoice
+        if self.pk:
+            self.calculate_totals()
+        else:
+            # For NEW invoices, set defaults (no items yet)
+            self.subtotal = 0
+            self.tax_amount = 0
+            self.total = 0
+            self.outstanding_amount = 0
         
         # Update status if overdue
         if self.is_overdue and self.status not in ['paid', 'cancelled']:

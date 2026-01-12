@@ -1,0 +1,373 @@
+{# Payment Reminder Email Template - knlInvoice/emails/payment_reminder_email.html #}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Reminder - Invoice {{ invoice.invoice_number }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #DC3545 0%, #c82333 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .content {
+            padding: 40px 20px;
+        }
+        
+        .greeting {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .greeting strong {
+            color: #DC3545;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #DC3545;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #FFD700;
+        }
+        
+        .alert-box {
+            background-color: #fff3cd;
+            border: 2px solid #FFC107;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .alert-box h2 {
+            color: #DC3545;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .alert-box p {
+            color: #856404;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        
+        .amount-due {
+            background-color: #f0f0f0;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 14px;
+            margin: 20px 0;
+        }
+        
+        .amount-due-label {
+            color: #666;
+            font-size: 12px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        
+        .amount-due-value {
+            color: #DC3545;
+            font-size: 32px;
+            font-weight: 700;
+        }
+        
+        .invoice-details {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .invoice-details-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .invoice-details-row:last-child {
+            border-bottom: none;
+        }
+        
+        .invoice-details-label {
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .invoice-details-value {
+            color: #333;
+            text-align: right;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background-color: #DC3545;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 700;
+            margin: 20px 0;
+            transition: background-color 0.3s;
+        }
+        
+        .cta-button:hover {
+            background-color: #c82333;
+        }
+        
+        .secondary-button {
+            display: inline-block;
+            background-color: #6c757d;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            margin-right: 10px;
+            font-size: 14px;
+        }
+        
+        .secondary-button:hover {
+            background-color: #5a6268;
+        }
+        
+        .payment-info {
+            background-color: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 3px;
+        }
+        
+        .payment-info strong {
+            color: #0056b3;
+        }
+        
+        .footer {
+            background-color: #f5f5f5;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #eee;
+        }
+        
+        .footer-section {
+            margin-bottom: 15px;
+        }
+        
+        .footer-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .company-info {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .overdue-text {
+            color: #DC3545;
+            font-weight: 700;
+        }
+        
+        .days-overdue {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-weight: 700;
+            font-size: 12px;
+        }
+        
+        @media only screen and (max-width: 600px) {
+            .container {
+                margin: 10px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .header {
+                padding: 30px 20px;
+            }
+            
+            .header h1 {
+                font-size: 22px;
+            }
+            
+            .alert-box h2 {
+                font-size: 20px;
+            }
+            
+            .amount-due-value {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>⚠️ Payment Reminder</h1>
+            <p>{{ company_name }}</p>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <!-- Greeting -->
+            <div class="greeting">
+                Hello <strong>{{ client.clientName|default:"Valued Client" }}</strong>,<br><br>
+                This is a friendly reminder that your payment is <strong>due</strong>. Please see the details below.
+            </div>
+            
+            <!-- Alert Box -->
+            <div class="alert-box">
+                <h2>Payment Due</h2>
+                {% if days_overdue > 0 %}
+                    <p>This invoice is <span class="days-overdue">{{ days_overdue }} day{{ days_overdue|pluralize }} overdue</span></p>
+                {% else %}
+                    <p>Your invoice is due soon. Please arrange payment.</p>
+                {% endif %}
+            </div>
+            
+            <!-- Amount Due -->
+            <div class="amount-due">
+                <div class="amount-due-label">Amount Outstanding</div>
+                <div class="amount-due-value">₦{{ outstanding_amount|floatformat:2 }}</div>
+            </div>
+            
+            <!-- Invoice Details -->
+            <div class="section">
+                <div class="section-title">Invoice Details</div>
+                <div class="invoice-details">
+                    <div class="invoice-details-row">
+                        <span class="invoice-details-label">Invoice Number:</span>
+                        <span class="invoice-details-value">#{{ invoice.invoice_number|default:invoice.id }}</span>
+                    </div>
+                    <div class="invoice-details-row">
+                        <span class="invoice-details-label">Invoice Date:</span>
+                        <span class="invoice-details-value">{{ invoice.date_created|date:"d M Y" }}</span>
+                    </div>
+                    {% if invoice.due_date %}
+                    <div class="invoice-details-row">
+                        <span class="invoice-details-label">Due Date:</span>
+                        <span class="invoice-details-value {% if days_overdue > 0 %}overdue-text{% endif %}">
+                            {{ invoice.due_date|date:"d M Y" }}
+                            {% if days_overdue > 0 %}(Overdue){% endif %}
+                        </span>
+                    </div>
+                    {% endif %}
+                    <div class="invoice-details-row">
+                        <span class="invoice-details-label">Total Amount:</span>
+                        <span class="invoice-details-value">₦{{ invoice.total|floatformat:2 }}</span>
+                    </div>
+                    <div class="invoice-details-row">
+                        <span class="invoice-details-label">Amount Paid:</span>
+                        <span class="invoice-details-value">₦{{ invoice.amount_paid|default:0|floatformat:2 }}</span>
+                    </div>
+                    <div class="invoice-details-row">
+                        <span class="invoice-details-label"><strong>Outstanding Balance:</strong></span>
+                        <span class="invoice-details-value"><strong>₦{{ outstanding_amount|floatformat:2 }}</strong></span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Payment Instructions -->
+            <div class="section">
+                <div class="section-title">How to Pay</div>
+                <div class="payment-info">
+                    <p style="margin: 0;">
+                        Please arrange payment of <strong>₦{{ outstanding_amount|floatformat:2 }}</strong> at your earliest convenience.<br><br>
+                        If you've already made payment, please disregard this reminder and accept our thanks.<br><br>
+                        If you have any questions or need assistance, please don't hesitate to contact us.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Call to Action -->
+            <div style="text-align: center;">
+                {% if invoice_url %}
+                <a href="{{ invoice_url }}" class="cta-button">Pay Now</a>
+                {% endif %}
+            </div>
+            
+            <!-- Contact Section -->
+            <div class="section">
+                <div class="section-title">Contact Us</div>
+                <p style="font-size: 14px; color: #666;">
+                    If you have already sent payment, please accept our thanks and disregard this reminder.<br><br>
+                    If you have any questions about this invoice or require assistance, please contact us:
+                </p>
+                <div style="text-align: center; margin-top: 15px;">
+                    📧 <strong>{{ company_email }}</strong><br>
+                    {% if company_phone %}📱 <strong>{{ company_phone }}</strong>{% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-section company-info">
+                {{ company_name }}
+            </div>
+            <div class="footer-section">
+                📧 {{ company_email }}<br>
+                {% if company_phone %}📱 {{ company_phone }}<br>{% endif %}
+                {% if company_address %}📍 {{ company_address }}{% endif %}
+            </div>
+            <div class="footer-section" style="font-size: 11px; color: #999;">
+                This is an automated email. Please do not reply to this address.
+            </div>
+        </div>
+    </div>
+</body>
+</html>
