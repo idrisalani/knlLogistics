@@ -73,6 +73,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Static files in production
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -391,7 +392,7 @@ else:
     # Email uses SMTP
     pass
 
-
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 # ============================================================================
 # END OF SETTINGS
 # ============================================================================
