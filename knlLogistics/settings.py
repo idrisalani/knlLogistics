@@ -392,7 +392,7 @@ else:
     # Email uses SMTP
     pass
 
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 # ============================================================================
 # END OF SETTINGS
 # ============================================================================
