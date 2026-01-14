@@ -73,7 +73,6 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',  # Static files in production
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -187,7 +186,7 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # WhiteNoise static file storage for production
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
 # Media files (user uploads)
 MEDIA_URL = '/uploads/'
@@ -391,8 +390,6 @@ else:
     # Database uses PostgreSQL
     # Email uses SMTP
     pass
-
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 # ============================================================================
 # END OF SETTINGS
 # ============================================================================
