@@ -279,9 +279,20 @@ class ClientForm(forms.ModelForm):
 
 class ProductForm(forms.ModelForm):
     """Form for managing products and services"""
+    
+    category = forms.ChoiceField(
+        choices=Product.CATEGORY_CHOICES,
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'required': True
+        }),
+        label='Category',
+        help_text='Classify the product/service'
+    )
+    
     class Meta:
         model = Product
-        fields = ['title', 'description', 'quantity', 'price', 'currency']
+        fields = ['title', 'description', 'category', 'quantity', 'price', 'currency']
         
         widgets = {
             'title': forms.TextInput(attrs={
@@ -297,11 +308,13 @@ class ProductForm(forms.ModelForm):
             'quantity': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Quantity',
+                'step': '0.01'
             }),
             'price': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Price',
-                'step': '0.01'
+                'step': '0.01',
+                'required': True
             }),
             'currency': forms.Select(attrs={
                 'class': 'form-control',
