@@ -181,14 +181,30 @@ DATETIME_INPUT_FORMATS = [
 # ============================================================================
 # WhiteNoise handles static files in production
 
-STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+# STATIC_URL = '/static/'
+# STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+# STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# WhiteNoise static file storage for production
+# # WhiteNoise static file storage for production
+# STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
+# # Media files (user uploads)
+# MEDIA_URL = '/uploads/'
+# MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')
+
+
+# # In settings.py, find STATIC configuration and update:
+
+STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+
+# Ensure WhiteNoise is configured
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
 
-# Media files (user uploads)
+# Add this for image handling
 MEDIA_URL = '/uploads/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'uploads')
 
