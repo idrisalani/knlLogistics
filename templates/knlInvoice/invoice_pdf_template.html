@@ -368,9 +368,9 @@
                 <div class="company-details">
                     <p><strong>Kamrate Nigeria Limited</strong></p>
                     <p>Transportation & Logistics Services</p>
-                    <p>{{ company_address }}</p>
-                    <p>Phone: {{ company_phone }}</p>
-                    <p>Email: {{ company_email }}</p>
+                    <p>{{ company_address|default:"123 Business Street, Lagos, Nigeria" }}</p>
+                    <p>Phone: {{ company_phone|default:"+234 XXX XXXX XXX" }}</p>
+                    <p>Email: {{ company_email|default:"info@kamrate.ng" }}</p>
                 </div>
             </div>
             <div class="invoice-badge">
@@ -387,7 +387,15 @@
             </div>
             <div class="date-item">
                 <div class="date-label">Due Date</div>
-                <div class="date-value">{{ invoice.dueDate|date:"d F Y"|default:"Upon Receipt" }}</div>
+                <div class="date-value">
+                    {% if invoice.dueDate %}
+                        {{ invoice.dueDate|date:"d F Y" }}
+                    {% elif invoice.due_date %}
+                        {{ invoice.due_date|date:"d F Y" }}
+                    {% else %}
+                        Upon Receipt
+                    {% endif %}
+                </div>
             </div>
             {% if invoice.reference_number %}
             <div class="date-item">
@@ -403,14 +411,24 @@
                 <div class="client-block-title">Bill To</div>
                 <div class="client-block-content">
                     <div class="client-name">{{ invoice.client.clientName }}</div>
-                    {% if invoice.client.email %}
-                    <p class="client-detail">{{ invoice.client.email }}</p>
+                    
+                    <!-- EMAIL - Try both field name variations -->
+                    {% if invoice.client.emailAddress %}
+                        <p class="client-detail">{{ invoice.client.emailAddress }}</p>
+                    {% elif invoice.client.email %}
+                        <p class="client-detail">{{ invoice.client.email }}</p>
                     {% endif %}
-                    {% if invoice.client.phone %}
-                    <p class="client-detail">{{ invoice.client.phone }}</p>
+                    
+                    <!-- PHONE - Try both field name variations -->
+                    {% if invoice.client.phoneNumber %}
+                        <p class="client-detail">{{ invoice.client.phoneNumber }}</p>
+                    {% elif invoice.client.phone %}
+                        <p class="client-detail">{{ invoice.client.phone }}</p>
                     {% endif %}
+                    
+                    <!-- ADDRESS - Try both field name variations -->
                     {% if invoice.client.address %}
-                    <p class="client-detail">{{ invoice.client.address }}</p>
+                        <p class="client-detail">{{ invoice.client.address }}</p>
                     {% endif %}
                 </div>
             </div>
@@ -419,11 +437,11 @@
                 <div class="client-block-title">Payment Details</div>
                 <div class="client-block-content">
                     <p><strong>Bank Name:</strong></p>
-                    <p class="client-detail">{{ bank_name }}</p>
+                    <p class="client-detail">{{ bank_name|default:"Access Bank" }}</p>
                     <p style="margin-top: 8px;"><strong>Account Name:</strong></p>
-                    <p class="client-detail">{{ account_name }}</p>
+                    <p class="client-detail">{{ account_name|default:"Kamrate Nigeria Limited" }}</p>
                     <p style="margin-top: 8px;"><strong>Account Number:</strong></p>
-                    <p class="client-detail">{{ account_number }}</p>
+                    <p class="client-detail">{{ account_number|default:"0123456789" }}</p>
                 </div>
             </div>
         </div>
@@ -440,47 +458,75 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for item in invoice.invoiceitem_set.all %}
-                    <tr>
-                        <td>
-                            <div class="item-description">{{ item.product.title }}</div>
-                            {% if item.description %}
-                            <div class="item-notes">{{ item.description }}</div>
-                            {% endif %}
-                        </td>
-                        <td class="text-center">
-                            {% if item.quantity %}
-                                {{ item.quantity }}
-                            {% else %}
-                                1
-                            {% endif %}
-                        </td>
-                        <td class="text-right">
-                            <span class="currency">
-                                {% if item.unit_price %}
-                                    {{ item.unit_price|floatformat:0 }}
-                                {% else %}
-                                    {{ item.product.price|floatformat:0 }}
+                    <!-- Try both relationship names: invoiceitem_set and items -->
+                    {% with items=invoice.items.all|default:invoice.invoiceitem_set.all %}
+                        {% for item in items %}
+                        <tr>
+                            <td>
+                                <!-- Display description or product title -->
+                                <div class="item-description">
+                                    {% if item.description %}
+                                        {{ item.description }}
+                                    {% elif item.product.title %}
+                                        {{ item.product.title }}
+                                    {% else %}
+                                        Unnamed Item
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Show product reference if different from description -->
+                                {% if item.product and item.description != item.product.title %}
+                                    <div class="item-notes">Product: {{ item.product.title }}</div>
                                 {% endif %}
-                            </span>
-                        </td>
-                        <td class="text-right">
-                            <span class="currency">
-                                {% if item.get_line_total %}
-                                    {{ item.get_line_total|floatformat:0 }}
+                            </td>
+                            
+                            <!-- QUANTITY - With fallback -->
+                            <td class="text-center">
+                                {% if item.quantity %}
+                                    {{ item.quantity }}
                                 {% else %}
-                                    {{ item.product.price|floatformat:0 }}
+                                    1
                                 {% endif %}
-                            </span>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="4" style="text-align: center; padding: 20px; color: #999;">
-                            No items in this invoice
-                        </td>
-                    </tr>
-                    {% endfor %}
+                            </td>
+                            
+                            <!-- UNIT PRICE - With fallback to product price -->
+                            <td class="text-right">
+                                <span class="currency">
+                                    {% if item.unit_price %}
+                                        {{ item.unit_price|floatformat:0 }}
+                                    {% elif item.product.price %}
+                                        {{ item.product.price|floatformat:0 }}
+                                    {% else %}
+                                        0
+                                    {% endif %}
+                                </span>
+                            </td>
+                            
+                            <!-- TOTAL - With multiple fallback options -->
+                            <td class="text-right">
+                                <span class="currency">
+                                    {% if item.get_line_total %}
+                                        {{ item.get_line_total|floatformat:0 }}
+                                    {% elif item.total %}
+                                        {{ item.total|floatformat:0 }}
+                                    {% else %}
+                                        {% with qty=item.quantity|default:1 %}
+                                            {% with price=item.unit_price|default:item.product.price|default:0 %}
+                                                {{ qty|floatformat:0 }} × {{ price|floatformat:0 }}
+                                            {% endwith %}
+                                        {% endwith %}
+                                    {% endif %}
+                                </span>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; padding: 20px; color: #999;">
+                                No items in this invoice
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% endwith %}
                 </tbody>
             </table>
         </div>
@@ -492,9 +538,16 @@
                     <tr class="totals-subtotal">
                         <td class="totals-label">Subtotal:</td>
                         <td class="totals-value">
-                            <span class="currency">{{ invoice.subtotal|floatformat:0|default:"0" }}</span>
+                            <span class="currency">
+                                {% if invoice.subtotal %}
+                                    {{ invoice.subtotal|floatformat:0 }}
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </span>
                         </td>
                     </tr>
+                    
                     {% if invoice.discount_amount %}
                     <tr>
                         <td class="totals-label">Discount:</td>
@@ -503,17 +556,34 @@
                         </td>
                     </tr>
                     {% endif %}
+                    
                     <!-- VAT 7.5% -->
                     <tr class="totals-vat">
                         <td class="totals-label">VAT (7.5%):</td>
                         <td class="totals-value">
-                            <span class="currency">{{ vat_amount|floatformat:0 }}</span>
+                            <span class="currency">
+                                {% if vat_amount %}
+                                    {{ vat_amount|floatformat:0 }}
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </span>
                         </td>
                     </tr>
+                    
+                    <!-- TOTAL -->
                     <tr class="totals-total">
                         <td class="totals-label">TOTAL DUE (Inc. VAT):</td>
                         <td class="totals-value">
-                            <span class="currency">{{ total_with_vat|floatformat:0|default:"0" }}</span>
+                            <span class="currency">
+                                {% if total_with_vat %}
+                                    {{ total_with_vat|floatformat:0 }}
+                                {% elif invoice.total %}
+                                    {{ invoice.total|floatformat:0 }}
+                                {% else %}
+                                    0
+                                {% endif %}
+                            </span>
                         </td>
                     </tr>
                 </table>
@@ -532,10 +602,11 @@
         <div class="notes-section">
             <h3>Payment Terms & Conditions</h3>
             <p>
-                Payment is due within 30 days of invoice date. Late payments may incur interest charges. 
-                Please reference the invoice number with your payment. VAT of 7.5% is included in the total above.
                 {% if invoice.payment_terms %}
                     {{ invoice.payment_terms }}
+                {% else %}
+                    Payment is due within 30 days of invoice date. Late payments may incur interest charges. 
+                    Please reference the invoice number with your payment. VAT of 7.5% is included in the total above.
                 {% endif %}
             </p>
         </div>
@@ -545,17 +616,17 @@
             <div class="signature-block">
                 <div class="signature-item">
                     <div class="signature-line"></div>
-                    <div class="signature-label">{{ authorized_person_name }}</div>
-                    <div class="signature-designation">{{ authorized_person_designation }}</div>
+                    <div class="signature-label">{{ authorized_person_name|default:"Authorized Signatory" }}</div>
+                    <div class="signature-designation">{{ authorized_person_designation|default:"Finance Manager" }}</div>
                 </div>
             </div>
             
             <!-- Additional Contact & Bank Info -->
             <div style="margin-top: 30px; font-size: 10px; color: #666; padding-top: 15px; border-top: 1px solid #ddd;">
-                <p style="margin: 3px 0;"><strong>TIN:</strong> {{ tin_number }}</p>
-                <p style="margin: 3px 0;"><strong>Account Name:</strong> {{ account_name }}</p>
-                <p style="margin: 3px 0;"><strong>Account Number:</strong> {{ account_number }}</p>
-                <p style="margin: 3px 0;"><strong>Bank:</strong> {{ bank_name }}</p>
+                <p style="margin: 3px 0;"><strong>TIN:</strong> {{ tin_number|default:"TIN: XXXXXXXXXX" }}</p>
+                <p style="margin: 3px 0;"><strong>Account Name:</strong> {{ account_name|default:"Kamrate Nigeria Limited" }}</p>
+                <p style="margin: 3px 0;"><strong>Account Number:</strong> {{ account_number|default:"0123456789" }}</p>
+                <p style="margin: 3px 0;"><strong>Bank:</strong> {{ bank_name|default:"Access Bank" }}</p>
             </div>
         </div>
         

@@ -160,9 +160,24 @@
     color: #084298;
   }
 
+  .status-draft {
+    background-color: #e2e3e5;
+    color: #383d41;
+  }
+
+  .status-pending {
+    background-color: #fff3cd;
+    color: #664d03;
+  }
+
+  .status-sent {
+    background-color: #cfe2ff;
+    color: #084298;
+  }
+
   .action-buttons {
     display: flex;
-    gap: 5px;
+    gap: 8px;
   }
 
   .btn-sm {
@@ -172,13 +187,15 @@
     border: none;
     cursor: pointer;
     transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
   }
 
   .btn-view {
     background-color: var(--kamrate-blue);
     color: white;
-    text-decoration: none;
-    display: inline-block;
   }
 
   .btn-view:hover {
@@ -188,8 +205,6 @@
   .btn-edit {
     background-color: var(--kamrate-orange);
     color: white;
-    text-decoration: none;
-    display: inline-block;
   }
 
   .btn-edit:hover {
@@ -282,20 +297,29 @@
           <tbody>
             {% for invoice in invoices %}
             <tr>
-              <td class="invoice-id">{{ invoice.number }}</td>
+              <td class="invoice-id">{{ invoice.invoice_number }}</td>
               <td>{{ invoice.client.clientName }}</td>
               <td>{{ invoice.date_created|date:"d M Y" }}</td>
-              <td>{{ invoice.dueDate|date:"d M Y" }}</td>
-              <td class="invoice-amount">₦{{ invoice.product.price|floatformat:0 }}</td>
+              <td>{{ invoice.due_date|date:"d M Y" }}</td>
+              <td class="invoice-amount">₦{{ invoice.total|floatformat:0 }}</td>
               <td>
                 <span class="status-badge status-{{ invoice.status|lower }}">
-                  {{ invoice.get_status_display }}
+                  {% if invoice.status == 'paid' %}PAID
+                  {% elif invoice.status == 'pending' %}PENDING
+                  {% elif invoice.status == 'draft' %}DRAFT
+                  {% elif invoice.status == 'sent' %}SENT
+                  {% elif invoice.status == 'overdue' %}OVERDUE
+                  {% else %}{{ invoice.status|upper }}{% endif %}
                 </span>
               </td>
               <td>
                 <div class="action-buttons">
-                  <a href="{% url 'knlInvoice:invoice-detail' invoice.pk %}" class="btn-sm btn-view">View</a>
-                  <a href="{% url 'knlInvoice:invoice-update' invoice.pk %}" class="btn-sm btn-edit">Edit</a>
+                  <a href="{% url 'knlInvoice:invoice-detail' invoice.pk %}" class="btn-sm btn-view">
+                    <i class="fas fa-eye"></i> View
+                  </a>
+                  <a href="{% url 'knlInvoice:invoice-update' invoice.pk %}" class="btn-sm btn-edit">
+                    <i class="fas fa-edit"></i> Edit
+                  </a>
                 </div>
               </td>
             </tr>

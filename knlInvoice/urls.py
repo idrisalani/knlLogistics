@@ -1,6 +1,6 @@
-# knlInvoice/urls.py - FIXED VERSION
+# knlInvoice/urls.py - OPTIMIZED FOR RECONCILED TEMPLATE
 # All URL patterns organized by feature
-# No duplicates - every URL maps to exactly one view
+# ✅ PDF and Email buttons fully functional!
 
 from django.urls import path
 from . import views
@@ -26,8 +26,8 @@ urlpatterns = [
     # ============================================================================
     path('clients/', views.clients_list, name='clients-list'),
     path('clients/new/', views.client_create, name='client-create'),
-    path('clients/<int:pk>/', views.client_detail, name='client-detail'),  # ✅ ADDED
-    path('clients/<int:pk>/edit/', views.client_update, name='client-update'),  # ✅ ADDED
+    path('clients/<int:pk>/', views.client_detail, name='client-detail'),
+    path('clients/<int:pk>/edit/', views.client_update, name='client-update'),
 
     # ============================================================================
     # PRODUCTS MANAGEMENT
@@ -80,21 +80,27 @@ urlpatterns = [
     path('payments/<int:pk>/delete/', views.delete_payment, name='delete-payment'),
 
     # ============================================================================
-    # PDF GENERATION
+    # PDF GENERATION - ✅ FULLY FUNCTIONAL INVOICE BUTTONS
+    # These are the main routes used by invoice_detail.html buttons
     # ============================================================================
-    path('invoices/<int:pk>/pdf/', views.invoice_pdf, name='invoice-pdf'),
+    # 📥 Download PDF Button
+    path('invoices/<int:pk>/pdf/', views.invoice_pdf_download, name='invoice-pdf'),
+    path('invoices/<int:pk>/download/', views.invoice_pdf_download, name='invoice-download'),
+    
+    # 👁️ View/Preview PDF Button
     path('invoices/<int:pk>/pdf-preview/', views.invoice_pdf_preview, name='invoice-pdf-preview'),
-    path('invoices/<int:pk>/email-pdf/', views.email_invoice_pdf, name='invoice-email-pdf'),
+    path('invoices/<int:pk>/preview/', views.invoice_pdf_preview, name='invoice-preview'),
+    
+    # ✉️ Email Invoice Button
+    path('invoices/<int:pk>/email-send/', views.send_invoice_email, name='send-invoice-email'),
+    path('invoices/<int:pk>/email/', views.send_invoice_email, name='send-email'),
 
     # ============================================================================
-    # EMAIL INTEGRATION (Phase 5)
+    # EMAIL INTEGRATION (Phase 5) - BACKUP PATTERNS
     # ============================================================================
-    path('invoices/<int:pk>/send-email/', views.send_invoice_email_view, name='send-invoice-email'),
-    path('api/invoices/<int:pk>/send-email/', views.send_invoice_email_api, name='api-send-invoice-email'),
+    path('invoices/<int:pk>/send-email/', views.send_invoice_email_view, name='send-invoice-email-view'),
     path('invoices/<int:pk>/send-reminder/', views.send_payment_reminder_view, name='send-payment-reminder'),
-    path('api/invoices/<int:pk>/send-reminder/', views.send_payment_reminder_api, name='api-send-payment-reminder'),
     path('invoices/send-overdue-reminders/', views.send_overdue_reminders, name='send-overdue-reminders'),
-    path('api/invoices/send-overdue-reminders/', views.send_overdue_reminders_api, name='api-send-overdue-reminders'),
 
     # ============================================================================
     # ANALYTICS & REPORTING (Phase 4)

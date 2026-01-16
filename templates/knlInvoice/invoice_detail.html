@@ -4,6 +4,9 @@
 {% block title %}Invoice {{ invoice.invoice_number }} - Kamrate Nigeria Limited{% endblock %}
 
 {% block css %}
+<!-- Font Awesome for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
 <style>
   /* ===== ROOT COLORS ===== */
   :root {
@@ -82,7 +85,7 @@
     margin-bottom: 0;
   }
 
-  /* ===== ACTIONS CARD ===== */
+  /* ===== ACTIONS CARD (IMPROVED) ===== */
   .invoice-actions-card {
     background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
     border: 2px solid var(--kamrate-orange);
@@ -94,14 +97,128 @@
 
   .invoice-actions-card h3 {
     color: var(--kamrate-blue);
-    margin-bottom: 15px;
+    margin-bottom: 20px;
     font-size: 0.95rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.5px;
   }
 
-  /* ===== BUTTON STYLING ===== */
+  .invoice-actions-card h3 i {
+    margin-right: 8px;
+    color: var(--kamrate-orange);
+  }
+
+  /* ===== ACTION BUTTONS (IMPROVED WITH ICONS) ===== */
+  .action-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+  }
+
+  .action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 20px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    text-align: center;
+    position: relative;
+  }
+
+  .action-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  }
+
+  .action-btn:active {
+    transform: translateY(-1px);
+  }
+
+  /* Icon styling */
+  .action-btn i {
+    font-size: 1.3rem;
+    width: 1.3rem;
+    height: 1.3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .action-btn span {
+    flex: 1;
+  }
+
+  /* ===== BUTTON VARIANTS ===== */
+  .action-btn.download {
+    background: linear-gradient(135deg, #FF9500 0%, #E68A00 100%);
+    color: white;
+  }
+
+  .action-btn.download:hover {
+    background: linear-gradient(135deg, #E68A00 0%, #CC7A00 100%);
+  }
+
+  .action-btn.download i::before {
+    content: "\f56e";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+  }
+
+  .action-btn.preview {
+    background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+    color: white;
+  }
+
+  .action-btn.preview:hover {
+    background: linear-gradient(135deg, #1976D2 0%, #1565C0 100%);
+  }
+
+  .action-btn.preview i::before {
+    content: "\f06e";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+  }
+
+  .action-btn.email {
+    background: linear-gradient(135deg, #4CAF50 0%, #388E3C 100%);
+    color: white;
+  }
+
+  .action-btn.email:hover {
+    background: linear-gradient(135deg, #388E3C 0%, #2E7D32 100%);
+  }
+
+  .action-btn.email i::before {
+    content: "\f0e0";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+  }
+
+  .action-btn.print {
+    background: linear-gradient(135deg, #666666 0%, #555555 100%);
+    color: white;
+  }
+
+  .action-btn.print:hover {
+    background: linear-gradient(135deg, #555555 0%, #444444 100%);
+  }
+
+  .action-btn.print i::before {
+    content: "\f02f";
+    font-family: "Font Awesome 6 Free";
+    font-weight: 900;
+  }
+
+  /* ===== BUTTON STYLING (General) ===== */
   .btn {
     border-radius: 8px;
     font-weight: 700;
@@ -376,6 +493,10 @@
       flex: 0 0 100%;
       max-width: 100%;
     }
+
+    .action-buttons {
+      grid-template-columns: repeat(2, 1fr);
+    }
   }
 
   @media (max-width: 768px) {
@@ -406,11 +527,18 @@
     .btn {
       padding: 10px 16px;
       font-size: 0.9rem;
-      width: 100%;
     }
 
     .invoice-actions-card {
       padding: 15px;
+    }
+
+    .action-buttons {
+      grid-template-columns: 1fr;
+    }
+
+    .action-btn {
+      width: 100%;
     }
   }
 </style>
@@ -441,62 +569,42 @@
               {% else %}#6c757d{% endif %};
             padding: 8px 12px;
           ">
-            {{ invoice.get_status_display|upper }}
+            {{ invoice.status|upper }}
           </span>
         </div>
       </div>
 
-      <!-- PDF ACTIONS CARD -->
+      <!-- ACTION BUTTONS CARD WITH ICONS -->
       <div class="invoice-actions-card">
-        <h3>📄 Invoice Actions</h3>
+        <h3><i class="fas fa-cogs"></i> Invoice Actions</h3>
 
-        <div style="
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-          gap: 10px;
-        ">
-          <!-- Download PDF -->
-          <a href="{% url 'knlInvoice:invoice-pdf' invoice.pk %}" class="btn" style="
-            background-color: #ff9500;
-            color: white;
-          "
-          onmouseover="this.style.backgroundColor='#E68A00'"
-          onmouseout="this.style.backgroundColor='#FF9500'">
-            📥 Download PDF
+        <div class="action-buttons">
+          <!-- Download PDF Button -->
+          <a href="{% url 'knlInvoice:invoice-pdf' invoice.pk %}" class="action-btn download" title="Download invoice as PDF file">
+            <i class="fas fa-download"></i>
+            <span>Download PDF</span>
           </a>
 
-          <!-- View PDF -->
-          <a href="{% url 'knlInvoice:invoice-pdf-preview' invoice.pk %}" target="_blank" class="btn" style="
-            background-color: #2196f3;
-            color: white;
-          "
-          onmouseover="this.style.backgroundColor='#0b7dda'"
-          onmouseout="this.style.backgroundColor='#2196F3'">
-            👁️ View PDF
+          <!-- View PDF Button -->
+          <a href="{% url 'knlInvoice:invoice-pdf-preview' invoice.pk %}" target="_blank" class="action-btn preview" title="View invoice in browser">
+            <i class="fas fa-eye"></i>
+            <span>View PDF</span>
           </a>
 
-          <!-- Email PDF -->
-          <form method="POST" action="{% url 'knlInvoice:invoice-email-pdf' invoice.pk %}" style="display: contents;">
+          <!-- Email Invoice Button -->
+          <form method="POST" action="{% url 'knlInvoice:send-invoice-email' invoice.pk %}" style="display: contents;">
             {% csrf_token %}
-            <button type="submit" class="btn" style="
-              background-color: #4caf50;
-              color: white;
-            "
-            onmouseover="this.style.backgroundColor='#45a049'"
-            onmouseout="this.style.backgroundColor='#4CAF50'"
-            onclick="return confirm('Email to {{ invoice.client.emailAddress }}?');">
-              📧 Email Invoice
+            <button type="submit" class="action-btn email" title="Email invoice to client" onclick="return confirm('Email invoice to {{ invoice.client.emailAddress }}?');">
+              <i class="fas fa-envelope"></i>
+              <span>Email Invoice</span>
             </button>
           </form>
 
-          <!-- Print -->
-          <button onclick="window.print()" class="btn" style="
-            background-color: #666;
-            color: white;
-          "
-          onmouseover="this.style.backgroundColor='#555'"
-          onmouseout="this.style.backgroundColor='#666'">
-            🖨️ Print
+          <!-- Print Button - ✅ FIXED: Now prints the PDF, not the page -->
+          <button onclick="printInvoicePDF('{% url 'knlInvoice:invoice-pdf-preview' invoice.pk %}')" 
+                  class="action-btn print" title="Print invoice PDF">
+            <i class="fas fa-print"></i>
+            <span>Print</span>
           </button>
         </div>
       </div>
@@ -565,13 +673,13 @@
                           <strong>₦{{ item.total|floatformat:2 }}</strong>
                         </td>
                         <td class="text-center">
-                          <a href="{% url 'knlInvoice:edit-invoice-item' invoice.pk item.pk %}" class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-edit"></i>
+                          <a href="{% url 'knlInvoice:edit-invoice-item' invoice.pk item.pk %}" class="btn btn-sm btn-outline-primary" title="Edit item">
+                            <i class="fas fa-edit"></i> Edit
                           </a>
                           <form method="post" action="{% url 'knlInvoice:delete-invoice-item' invoice.pk item.pk %}" style="display: inline;" onsubmit="return confirm('Delete this item?');">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-outline-danger">
-                              <i class="fas fa-trash"></i>
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete item">
+                              <i class="fas fa-trash"></i> Delete
                             </button>
                           </form>
                         </td>
@@ -624,7 +732,7 @@
                   <p><strong>Date Created:</strong> {{ invoice.date_created|date:"d M Y" }}</p>
                   <p><strong>Status:</strong> 
                     <span class="badge badge-{{ invoice.status }}">
-                      {{ invoice.get_status_display }}
+                      {{ invoice.status|upper }}
                     </span>
                   </p>
                 </div>
@@ -705,7 +813,7 @@
                         <td class="text-center">
                           <form method="post" action="{% url 'knlInvoice:delete-payment' payment.pk %}" style="display: inline;" onsubmit="return confirm('Delete this payment?');">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                            <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete payment">
                               <i class="fas fa-trash"></i>
                             </button>
                           </form>
@@ -758,5 +866,33 @@
     </div>
   </div>
 </div>
+
+<!-- ✅ JAVASCRIPT FOR PRINT PDF FUNCTIONALITY -->
+<script>
+/**
+ * Print Invoice PDF
+ * Opens PDF in new tab and triggers print dialog
+ * Then closes the tab after printing
+ */
+function printInvoicePDF(pdfUrl) {
+  const printWindow = window.open(pdfUrl, '_blank');
+  
+  if (printWindow) {
+    // Wait for PDF to load, then print
+    printWindow.onload = function() {
+      setTimeout(function() {
+        printWindow.print();
+        // Close window after print dialog closes
+        printWindow.onafterprint = function() {
+          printWindow.close();
+        };
+      }, 250);
+    };
+  } else {
+    // Fallback if popup blocked
+    alert('Please allow popups to print the invoice.');
+  }
+}
+</script>
 
 {% endblock %}

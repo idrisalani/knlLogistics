@@ -1,0 +1,711 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %}KNL-{{ invoice.client.clientName|truncatewords:2 }} - Invoice {{ invoice.invoice_number }}{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  :root {
+    --kamrate-orange: #FF9500;
+    --kamrate-blue: #001F4D;
+    --kamrate-green: #0D7A3D;
+    --border-color: #e0e0e0;
+  }
+
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f5f5f5;
+    padding: 20px;
+  }
+
+  .print-container {
+    background: white;
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 40px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  }
+
+  /* ===== HEADER SECTION ===== */
+  .invoice-header {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 3px solid var(--kamrate-orange);
+    align-items: start;
+  }
+
+  .logo-section {
+    text-align: center;
+  }
+
+  .logo-section img {
+    max-width: 120px;
+    height: auto;
+    margin-bottom: 10px;
+  }
+
+  .company-name {
+    color: var(--kamrate-blue);
+    font-size: 12px;
+    font-weight: 700;
+    text-align: center;
+    letter-spacing: 2px;
+  }
+
+  .invoice-title {
+    text-align: center;
+  }
+
+  .invoice-title h1 {
+    color: var(--kamrate-blue);
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+  }
+
+  .invoice-title p {
+    color: #666;
+    font-size: 13px;
+  }
+
+  .invoice-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-size: 12px;
+  }
+
+  .invoice-meta-item {
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .invoice-meta-item strong {
+    color: var(--kamrate-blue);
+    min-width: 80px;
+  }
+
+  /* ===== CLIENT INFO SECTION ===== */
+  .client-info-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 30px;
+  }
+
+  .client-info {
+    font-size: 12px;
+  }
+
+  .client-info h3 {
+    color: var(--kamrate-blue);
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .client-info p {
+    margin-bottom: 5px;
+    line-height: 1.6;
+  }
+
+  .client-info strong {
+    color: var(--kamrate-blue);
+  }
+
+  /* ===== ITEMS TABLE ===== */
+  .items-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+    font-size: 12px;
+  }
+
+  .items-table thead {
+    background-color: var(--kamrate-blue);
+    color: white;
+  }
+
+  .items-table th {
+    padding: 12px 10px;
+    text-align: left;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid var(--border-color);
+  }
+
+  .items-table td {
+    padding: 12px 10px;
+    border: 1px solid var(--border-color);
+    vertical-align: top;
+  }
+
+  .items-table tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+
+  .items-table tbody tr:hover {
+    background-color: #f0f0f0;
+  }
+
+  .items-table tbody tr:last-child td {
+    font-weight: 700;
+    background-color: #e3f2fd;
+    border: 2px solid var(--kamrate-orange);
+  }
+
+  .text-right {
+    text-align: right;
+  }
+
+  .text-center {
+    text-align: center;
+  }
+
+  /* ===== SUMMARY SECTION ===== */
+  .invoice-summary {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 30px;
+    margin-bottom: 30px;
+  }
+
+  .summary-notes {
+    font-size: 12px;
+  }
+
+  .summary-notes h3 {
+    color: var(--kamrate-blue);
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+  }
+
+  .summary-notes p {
+    line-height: 1.6;
+    color: #666;
+  }
+
+  .summary-totals {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    font-size: 12px;
+  }
+
+  .total-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 8px;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  .total-row.total-final {
+    background-color: #e3f2fd;
+    border: 2px solid var(--kamrate-orange);
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 14px;
+    padding: 12px;
+  }
+
+  .total-row.total-final .label {
+    color: var(--kamrate-blue);
+  }
+
+  .total-row.total-final .value {
+    color: var(--kamrate-orange);
+  }
+
+  .label {
+    color: var(--kamrate-blue);
+    font-weight: 600;
+  }
+
+  .value {
+    text-align: right;
+    font-weight: 600;
+  }
+
+  /* ===== PAYMENT DETAILS ===== */
+  .payment-section {
+    background-color: #f5f5f5;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    font-size: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+  }
+
+  .payment-detail {
+    border-right: 1px solid var(--border-color);
+
+  }
+
+  .payment-detail:last-child {
+    border-right: none;
+  }
+
+  .payment-detail h4 {
+    color: var(--kamrate-blue);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+  }
+
+  .payment-detail p {
+    margin-bottom: 4px;
+    line-height: 1.5;
+  }
+
+  /* ===== FOOTER SECTION ===== */
+  .invoice-footer {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 2px solid var(--border-color);
+    font-size: 12px;
+  }
+
+  .footer-signature {
+    text-align: center;
+  }
+
+  .signature-line {
+    border-top: 1px solid #333;
+    width: 80%;
+    margin: 40px auto 5px;
+  }
+
+  .signature-label {
+    color: var(--kamrate-blue);
+    font-weight: 700;
+    font-size: 11px;
+  }
+
+  .footer-company-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 15px;
+    background-color: var(--kamrate-orange);
+    color: white;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+
+  .footer-company-info p {
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  .footer-company-info strong {
+    color: white;
+  }
+
+  /* ===== BADGE ===== */
+  .status-badge {
+    display: inline-block;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-paid {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+  }
+
+  .badge-pending {
+    background-color: #e3f2fd;
+    color: #1565c0;
+  }
+
+  .badge-overdue {
+    background-color: #ffebee;
+    color: #c62828;
+  }
+
+  /* ===== ACTION BUTTONS ===== */
+  .action-buttons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 13px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    color: white;
+  }
+
+  .action-btn.download {
+    background-color: var(--kamrate-orange);
+  }
+
+  .action-btn.download:hover {
+    background-color: #E68A00;
+  }
+
+  .action-btn.preview {
+    background-color: #2196F3;
+  }
+
+  .action-btn.preview:hover {
+    background-color: #1976D2;
+  }
+
+  .action-btn.email {
+    background-color: var(--kamrate-green);
+  }
+
+  .action-btn.email:hover {
+    background-color: #0a5e2f;
+  }
+
+  .action-btn.print {
+    background-color: #666;
+  }
+
+  .action-btn.print:hover {
+    background-color: #555;
+  }
+
+  .action-btn.back {
+    background-color: #999;
+  }
+
+  .action-btn.back:hover {
+    background-color: #777;
+  }
+
+  /* ===== PRINT STYLES ===== */
+  @media print {
+    body {
+      background: white;
+      padding: 0;
+    }
+
+    .print-container {
+      box-shadow: none;
+      max-width: 100%;
+      padding: 20px;
+    }
+
+    .action-buttons {
+      display: none;
+    }
+
+    .no-print {
+      display: none;
+    }
+  }
+
+  /* ===== LANDSCAPE ORIENTATION ===== */
+  @page {
+    size: A4 landscape;
+    margin: 10mm;
+  }
+
+  @media (max-width: 1200px) {
+    .invoice-header {
+      grid-template-columns: 1fr;
+      gap: 20px;
+    }
+
+    .client-info-section {
+      grid-template-columns: 1fr;
+    }
+
+    .invoice-summary {
+      grid-template-columns: 1fr;
+    }
+
+    .payment-section {
+      grid-template-columns: 1fr;
+    }
+
+    .invoice-footer {
+      grid-template-columns: 1fr;
+    }
+
+    .payment-detail {
+      border-right: none;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .payment-detail:last-child {
+      border-bottom: none;
+    }
+
+    .items-table {
+      font-size: 11px;
+    }
+
+    .items-table th,
+    .items-table td {
+      padding: 8px 6px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="print-container">
+  
+  <!-- ACTION BUTTONS (Hidden when printing) -->
+  <div class="action-buttons no-print">
+    <a href="{% url 'knlInvoice:invoice-pdf' invoice.pk %}" class="action-btn download">
+      <i class="fas fa-download"></i> Download PDF
+    </a>
+    <a href="{% url 'knlInvoice:invoice-pdf-preview' invoice.pk %}" target="_blank" class="action-btn preview">
+      <i class="fas fa-eye"></i> View PDF
+    </a>
+    <form method="POST" action="{% url 'knlInvoice:send-invoice-email' invoice.pk %}" style="display: inline;">
+      {% csrf_token %}
+      <button type="submit" class="action-btn email" onclick="return confirm('Email invoice to {{ invoice.client.emailAddress }}?');">
+        <i class="fas fa-envelope"></i> Email Invoice
+      </button>
+    </form>
+    <button onclick="printInvoicePDF('{% url 'knlInvoice:invoice-pdf-preview' invoice.pk %}')" class="action-btn print">
+      <i class="fas fa-print"></i> Print
+    </button>
+    <a href="{% url 'knlInvoice:invoices-list' %}" class="action-btn back">
+      <i class="fas fa-arrow-left"></i> Back
+    </a>
+  </div>
+
+  <!-- ===== INVOICE HEADER ===== -->
+  <div class="invoice-header">
+    <!-- Logo Section -->
+    <div class="logo-section">
+      <div style="width: 100px; height: 100px; background-color: #f0f0f0; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin: 0 auto; margin-bottom: 10px;">
+        <i class="fas fa-globe" style="font-size: 48px; color: var(--kamrate-orange);"></i>
+      </div>
+      <div class="company-name">
+        KAMRATE<br>
+        NIGERIA LIMITED
+      </div>
+    </div>
+
+    <!-- Invoice Title -->
+    <div class="invoice-title">
+      <h1>KNL-{{ invoice.client.clientName|truncatewords:2|upper }}</h1>
+      <p>INVOICE #{{ invoice.invoice_number }}</p>
+    </div>
+
+    <!-- Invoice Meta -->
+    <div class="invoice-meta">
+      <div class="invoice-meta-item">
+        <strong>Invoice Date:</strong>
+        <span>{{ invoice.issue_date|date:"d M Y" }}</span>
+      </div>
+      <div class="invoice-meta-item">
+        <strong>Due Date:</strong>
+        <span>{{ invoice.due_date|date:"d M Y" }}</span>
+      </div>
+      <div class="invoice-meta-item">
+        <strong>Status:</strong>
+        <span class="status-badge 
+          {% if invoice.status == 'paid' %}badge-paid
+          {% elif invoice.status == 'overdue' %}badge-overdue
+          {% else %}badge-pending{% endif %}">
+          {{ invoice.status|upper }}
+        </span>
+      </div>
+      <div class="invoice-meta-item">
+        <strong>Invoice #:</strong>
+        <span>{{ invoice.invoice_number }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CLIENT INFO ===== -->
+  <div class="client-info-section">
+    <!-- Bill To -->
+    <div class="client-info">
+      <h3><i class="fas fa-user-tie"></i> Bill To:</h3>
+      <p><strong>{{ invoice.client.clientName }}</strong></p>
+      <p>Email: {{ invoice.client.emailAddress }}</p>
+      <p>Phone: {{ invoice.client.phoneNumber }}</p>
+    </div>
+
+    <!-- Invoice Details -->
+    <div class="client-info">
+      <h3><i class="fas fa-file-invoice"></i> Invoice Details:</h3>
+      <p><strong>Invoice Number:</strong> {{ invoice.invoice_number }}</p>
+      <p><strong>Payment Terms:</strong> {{ invoice.paymentTerms|default:"Net 30" }}</p>
+      <p><strong>Created:</strong> {{ invoice.date_created|date:"d M Y" }}</p>
+    </div>
+  </div>
+
+  <!-- ===== ITEMS TABLE ===== -->
+  <table class="items-table">
+    <thead>
+      <tr>
+        <th style="width: 40%;">Description</th>
+        <th style="width: 12%;" class="text-center">Quantity</th>
+        <th style="width: 18%;" class="text-right">Unit Price</th>
+        <th style="width: 18%;" class="text-right">Total Amount</th>
+        <th style="width: 12%;" class="text-center">Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in items %}
+      <tr>
+        <td>
+          <strong>{{ item.description }}</strong>
+          {% if item.product %}<br><small style="color: #999;">Product: {{ item.product.title }}</small>{% endif %}
+        </td>
+        <td class="text-center">{{ item.quantity }}</td>
+        <td class="text-right">₦{{ item.unit_price|floatformat:2 }}</td>
+        <td class="text-right">₦{{ item.total|floatformat:2 }}</td>
+        <td class="text-center">
+          <span class="status-badge badge-pending">Item</span>
+        </td>
+      </tr>
+      {% endfor %}
+      <tr>
+        <td colspan="3" style="text-align: right;"><strong>TOTAL:</strong></td>
+        <td style="text-align: right;"><strong>₦{{ invoice.total|floatformat:2 }}</strong></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ===== SUMMARY SECTION ===== -->
+  <div class="invoice-summary">
+    <!-- Notes -->
+    <div class="summary-notes">
+      {% if invoice.notes %}
+      <h3><i class="fas fa-sticky-note"></i> Additional Notes:</h3>
+      <p>{{ invoice.notes }}</p>
+      {% else %}
+      <h3><i class="fas fa-sticky-note"></i> Additional Notes:</h3>
+      <p>Thank you for your business! Please make payment by the due date to avoid any late fees.</p>
+      {% endif %}
+    </div>
+
+    <!-- Totals Summary -->
+    <div class="summary-totals">
+      <div class="total-row">
+        <span class="label">Subtotal:</span>
+        <span class="value">₦{{ invoice.subtotal|floatformat:2 }}</span>
+      </div>
+      <div class="total-row">
+        <span class="label">Tax ({{ invoice.tax_rate|floatformat:1 }}%):</span>
+        <span class="value">₦{{ invoice.tax_amount|floatformat:2 }}</span>
+      </div>
+      <div class="total-row total-final">
+        <span class="label">TOTAL DUE:</span>
+        <span class="value">₦{{ invoice.total|floatformat:2 }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PAYMENT SECTION ===== -->
+  <div class="payment-section">
+    <div class="payment-detail">
+      <h4><i class="fas fa-bank"></i> Bank Details:</h4>
+      <p><strong>Account Name:</strong></p>
+      <p>KAMRATE NIGERIA LIMITED</p>
+      <p><strong>Account Number:</strong></p>
+      <p>0004662938</p>
+    </div>
+    <div class="payment-detail">
+      <h4><i class="fas fa-university"></i> Bank Information:</h4>
+      <p><strong>Bank Name:</strong></p>
+      <p>JAIZ BANK</p>
+      <p><strong>SWIFT Code:</strong></p>
+      <p>JAIZNGLA</p>
+    </div>
+    <div class="payment-detail">
+      <h4><i class="fas fa-id-card"></i> Tax Details:</h4>
+      <p><strong>TIN:</strong></p>
+      <p>20727419-0001</p>
+      <p><strong>RC Number:</strong></p>
+      <p>1421251</p>
+    </div>
+  </div>
+
+  <!-- ===== FOOTER ===== -->
+  <div class="invoice-footer">
+    <!-- Signature -->
+    <div class="footer-signature">
+      <p style="margin-bottom: 50px; color: #666;">Authorized By:</p>
+      <div class="signature-line"></div>
+      <p class="signature-label">Signature & Date</p>
+    </div>
+
+    <!-- Company Info -->
+    <div class="footer-company-info">
+      <p><strong>KAMRATE NIGERIA LIMITED</strong></p>
+      <p>📍 33, Creek Road, Ibu Boulevard, Apapa, Lagos</p>
+      <p>📞 +234 803 484 9228 | +234 806 262 6552</p>
+      <p>📧 info@kamratelimited.com</p>
+      <p>🌐 www.kamratelimited.com</p>
+    </div>
+  </div>
+
+</div>
+
+<!-- JavaScript for Print PDF -->
+<script>
+function printInvoicePDF(pdfUrl) {
+  const printWindow = window.open(pdfUrl, '_blank');
+  if (printWindow) {
+    printWindow.onload = function() {
+      setTimeout(function() {
+        printWindow.print();
+        printWindow.onafterprint = function() {
+          printWindow.close();
+        };
+      }, 250);
+    };
+  } else {
+    alert('Please allow popups to print the invoice.');
+  }
+}
+</script>
+
+{% endblock %}
