@@ -4,9 +4,8 @@ from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
 from .models import (
     Truck, Trip, TripExpense, Client, Product, Invoice,
-    InvoiceItem, PaymentRecord
+    InvoiceItem, PaymentRecord, TripInvoice
 )
-
 
 # ============================================
 # AUTHENTICATION FORMS
@@ -494,4 +493,144 @@ class PaymentRecordForm(forms.ModelForm):
                 'placeholder': 'Payment Notes (Optional)',
                 'rows': 2,
             }),
+        }
+
+class QuickAddTruckForm(forms.ModelForm):
+    """Quick form to add truck from trip creation"""
+    
+    class Meta:
+        model = Truck
+        fields = ['plateNumber', 'model', 'manufacturer', 'yearOfManufacture', 'capacity', 'status', 'driverName', 'driverPhone']
+        widgets = {
+            'plateNumber': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., KRD 123 XY',
+                'required': True
+            }),
+            'model': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Howo 10-ton',
+                'required': True
+            }),
+            'manufacturer': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Sinotruk',
+                'required': True
+            }),
+            'yearOfManufacture': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'type': 'number',
+                'required': True
+            }),
+            'capacity': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'required': True
+            }),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'driverName': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Optional'
+            }),
+            'driverPhone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Optional'
+            }),
+        }
+
+
+class TripForm(forms.ModelForm):
+    """Trip creation form"""
+    
+    class Meta:
+        model = Trip
+        fields = ['tripNumber', 'truck', 'origin', 'destination', 'distance', 'cargoDescription', 'cargoWeight', 'revenue', 'status']
+        widgets = {
+            'tripNumber': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Auto-generated',
+                'readonly': True
+            }),
+            'truck': forms.Select(attrs={
+                'class': 'form-select',
+                'required': True
+            }),
+            'origin': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Lagos'
+            }),
+            'destination': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Port Harcourt'
+            }),
+            'distance': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'placeholder': 'kilometers'
+            }),
+            'cargoDescription': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'e.g., Container (40FT) with electronics'
+            }),
+            'cargoWeight': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'placeholder': 'kilograms'
+            }),
+            'revenue': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'placeholder': 'Nigerian Naira'
+            }),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+
+class ClientForm(forms.ModelForm):
+    """Client form"""
+    
+    class Meta:
+        model = Client
+        fields = ['clientName', 'addressLine1', 'state', 'phoneNumber', 'emailAddress', 'taxNumber']
+        widgets = {
+            'clientName': forms.TextInput(attrs={'class': 'form-control'}),
+            'addressLine1': forms.TextInput(attrs={'class': 'form-control'}),
+            'state': forms.Select(attrs={'class': 'form-select'}),
+            'phoneNumber': forms.TextInput(attrs={'class': 'form-control'}),
+            'emailAddress': forms.EmailInput(attrs={'class': 'form-control'}),
+            'taxNumber': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+
+class InvoiceForm(forms.ModelForm):
+    """Invoice form"""
+    
+    class Meta:
+        model = Invoice
+        fields = ['client', 'issue_date', 'due_date', 'tax_rate', 'paymentTerms', 'notes']
+        widgets = {
+            'client': forms.Select(attrs={'class': 'form-select'}),
+            'issue_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'due_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'tax_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'paymentTerms': forms.Select(attrs={'class': 'form-select'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+
+
+class TripInvoiceForm(forms.ModelForm):
+    """Trip Invoice form"""
+    
+    class Meta:
+        model = TripInvoice
+        fields = ['trip', 'client', 'issue_date', 'due_date', 'tax_rate', 'paymentTerms', 'notes']
+        widgets = {
+            'trip': forms.Select(attrs={'class': 'form-select'}),
+            'client': forms.Select(attrs={'class': 'form-select'}),
+            'issue_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'due_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'tax_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
+            'paymentTerms': forms.Select(attrs={'class': 'form-select'}),
+            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }

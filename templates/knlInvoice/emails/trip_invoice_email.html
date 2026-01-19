@@ -1,0 +1,472 @@
+{# Trip Invoice Email Template - knlInvoice/emails/trip_invoice_email.html #}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trip Invoice {{ invoice.invoice_number }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 700px;
+            margin: 20px auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #001F4D 0%, #003366 100%);
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .content {
+            padding: 40px 20px;
+        }
+        
+        .greeting {
+            font-size: 16px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .greeting strong {
+            color: #001F4D;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #001F4D;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #FF9500;
+        }
+        
+        .details {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .detail-value {
+            color: #333;
+            text-align: right;
+        }
+        
+        .trip-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            font-size: 13px;
+        }
+        
+        .trip-table th {
+            background-color: #001F4D;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: 700;
+        }
+        
+        .trip-table td {
+            padding: 12px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .trip-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        
+        .total-row {
+            background-color: #f0f0f0 !important;
+            font-weight: 700;
+        }
+        
+        .total-row td:last-child {
+            color: #FF9500;
+            font-size: 14px;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            font-size: 14px;
+        }
+        
+        .summary-label {
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .summary-value {
+            color: #333;
+            text-align: right;
+        }
+        
+        .summary-row.total {
+            border-top: 2px solid #001F4D;
+            border-bottom: 2px solid #FF9500;
+            padding: 15px 0;
+            font-size: 16px;
+            font-weight: 700;
+        }
+        
+        .summary-row.total .summary-value {
+            color: #FF9500;
+        }
+        
+        .amount-words {
+            background-color: #f0f8f4;
+            border-left: 4px solid #FF9500;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 3px;
+            font-size: 13px;
+            color: #333;
+        }
+        
+        .payment-status {
+            background-color: #f0f8f4;
+            border-left: 4px solid #0D7A3D;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 3px;
+        }
+        
+        .payment-status-pending {
+            background-color: #fff3e0;
+            border-left-color: #FF9500;
+        }
+        
+        .payment-status-overdue {
+            background-color: #ffebee;
+            border-left-color: #DC3545;
+        }
+        
+        .cta-button {
+            display: inline-block;
+            background-color: #FF9500;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 700;
+            margin: 20px 0;
+            transition: background-color 0.3s;
+        }
+        
+        .cta-button:hover {
+            background-color: #E67E00;
+        }
+        
+        .footer {
+            background-color: #f5f5f5;
+            padding: 20px;
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid #eee;
+        }
+        
+        .footer-section {
+            margin-bottom: 15px;
+        }
+        
+        .footer-section:last-child {
+            margin-bottom: 0;
+        }
+        
+        .company-info {
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #001F4D;
+        }
+        
+        .divider {
+            width: 100%;
+            height: 1px;
+            background-color: #eee;
+            margin: 20px 0;
+        }
+        
+        @media only screen and (max-width: 600px) {
+            .container {
+                margin: 10px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .header {
+                padding: 30px 20px;
+            }
+            
+            .header h1 {
+                font-size: 22px;
+            }
+            
+            .detail-row {
+                flex-direction: column;
+            }
+            
+            .detail-value {
+                text-align: left;
+                margin-top: 5px;
+            }
+            
+            .trip-table {
+                font-size: 12px;
+            }
+            
+            .trip-table th,
+            .trip-table td {
+                padding: 8px;
+            }
+            
+            .summary-row {
+                flex-direction: column;
+            }
+            
+            .summary-value {
+                text-align: left;
+                margin-top: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Trip Invoice</h1>
+            <p>{{ company_name }}</p>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <!-- Greeting -->
+            <div class="greeting">
+                Hello <strong>{{ client.clientName|default:"Valued Client" }}</strong>,<br><br>
+                Thank you for your business! We've attached your trip invoice below. Please review the details and arrange payment at your earliest convenience.
+            </div>
+            
+            <!-- Invoice Details Section -->
+            <div class="section">
+                <div class="section-title">Invoice Details</div>
+                <div class="details">
+                    <div class="detail-row">
+                        <span class="detail-label">Invoice Number:</span>
+                        <span class="detail-value">#{{ invoice.invoice_number }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Trip Number:</span>
+                        <span class="detail-value">{{ trip.tripNumber }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Invoice Date:</span>
+                        <span class="detail-value">{{ invoice.issue_date|date:"d M Y" }}</span>
+                    </div>
+                    {% if invoice.due_date %}
+                    <div class="detail-row">
+                        <span class="detail-label">Due Date:</span>
+                        <span class="detail-value">{{ invoice.due_date|date:"d M Y" }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="detail-row">
+                        <span class="detail-label">Total Amount:</span>
+                        <span class="detail-value" style="color: #FF9500; font-weight: 700; font-size: 16px;">₦{{ invoice.total|floatformat:2 }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Trip Information Section -->
+            <div class="section">
+                <div class="section-title">Trip Information</div>
+                <div class="details">
+                    <div class="detail-row">
+                        <span class="detail-label">Origin:</span>
+                        <span class="detail-value">{{ trip.origin }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Destination:</span>
+                        <span class="detail-value">{{ trip.destination }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Distance:</span>
+                        <span class="detail-value">{{ trip.distance }} km</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Truck:</span>
+                        <span class="detail-value">{{ trip.truck.plateNumber }}</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Trip Date:</span>
+                        <span class="detail-value">{{ trip.startDate|date:"d M Y H:i"|default:"N/A" }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Trip Manifest Table -->
+            <div class="section">
+                <div class="section-title">Trip Manifest</div>
+                <table class="trip-table">
+                    <thead>
+                        <tr>
+                            <th>Origin</th>
+                            <th>Destination</th>
+                            <th>Truck</th>
+                            <th style="text-align: right;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>{{ trip.origin }}</td>
+                            <td>{{ trip.destination }}</td>
+                            <td>{{ trip.truck.plateNumber }}</td>
+                            <td style="text-align: right;">₦{{ trip.revenue|floatformat:2 }}</td>
+                        </tr>
+                        <tr class="total-row">
+                            <td colspan="3" style="text-align: right;"><strong>TOTAL:</strong></td>
+                            <td style="text-align: right;">₦{{ trip.revenue|floatformat:2 }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Financial Summary -->
+            <div class="section">
+                <div class="section-title">Financial Summary</div>
+                <div class="summary-row">
+                    <span class="summary-label">Subtotal:</span>
+                    <span class="summary-value">₦{{ invoice.subtotal|floatformat:2 }}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Tax ({{ invoice.tax_rate }}%):</span>
+                    <span class="summary-value">₦{{ invoice.tax_amount|floatformat:2 }}</span>
+                </div>
+                <div class="summary-row total">
+                    <span class="summary-label">TOTAL DUE:</span>
+                    <span class="summary-value">₦{{ invoice.total|floatformat:2 }}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Amount Paid:</span>
+                    <span class="summary-value">₦{{ invoice.amount_paid|floatformat:2 }}</span>
+                </div>
+                <div class="summary-row">
+                    <span class="summary-label">Outstanding:</span>
+                    <span class="summary-value">₦{{ invoice.outstanding_amount|floatformat:2 }}</span>
+                </div>
+            </div>
+            
+            <!-- Payment Status -->
+            <div class="section">
+                <div class="section-title">Payment Status</div>
+                <div class="payment-status {% if invoice.status == 'overdue' %}payment-status-overdue{% elif invoice.status == 'pending' %}payment-status-pending{% endif %}">
+                    <strong>Status:</strong> {{ invoice.status|default:"Pending"|title }}<br>
+                    <strong>Outstanding Amount:</strong> ₦{{ invoice.outstanding_amount|floatformat:2 }}<br>
+                    <strong>Payment Terms:</strong> {{ invoice.paymentTerms }}
+                </div>
+            </div>
+            
+            <!-- Payment Instructions -->
+            <div class="section">
+                <div class="section-title">Payment Instructions</div>
+                <p style="font-size: 14px; color: #666;">
+                    Please arrange payment of <strong>₦{{ invoice.total|floatformat:2 }}</strong> to the account details below:
+                </p>
+                <div class="details" style="margin-top: 15px;">
+                    <div class="detail-row">
+                        <span class="detail-label">Account Name:</span>
+                        <span class="detail-value">KAMRATE NIGERIA LIMITED</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Account Number:</span>
+                        <span class="detail-value">0004662938</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Bank:</span>
+                        <span class="detail-value">JAIZ BANK</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">TIN:</span>
+                        <span class="detail-value">20727419-0001</span>
+                    </div>
+                </div>
+                <p style="font-size: 13px; color: #666; margin-top: 15px;">
+                    If you have any questions about this invoice, please don't hesitate to contact us.
+                </p>
+            </div>
+            
+            <!-- Divider -->
+            <div class="divider"></div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-section company-info">
+                {{ company_name }}
+            </div>
+            <div class="footer-section">
+                📧 {{ company_email }}<br>
+                📱 {{ company_phone }}<br>
+                📍 {{ company_address }}
+            </div>
+            <div class="footer-section" style="font-size: 11px; color: #999;">
+                This is an automated email. Please do not reply to this address.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,268 +1,199 @@
 {% extends 'partials/base.html' %}
 {% load static %}
 
-{% block title %}{% if form.instance.pk %}Edit Trip{% else %}Create Trip{% endif %} - Kamrate Nigeria Limited{% endblock %}
+{% block title %}Create Trip - Kamrate Nigeria Limited{% endblock %}
 
 {% block content %}
 
-<div class="container-fluid mt-5">
+<div class="container mt-5 mb-5">
   <div class="row justify-content-center">
-    <div class="col-lg-10">
-      <!-- Page Header -->
-      <div class="mb-4">
-        <h1 class="page-title mb-1">
-          <i class="fas fa-truck"></i>
-          {% if form.instance.pk %} Edit Trip {% else %} Create New Trip {% endif %}
-        </h1>
-        <p class="text-muted">
-          {% if form.instance.pk %} Update trip details and information {% else %} Create a new truck trip record {% endif %}
-        </p>
-      </div>
-
+    <div class="col-lg-8">
       <!-- Form Card -->
       <div class="card shadow-sm border-0">
-        <div class="card-header bg-primary text-white py-4" style="background-color: #001f4d !important">
-          <h5 class="mb-0"><i class="fas fa-edit"></i> Trip Information</h5>
+        <div class="card-header" style="background: linear-gradient(135deg, #001F4D 0%, #003366 100%); color: white; padding: 25px;">
+          <h3 class="mb-1" style="font-weight: 700;">
+            <i class="fas fa-truck"></i> {{ title }}
+          </h3>
+          <p class="text-white-50 mb-0">Fill in the trip details below</p>
         </div>
 
-        <div class="card-body p-4">
-          
-          <!-- Display Non-Field Errors -->
-          {% if form.non_field_errors %}
-          <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            <strong><i class="fas fa-exclamation-circle"></i> Error!</strong>
-            {% for error in form.non_field_errors %}
-            <div>{{ error }}</div>
-            {% endfor %}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-          </div>
-          {% endif %}
-
-          <form method="post" id="tripForm">
+        <div class="card-body p-5">
+          <form method="post" action="" class="trip-form">
             {% csrf_token %}
 
-            <!-- Section 1: Trip Details -->
-            <fieldset class="mb-4">
-              <legend class="fs-5 fw-bold text-dark mb-3">
-                <i class="fas fa-receipt" style="color: #ff9500"></i> Trip Details
-              </legend>
+            <!-- Form Alerts -->
+            {% if form.non_field_errors %}
+              <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle"></i> Please correct the errors below:
+                <ul class="mb-0 mt-2">
+                  {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                  {% endfor %}
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endif %}
 
-              <!-- Trip Number Field -->
-              <div class="mb-3">
-                <label for="{{ form.tripNumber.id_for_label }}" class="form-label fw-500">
-                  Trip Number <span class="text-danger">*</span>
+            <!-- Trip Number -->
+            <div class="mb-4">
+              <label for="{{ form.tripNumber.id_for_label }}" class="form-label fw-600" style="color: #001f4d;">
+                <i class="fas fa-hashtag"></i> Trip Number *
+              </label>
+              {{ form.tripNumber }}
+              {% if form.tripNumber.errors %}
+                <div class="alert alert-danger mt-2" role="alert">
+                  <i class="fas fa-times-circle"></i> {{ form.tripNumber.errors.0 }}
+                </div>
+              {% endif %}
+              <small class="text-muted d-block mt-2">Unique identifier for this trip (e.g., TRIP-001-2026)</small>
+            </div>
+
+            <!-- Truck Selection -->
+            <div class="mb-4">
+              <label for="{{ form.truck.id_for_label }}" class="form-label fw-600" style="color: #001f4d;">
+                <i class="fas fa-car"></i> Truck *
+              </label>
+              <div class="input-group">
+                {{ form.truck }}
+              </div>
+              {% if form.truck.errors %}
+                <div class="alert alert-danger mt-2" role="alert">
+                  <i class="fas fa-times-circle"></i> {{ form.truck.errors.0 }}
+                </div>
+              {% endif %}
+              <small class="text-muted d-block mt-2">Select the truck for this trip</small>
+            </div>
+
+            <!-- Origin -->
+            <div class="row">
+              <div class="col-md-6 mb-4">
+                <label for="{{ form.origin.id_for_label }}" class="form-label fw-600" style="color: #001f4d;">
+                  <i class="fas fa-map-marker-alt"></i> Origin *
                 </label>
-                
-                {% if form.tripNumber.errors %}
-                  {{ form.tripNumber }}
-                  <div class="invalid-feedback d-block">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    {% for error in form.tripNumber.errors %}
-                      {{ error }}
-                    {% endfor %}
+                {{ form.origin }}
+                {% if form.origin.errors %}
+                  <div class="alert alert-danger mt-2" role="alert">
+                    <i class="fas fa-times-circle"></i> {{ form.origin.errors.0 }}
                   </div>
-                {% else %}
-                  {{ form.tripNumber }}
                 {% endif %}
-                
-                <small class="text-muted">Unique trip identifier</small>
+                <small class="text-muted d-block mt-2">Starting location</small>
               </div>
 
-              <!-- Truck Field -->
-              <div class="mb-3">
-                <label for="{{ form.truck.id_for_label }}" class="form-label fw-500">
-                  Truck <span class="text-danger">*</span>
+              <!-- Destination -->
+              <div class="col-md-6 mb-4">
+                <label for="{{ form.destination.id_for_label }}" class="form-label fw-600" style="color: #001f4d;">
+                  <i class="fas fa-location-dot"></i> Destination *
                 </label>
-                
-                {% if form.truck.errors %}
-                  {{ form.truck }}
-                  <div class="invalid-feedback d-block">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    {% for error in form.truck.errors %}
-                      {{ error }}
-                    {% endfor %}
+                {{ form.destination }}
+                {% if form.destination.errors %}
+                  <div class="alert alert-danger mt-2" role="alert">
+                    <i class="fas fa-times-circle"></i> {{ form.destination.errors.0 }}
                   </div>
-                {% else %}
-                  {{ form.truck }}
                 {% endif %}
-                
-                <small class="text-muted">Vehicle for this trip</small>
+                <small class="text-muted d-block mt-2">Ending location</small>
               </div>
-            </fieldset>
+            </div>
 
-            <!-- Section 2: Route Information -->
-            <fieldset class="mb-4">
-              <legend class="fs-5 fw-bold text-dark mb-3">
-                <i class="fas fa-map-marker-alt" style="color: #ff9500"></i> Route Information
-              </legend>
-
-              <div class="row">
-                <!-- Origin Field -->
-                <div class="col-md-6 mb-3">
-                  <label for="{{ form.origin.id_for_label }}" class="form-label fw-500">
-                    Origin <span class="text-danger">*</span>
-                  </label>
-                  
-                  {% if form.origin.errors %}
-                    {{ form.origin }}
-                    <div class="invalid-feedback d-block">
-                      <i class="fas fa-exclamation-triangle"></i>
-                      {% for error in form.origin.errors %}
-                        {{ error }}
-                      {% endfor %}
-                    </div>
-                  {% else %}
-                    {{ form.origin }}
-                  {% endif %}
-                  
-                  <small class="text-muted">Starting location</small>
-                </div>
-
-                <!-- Destination Field -->
-                <div class="col-md-6 mb-3">
-                  <label for="{{ form.destination.id_for_label }}" class="form-label fw-500">
-                    Destination <span class="text-danger">*</span>
-                  </label>
-                  
-                  {% if form.destination.errors %}
-                    {{ form.destination }}
-                    <div class="invalid-feedback d-block">
-                      <i class="fas fa-exclamation-triangle"></i>
-                      {% for error in form.destination.errors %}
-                        {{ error }}
-                      {% endfor %}
-                    </div>
-                  {% else %}
-                    {{ form.destination }}
-                  {% endif %}
-                  
-                  <small class="text-muted">Destination location</small>
-                </div>
-              </div>
-
-              <!-- Distance Field -->
-              <div class="mb-3">
-                <label for="{{ form.distance.id_for_label }}" class="form-label fw-500">
-                  Distance (km) <span class="text-danger">*</span>
+            <!-- Distance -->
+            <div class="row">
+              <div class="col-md-6 mb-4">
+                <label for="{{ form.distance.id_for_label }}" class="form-label fw-600" style="color: #001f4d;">
+                  <i class="fas fa-ruler"></i> Distance (km) *
                 </label>
-                
-                <div class="input-group">
-                  {% if form.distance.errors %}
-                    {{ form.distance }}
-                  {% else %}
-                    {{ form.distance }}
-                  {% endif %}
-                  <span class="input-group-text">km</span>
-                </div>
-                
+                {{ form.distance }}
                 {% if form.distance.errors %}
-                  <div class="invalid-feedback d-block">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    {% for error in form.distance.errors %}
-                      {{ error }}
-                    {% endfor %}
+                  <div class="alert alert-danger mt-2" role="alert">
+                    <i class="fas fa-times-circle"></i> {{ form.distance.errors.0 }}
                   </div>
                 {% endif %}
-                
-                <small class="text-muted">Distance in kilometers</small>
+                <small class="text-muted d-block mt-2">Distance traveled in kilometers</small>
               </div>
-            </fieldset>
 
-            <!-- Section 3: Financial Details -->
-            <fieldset class="mb-4">
-              <legend class="fs-5 fw-bold text-dark mb-3">
-                <i class="fas fa-coins" style="color: #ff9500"></i> Financial Details
-              </legend>
-
-              <!-- Revenue Field -->
-              <div class="mb-3">
-                <label for="{{ form.revenue.id_for_label }}" class="form-label fw-500">
-                  Revenue (₦) <span class="text-danger">*</span>
+              <!-- Revenue -->
+              <div class="col-md-6 mb-4">
+                <label for="{{ form.revenue.id_for_label }}" class="form-label fw-600" style="color: #001f4d;">
+                  <i class="fas fa-money-bill-wave"></i> Revenue (₦) *
                 </label>
-                
-                <div class="input-group">
-                  <span class="input-group-text">₦</span>
-                  {% if form.revenue.errors %}
-                    {{ form.revenue }}
-                  {% else %}
-                    {{ form.revenue }}
-                  {% endif %}
-                </div>
-                
+                {{ form.revenue }}
                 {% if form.revenue.errors %}
-                  <div class="invalid-feedback d-block">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    {% for error in form.revenue.errors %}
-                      {{ error }}
-                    {% endfor %}
+                  <div class="alert alert-danger mt-2" role="alert">
+                    <i class="fas fa-times-circle"></i> {{ form.revenue.errors.0 }}
                   </div>
                 {% endif %}
-                
-                <small class="text-muted">Trip revenue in Nigerian Naira</small>
+                <small class="text-muted d-block mt-2">Total revenue for this trip</small>
               </div>
-            </fieldset>
+            </div>
 
-            <!-- Section 4: Additional Information -->
-            <fieldset class="mb-4">
-              <legend class="fs-5 fw-bold text-dark mb-3">
-                <i class="fas fa-notes-medical" style="color: #ff9500"></i> Additional Information
-              </legend>
-
-              <!-- Status Field -->
-              <div class="mb-3">
-                <label for="{{ form.status.id_for_label }}" class="form-label fw-500">
-                  Status
+            <!-- Status -->
+            <div class="row">
+              <div class="col-md-6 mb-4">
+                <label for="{{ form.status.id_for_label }}" class="form-label fw-600" style="color: #001f4d;">
+                  <i class="fas fa-info-circle"></i> Status *
                 </label>
-                
+                {{ form.status }}
                 {% if form.status.errors %}
-                  {{ form.status }}
-                  <div class="invalid-feedback d-block">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    {% for error in form.status.errors %}
-                      {{ error }}
-                    {% endfor %}
+                  <div class="alert alert-danger mt-2" role="alert">
+                    <i class="fas fa-times-circle"></i> {{ form.status.errors.0 }}
                   </div>
-                {% else %}
-                  {{ form.status }}
                 {% endif %}
+                <small class="text-muted d-block mt-2">Current status of the trip</small>
               </div>
 
-              <!-- Notes Field -->
-              <div class="mb-3">
-                <label for="{{ form.notes.id_for_label }}" class="form-label fw-500">
-                  Notes
+              <!-- Start Date -->
+              <div class="col-md-6 mb-4">
+                <label for="{{ form.startDate.id_for_label }}" class="form-label fw-600" style="color: #001f4d;">
+                  <i class="fas fa-calendar-alt"></i> Start Date *
                 </label>
-                
-                {% if form.notes.errors %}
-                  {{ form.notes }}
-                  <div class="invalid-feedback d-block">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    {% for error in form.notes.errors %}
-                      {{ error }}
-                    {% endfor %}
+                {{ form.startDate }}
+                {% if form.startDate.errors %}
+                  <div class="alert alert-danger mt-2" role="alert">
+                    <i class="fas fa-times-circle"></i> {{ form.startDate.errors.0 }}
                   </div>
-                {% else %}
-                  {{ form.notes }}
                 {% endif %}
+                <small class="text-muted d-block mt-2">When the trip started</small>
               </div>
-            </fieldset>
+            </div>
 
-            <!-- Form Actions -->
-            <div class="border-top pt-3 mt-4">
-              <div class="d-flex gap-2">
-                <button
-                  type="submit"
-                  class="btn btn-lg"
-                  style="background-color: #001f4d; color: white; min-width: 150px"
-                >
-                  <i class="fas fa-save"></i>
-                  {% if form.instance.pk %} Update Trip {% else %} Create Trip {% endif %}
-                </button>
-
-                <a href="{% url 'knlInvoice:trips-list' %}" class="btn btn-secondary btn-lg">
-                  <i class="fas fa-times"></i> Cancel
-                </a>
+            <!-- End Date (if exists in form) -->
+            {% if form.endDate %}
+              <div class="mb-4">
+                <label for="{{ form.endDate.id_for_label }}" class="form-label fw-600" style="color: #001f4d;">
+                  <i class="fas fa-calendar-check"></i> End Date
+                </label>
+                {{ form.endDate }}
+                {% if form.endDate.errors %}
+                  <div class="alert alert-danger mt-2" role="alert">
+                    <i class="fas fa-times-circle"></i> {{ form.endDate.errors.0 }}
+                  </div>
+                {% endif %}
+                <small class="text-muted d-block mt-2">When the trip ended (optional)</small>
               </div>
+            {% endif %}
+
+            <!-- Notes (if exists in form) -->
+            {% if form.notes %}
+              <div class="mb-4">
+                <label for="{{ form.notes.id_for_label }}" class="form-label fw-600" style="color: #001f4d;">
+                  <i class="fas fa-sticky-note"></i> Notes
+                </label>
+                {{ form.notes }}
+                {% if form.notes.errors %}
+                  <div class="alert alert-danger mt-2" role="alert">
+                    <i class="fas fa-times-circle"></i> {{ form.notes.errors.0 }}
+                  </div>
+                {% endif %}
+                <small class="text-muted d-block mt-2">Additional trip notes (optional)</small>
+              </div>
+            {% endif %}
+
+            <!-- Form Buttons -->
+            <div class="d-flex gap-3 mt-5 pt-4 border-top">
+              <button type="submit" class="btn btn-primary btn-lg" style="background-color: #ff9500; border-color: #ff9500; font-weight: 700;">
+                <i class="fas fa-save"></i> Save Trip
+              </button>
+              <a href="/trips/" class="btn btn-outline-secondary btn-lg" style="font-weight: 700;">
+                <i class="fas fa-arrow-left"></i> Back to Trips
+              </a>
             </div>
           </form>
         </div>
@@ -272,154 +203,86 @@
 </div>
 
 <style>
-  /* Form-specific styling to account for sidebar */
-  
-  .container-fluid {
-    max-width: 70%;
-    padding-right: 20px;
-    padding-left: 20px;
+  .form-label {
+    font-weight: 600;
+    color: #001f4d;
+    margin-bottom: 10px;
   }
 
-  .page-title {
-    color: #001f4d;
+  .form-control, .form-select {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 12px 15px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: #ff9500;
+    box-shadow: 0 0 0 4px rgba(255, 149, 0, 0.15);
+    color: #333;
+  }
+
+  .form-control::placeholder {
+    color: #999;
+    font-style: italic;
+  }
+
+  .input-group .form-select,
+  .input-group .form-control {
+    margin-right: 10px;
+  }
+
+  .btn-primary {
+    background-color: #ff9500;
+    border-color: #ff9500;
+    color: white;
     font-weight: 700;
-    font-size: 28px;
-    margin-bottom: 10px;
+    border-radius: 5px;
+    padding: 12px 30px;
+    transition: all 0.3s ease;
+  }
+
+  .btn-primary:hover {
+    background-color: #e68a00;
+    border-color: #e68a00;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 149, 0, 0.3);
+  }
+
+  .btn-outline-secondary {
+    color: #6c757d;
+    border-color: #6c757d;
+    font-weight: 700;
+    border-radius: 5px;
+    padding: 12px 30px;
+    transition: all 0.3s ease;
+  }
+
+  .btn-outline-secondary:hover {
+    background-color: #6c757d;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
   }
 
   .card {
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e9ecef;
   }
 
   .card-header {
-    background-color: #001f4d !important;
-    color: white;
-    padding: 20px 24px !important;
-  }
-
-  .card-body {
-    padding: 30px;
-  }
-
-  fieldset {
     border: none;
-    padding: 20px;
-    background-color: #f8f9fa;
-    border-radius: 8px;
-    margin-bottom: 20px;
-  }
-
-  legend {
-    width: auto;
-    padding: 0 10px;
-    margin-bottom: 20px;
-    font-size: 1.1rem;
-    font-weight: 700;
-    color: #001f4d;
-  }
-
-  .form-label {
-    font-weight: 600;
-    color: #333;
-    margin-bottom: 10px;
-    display: block;
-  }
-
-  .form-control,
-  .form-select {
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    padding: 12px 15px;
-    font-size: 0.95rem;
-    transition: all 0.3s ease;
-    width: 100%;
-  }
-
-  .form-control:focus,
-  .form-select:focus {
-    border-color: #ff9500;
-    box-shadow: 0 0 0 3px rgba(255, 149, 0, 0.15);
-    outline: none;
-  }
-
-  /* Error styling */
-  .form-control.is-invalid,
-  .form-select.is-invalid {
-    border-color: #dc3545;
-    background-image: none;
-  }
-
-  .form-control.is-invalid:focus,
-  .form-select.is-invalid:focus {
-    border-color: #dc3545;
-    box-shadow: 0 0 0 3px rgba(220, 53, 69, 0.15);
-  }
-
-  .invalid-feedback {
-    color: #dc3545;
-    font-size: 0.875rem;
-    margin-top: 0.25rem;
-    display: block;
-    font-weight: 500;
-  }
-
-  .input-group-text {
-    background-color: #f8f9fa;
-    border: 1px solid #ddd;
-    padding: 12px 15px;
-  }
-
-  .input-group .form-control,
-  .input-group .form-select {
-    margin-bottom: 0;
-  }
-
-  .btn {
-    border-radius: 5px;
-    font-weight: 600;
-    padding: 12px 24px;
-    transition: all 0.3s ease;
-  }
-
-  .btn-primary {
-    background-color: #001f4d;
-    border-color: #001f4d;
+    background: linear-gradient(135deg, #001F4D 0%, #003366 100%);
     color: white;
-  }
-
-  .btn-primary:hover {
-    background-color: #003d7a;
-    border-color: #003d7a;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 31, 77, 0.3);
-  }
-
-  .btn-secondary {
-    background-color: #6c757d;
-    border-color: #6c757d;
-    color: white;
-  }
-
-  .btn-secondary:hover {
-    background-color: #5a6268;
-    border-color: #545b62;
-  }
-
-  .text-danger {
-    color: #dc3545;
-  }
-
-  .text-muted {
-    color: #6c757d;
-    font-size: 0.85rem;
   }
 
   .alert {
     border-radius: 5px;
-    margin-bottom: 20px;
     border: none;
+    padding: 15px;
+    margin-top: 10px;
   }
 
   .alert-danger {
@@ -427,57 +290,44 @@
     color: #721c24;
   }
 
-  .mb-3 {
-    margin-bottom: 20px;
+  .alert-success {
+    background-color: #d4edda;
+    color: #155724;
   }
 
-  .mb-4 {
-    margin-bottom: 30px;
+  .fw-600 {
+    font-weight: 600;
   }
 
-  .row {
-    margin-right: -15px;
-    margin-left: -15px;
+  .text-white-50 {
+    color: rgba(255, 255, 255, 0.5);
   }
 
-  .col-md-6 {
-    padding-right: 15px;
-    padding-left: 15px;
+  .border-top {
+    border-top: 1px solid #e9ecef !important;
   }
 
-  .gap-2 {
-    gap: 12px;
-    display: flex;
-  }
-
-  /* Responsive adjustments */
-  @media (max-width: 992px) {
-    .col-lg-10 {
-      max-width: 100%;
-      flex: 0 0 100%;
-    }
-    
-    .card-body {
-      padding: 20px;
-    }
-
-    fieldset {
-      padding: 15px;
-    }
-  }
-
+  /* Responsive */
   @media (max-width: 768px) {
-    .page-title {
-      font-size: 24px;
+    .col-lg-8 {
+      padding: 0 15px;
     }
 
     .card-body {
-      padding: 15px;
+      padding: 25px !important;
     }
 
-    .col-md-6 {
-      max-width: 100%;
-      flex: 0 0 100%;
+    .btn-lg {
+      padding: 10px 20px;
+      font-size: 14px;
+    }
+
+    .d-flex {
+      flex-direction: column;
+    }
+
+    .d-flex .btn {
+      width: 100%;
     }
   }
 </style>

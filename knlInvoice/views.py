@@ -15,14 +15,25 @@ from datetime import timedelta, datetime
 from django.utils import timezone
 from django.conf import settings
 from decimal import Decimal
+from django.template.loader import render_to_string
 import os
 import json
 import logging
 from io import BytesIO
-
-
-from .models import Trip, Invoice, Product, Truck, Client, TripExpense, InvoiceItem, PaymentRecord
+from reportlab.lib.pagesizes import A4, landscape      # ✅ Most important!
+from reportlab.lib.units import inch
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from .models import Trip, Invoice, Product, Truck, Client, TripExpense, InvoiceItem, PaymentRecord, TripInvoice, Trip, PaymentRecord
 from .forms import TripForm, InvoiceForm, ProductForm, TripExpenseForm, ClientForm
+from .forms import QuickAddTruckForm
+from django.views.decorators.http import require_http_methods
+
+# from knlTrip.models import Trip  # Adjust import based on your app name
+
+logger = logging.getLogger(__name__)
 
 # ============================================
 # PDF GENERATION IMPORTS
@@ -110,12 +121,36 @@ def dashboard(request):
     thirty_days_ago = today - timedelta(days=30)
     thirty_days_revenue = user_invoices.filter(status='paid', date_created__gte=thirty_days_ago).aggregate(total=Sum('total'))['total'] or 0
     
+    # ✅ FIX: Trip calculations with proper Decimal handling
     all_trips = Trip.objects.all()
     total_trips = all_trips.count()
-    total_trip_revenue = sum(t.revenue for t in all_trips) if all_trips else 0
-    total_expenses = sum(t.get_total_expenses() for t in all_trips) if all_trips else 0
+    
+    # Calculate trip revenue - use Decimal for consistency
+    try:
+        total_trip_revenue = sum((Decimal(str(t.revenue)) for t in all_trips), Decimal('0'))
+    except (TypeError, ValueError):
+        total_trip_revenue = Decimal('0')
+    
+    # Calculate expenses - use Decimal for consistency
+    try:
+        total_expenses = sum(
+            (Decimal(str(t.get_total_expenses())) for t in all_trips if hasattr(t, 'get_total_expenses')),
+            Decimal('0')
+        )
+    except (TypeError, ValueError, AttributeError):
+        total_expenses = Decimal('0')
+    
+    # ✅ FIX: Ensure both are Decimal before subtraction
+    total_trip_revenue = Decimal(str(total_trip_revenue or 0))
+    total_expenses = Decimal(str(total_expenses or 0))
     total_profit = total_trip_revenue - total_expenses
-    profit_margin = (total_profit / total_trip_revenue * 100) if total_trip_revenue > 0 else 0
+    
+    # Calculate profit margin safely
+    try:
+        profit_margin = float((total_profit / total_trip_revenue * 100)) if total_trip_revenue > 0 else 0
+    except (TypeError, ZeroDivisionError):
+        profit_margin = 0
+    
     trips = all_trips.order_by('-startDate')[:5]
     
     products = Product.objects.all().order_by('-date_created')[:5]
@@ -134,7 +169,7 @@ def dashboard(request):
     monthly_revenue = []
     months_names = []
     for item in monthly_data:
-        monthly_revenue.append(item['total'] or 0)
+        monthly_revenue.append(float(item['total'] or 0))
         months_names.append(item['month'].strftime('%b'))
     
     if not monthly_revenue:
@@ -147,22 +182,23 @@ def dashboard(request):
     pending_count = user_invoices.filter(status__in=['pending', 'sent']).count()
     overdue_count = user_invoices.filter(status='overdue').count()
     
+    # ✅ FIX: Convert all Decimal values to float for template rendering
     context = {
         'page_title': 'Dashboard',
         'invoices': invoices,
         'total_invoices': total_invoices,
-        'total_revenue': total_revenue,
+        'total_revenue': float(total_revenue or 0),
         'pending_invoices': pending_invoices,
         'overdue_invoices': overdue_invoices,
-        'outstanding_amount': outstanding,
-        'this_month_revenue': this_month_revenue,
-        'thirty_days_revenue': thirty_days_revenue,
+        'outstanding_amount': float(outstanding or 0),
+        'this_month_revenue': float(this_month_revenue or 0),
+        'thirty_days_revenue': float(thirty_days_revenue or 0),
         'trips': trips,
         'total_trips': total_trips,
-        'total_trip_revenue': total_trip_revenue,
-        'total_expenses': total_expenses,
-        'total_profit': total_profit,
-        'profit_margin': profit_margin,
+        'total_trip_revenue': float(total_trip_revenue or 0),
+        'total_expenses': float(total_expenses or 0),
+        'total_profit': float(total_profit or 0),
+        'profit_margin': round(profit_margin, 2),
         'products': products,
         'total_clients': total_clients,
         'monthly_revenue': monthly_revenue,
@@ -173,7 +209,6 @@ def dashboard(request):
     }
     
     return render(request, 'knlInvoice/dashboard.html', context)
-
 
 # ============================================
 # CLIENT VIEWS
@@ -340,21 +375,43 @@ def product_delete(request, pk):
 
 @login_required(login_url='knlInvoice:login')
 def trips_list(request):
-    """List all trips"""
     trips = Trip.objects.all().order_by('-startDate')
-    total_revenue = sum(t.revenue for t in trips) if trips else 0
-    total_expenses = sum(t.get_total_expenses() for t in trips) if trips else 0
+    clients = Client.objects.all()  # ← GET ALL CLIENTS!
     
+    # Calculate totals...
+    try:
+        total_revenue = sum((Decimal(str(t.revenue)) for t in trips), Decimal('0'))
+    except (TypeError, ValueError):
+        total_revenue = Decimal('0')
+    
+    try:
+        total_expenses = sum(
+            (Decimal(str(t.get_total_expenses())) for t in trips if hasattr(t, 'get_total_expenses')),
+            Decimal('0')
+        )
+    except (TypeError, ValueError, AttributeError):
+        total_expenses = Decimal('0')
+    
+    total_profit_loss = total_revenue - total_expenses
+    
+    try:
+        profit_percentage = float((total_profit_loss / total_expenses * 100)) if total_expenses > 0 else 0
+    except (TypeError, ZeroDivisionError):
+        profit_percentage = 0
+    
+    # PASS CLIENTS TO TEMPLATE!
     context = {
         'page_title': 'Trips',
         'trips': trips,
+        'clients': clients,  # ← THIS LINE WAS MISSING!
         'total_trips': trips.count(),
-        'total_revenue': total_revenue,
-        'total_expenses': total_expenses,
-        'total_profit_loss': total_revenue - total_expenses,
-        'profit_percentage': ((total_revenue - total_expenses) / total_expenses * 100) if total_expenses > 0 else 0,
+        'total_revenue': float(total_revenue),
+        'total_expenses': float(total_expenses),
+        'total_profit_loss': float(total_profit_loss),
+        'profit_percentage': round(profit_percentage, 2),
     }
-    return render(request, 'knlInvoice/trips.html', context)
+    
+    return render(request, 'knlInvoice/trips_list.html', context)
 
 
 @login_required(login_url='knlInvoice:login')
@@ -378,33 +435,69 @@ def trip_create(request):
 
 @login_required(login_url='knlInvoice:login')
 def trip_detail(request, pk):
-    """View trip details with profitability analytics"""
+    """View trip details with expense management"""
     trip = get_object_or_404(Trip, pk=pk)
     
-    expenses = trip.tripexpense_set.all()
+    # Get expenses safely
+    expenses = []
+    total_expenses = 0
+    expense_categories = {}
     
-    total_expenses = sum(e.amount for e in expenses) if expenses else 0
-    total_revenue = trip.revenue or 0
+    try:
+        # Try to get expenses if the relationship exists
+        if hasattr(trip, 'tripexpense_set'):
+            expenses = trip.tripexpense_set.all()
+        elif hasattr(trip, 'expense_set'):
+            expenses = trip.expense_set.all()
+        else:
+            # Try querying by trip ID if neither relationship works
+            from .models import TripExpense
+            try:
+                expenses = TripExpense.objects.filter(trip=trip)
+            except:
+                expenses = []
+        
+        # Calculate total expenses
+        if expenses:
+            total_expenses = sum(float(e.amount or 0) for e in expenses)
+            
+            # Calculate expense categories
+            for expense in expenses:
+                if hasattr(expense, 'get_category_display'):
+                    category = expense.get_category_display()
+                elif hasattr(expense, 'category'):
+                    category = expense.category
+                else:
+                    category = 'Other'
+                
+                if category not in expense_categories:
+                    expense_categories[category] = 0
+                expense_categories[category] += float(expense.amount or 0)
+    
+    except Exception as e:
+        # If anything fails, just use empty expenses
+        expenses = []
+        total_expenses = 0
+        expense_categories = {}
+    
+    # Calculate profitability
+    total_revenue = float(trip.revenue or 0)
     profit = total_revenue - total_expenses
     profit_margin = (profit / total_revenue * 100) if total_revenue > 0 else 0
-    
-    expense_categories = {}
-    for expense in expenses:
-        category = expense.get_category_display()
-        if category not in expense_categories:
-            expense_categories[category] = 0
-        expense_categories[category] += expense.amount
+    expense_percentage = (total_expenses / total_revenue * 100) if total_revenue > 0 else 0
     
     context = {
         'page_title': f'Trip {trip.tripNumber}',
         'trip': trip,
         'expenses': expenses,
-        'total_expenses': total_expenses,
-        'total_revenue': total_revenue,
-        'profit': profit,
-        'profit_margin': profit_margin,
-        'profit_status': 'profitable' if profit > 0 else 'loss' if profit < 0 else 'break_even',
-        'expense_categories': expense_categories,
+        'expenses_count': len(expenses) if expenses else 0,
+        'total_expenses': float(total_expenses),
+        'total_revenue': float(total_revenue),
+        'profit': float(profit),
+        'net_profit': float(profit),
+        'profit_margin': round(profit_margin, 2),
+        'expense_percentage': round(expense_percentage, 1),
+        'category_breakdown': expense_categories,
     }
     
     return render(request, 'knlInvoice/trip_detail.html', context)
@@ -451,6 +544,82 @@ def trip_delete(request, pk):
     messages.success(request, 'Trip deleted!')
     return redirect('knlInvoice:trips-list')
 
+# VIEW TRIP DETAILS
+@login_required
+
+# EDIT TRIP
+@login_required
+def trip_edit(request, id):
+    """Edit trip"""
+    trip = get_object_or_404(Trip, id=id)
+    if request.method == 'POST':
+        # Handle form submission
+        trip.tripNumber = request.POST.get('tripNumber', trip.tripNumber)
+        trip.origin = request.POST.get('origin', trip.origin)
+        trip.destination = request.POST.get('destination', trip.destination)
+        trip.distance = request.POST.get('distance', trip.distance)
+        trip.revenue = request.POST.get('revenue', trip.revenue)
+        trip.status = request.POST.get('status', trip.status)
+        trip.save()
+        return redirect('knlInvoice:trips-list')
+    
+    return render(request, 'knlInvoice/trip_form.html', {
+        'trip': trip,
+        'form': trip_form(instance=trip),
+        'title': 'Edit Trip'
+    })
+
+# DELETE TRIP
+@login_required
+def trip_delete(request, id):
+    """Delete trip"""
+    trip = get_object_or_404(Trip, id=id)
+    if request.method == 'POST':
+        trip.delete()
+        return redirect('knlInvoice:trips-list')
+    return render(request, 'knlInvoice/trip_confirm_delete.html', {'trip': trip})
+
+# ← CREATE INVOICE FROM TRIP
+@login_required
+def trip_invoice_create(request, id):
+    """Create invoice from trip"""
+    trip = get_object_or_404(Trip, id=id)
+    
+    # Check if invoice already exists
+    if hasattr(trip, 'tripinvoice'):
+        # Invoice exists, redirect to edit
+        return redirect('knlInvoice:invoice-edit', pk=trip.tripinvoice.invoice.id)
+    
+    # Create new invoice from trip data
+    if request.method == 'POST':
+        client_id = request.POST.get('client')
+        
+        # Create invoice
+        invoice = Invoice.objects.create(
+            invoiceNumber=f"INV-{trip.tripNumber}",
+            user=request.user,
+            client_id=client_id,
+            total=trip.revenue,
+            tax=trip.revenue * 0.075,  # 7.5% VAT
+            status='draft'
+        )
+        
+        # Create trip invoice link
+        trip_invoice = TripInvoice.objects.create(
+            trip=trip,
+            invoice=invoice
+        )
+        
+        return redirect('knlInvoice:invoice-detail', pk=invoice.id)
+    
+    # GET request: Show client selection form
+    from .models import Client
+    clients = Client.objects.all()
+    
+    return render(request, 'knlInvoice/trip_invoice_create.html', {
+        'trip': trip,
+        'clients': clients
+    })
 
 # ============================================
 # INVOICE VIEWS
@@ -644,7 +813,201 @@ def add_invoice_item(request, pk):
 
 
 # ============================================
-# EXPENSE VIEWS
+# TRIP DETAIL (UPDATED - Safe expense handling)
+# ============================================
+
+@login_required(login_url='knlInvoice:login')
+def trip_detail(request, pk):
+    """View trip details with expense management - ALL values pre-calculated"""
+    trip = get_object_or_404(Trip, pk=pk)
+    
+    # Get expenses safely
+    expenses = []
+    total_expenses = Decimal('0')
+    expense_categories = {}
+    
+    try:
+        # Try to get expenses
+        if hasattr(trip, 'tripexpense_set'):
+            expenses = trip.tripexpense_set.all()
+        elif hasattr(trip, 'expense_set'):
+            expenses = trip.expense_set.all()
+        else:
+            try:
+                expenses = TripExpense.objects.filter(trip=trip)
+            except:
+                expenses = []
+        
+        # Calculate totals
+        if expenses:
+            total_expenses = sum((Decimal(str(e.amount or 0)) for e in expenses), Decimal('0'))
+            
+            # Calculate by category
+            for expense in expenses:
+                if hasattr(expense, 'get_category_display'):
+                    category = expense.get_category_display()
+                elif hasattr(expense, 'category'):
+                    category = expense.category
+                else:
+                    category = 'Other'
+                
+                if category not in expense_categories:
+                    expense_categories[category] = Decimal('0')
+                expense_categories[category] += Decimal(str(expense.amount or 0))
+    
+    except Exception as e:
+        expenses = []
+        total_expenses = Decimal('0')
+    
+    # Calculate profitability (ALL VALUES PRE-CALCULATED!)
+    total_revenue = Decimal(str(trip.revenue or 0))
+    profit = total_revenue - total_expenses
+    profit_margin = (profit / total_revenue * 100) if total_revenue > 0 else 0
+    expense_percentage = (total_expenses / total_revenue * 100) if total_revenue > 0 else 0
+    
+    # ✅ IMPORTANT: Convert all Decimal to float for template!
+    context = {
+        'page_title': f'Trip {trip.tripNumber}',
+        'trip': trip,
+        'expenses': expenses,
+        'expenses_count': len(expenses) if expenses else 0,
+        # ✅ All monetary values as FLOAT (no filters needed!)
+        'total_revenue': float(total_revenue),
+        'total_expenses': float(total_expenses),
+        'profit': float(profit),
+        'net_profit': float(profit),
+        'profit_margin': round(profit_margin, 2),
+        'expense_percentage': round(expense_percentage, 1),
+        # Category breakdown
+        'category_breakdown': {k: float(v) for k, v in expense_categories.items()},
+    }
+    
+    return render(request, 'knlInvoice/trip_detail.html', context)
+
+
+# ============================================
+# EXPENSE LIST (NEW VIEW)
+# ============================================
+
+@login_required(login_url='knlInvoice:login')
+def expense_list(request, pk):
+    """View all expenses for a trip"""
+    trip = get_object_or_404(Trip, pk=pk)
+    
+    # Get expenses
+    expenses = []
+    total_expenses = Decimal('0')
+    expense_categories = {}
+    
+    try:
+        if hasattr(trip, 'tripexpense_set'):
+            expenses = trip.tripexpense_set.all()
+        elif hasattr(trip, 'expense_set'):
+            expenses = trip.expense_set.all()
+        else:
+            try:
+                expenses = TripExpense.objects.filter(trip=trip)
+            except:
+                expenses = []
+        
+        if expenses:
+            total_expenses = sum((Decimal(str(e.amount or 0)) for e in expenses), Decimal('0'))
+            
+            for expense in expenses:
+                category = expense.get_category_display() if hasattr(expense, 'get_category_display') else expense.category
+                if category not in expense_categories:
+                    expense_categories[category] = Decimal('0')
+                expense_categories[category] += Decimal(str(expense.amount or 0))
+    except:
+        expenses = []
+        total_expenses = Decimal('0')
+    
+    # Calculate profitability
+    total_revenue = Decimal(str(trip.revenue or 0))
+    net_profit = total_revenue - total_expenses
+    expense_percentage = (total_expenses / total_revenue * 100) if total_revenue > 0 else 0
+    
+    context = {
+        'page_title': f'Trip {trip.tripNumber} - Expenses',
+        'trip': trip,
+        'expenses': expenses,
+        'expenses_count': len(expenses) if expenses else 0,
+        'total_expenses': float(total_expenses),
+        'total_revenue': float(total_revenue),
+        'net_profit': float(net_profit),
+        'expense_percentage': round(expense_percentage, 1),
+        'category_breakdown': {k: float(v) for k, v in expense_categories.items()},
+    }
+    
+    return render(request, 'knlInvoice/expense_list.html', context)
+
+
+# ============================================
+# ADD EXPENSE (expense_create)
+# ============================================
+
+@login_required(login_url='knlInvoice:login')
+def expense_create(request, pk):
+    """Create new expense for trip"""
+    trip = get_object_or_404(Trip, pk=pk)
+    
+    # Get trip financial data for context
+    total_revenue = float(trip.revenue or 0)
+    total_expenses = trip.get_total_expenses()
+    profit = total_revenue - total_expenses
+    
+    if request.method == 'POST':
+        try:
+            amount = float(request.POST.get('amount', 0))
+            date = request.POST.get('date')  # Changed from expense_date
+            expenseType = request.POST.get('expenseType')  # Changed from category
+            description = request.POST.get('description', '')
+            notes = request.POST.get('notes', '')
+            
+            if amount <= 0:
+                messages.error(request, '❌ Expense amount must be greater than zero.')
+                return render(request, 'knlInvoice/add_expense.html', {
+                    'trip': trip,
+                    'total_revenue': total_revenue,
+                    'total_expenses': total_expenses,
+                    'profit': profit,
+                    'expense_types': TripExpense.EXPENSE_TYPE_CHOICES,
+                })
+            
+            # Create expense with CORRECT field names
+            TripExpense.objects.create(
+                trip=trip,
+                amount=amount,
+                date=date,  # ✅ CORRECT
+                expenseType=expenseType,  # ✅ CORRECT
+                description=description,
+                notes=notes,
+            )
+            
+            messages.success(request, f'✅ Expense of ₦{amount:,.2f} added successfully!')
+            return redirect('knlInvoice:expense-list', pk=trip.pk)
+            
+        except ValueError:
+            messages.error(request, '❌ Invalid expense amount.')
+            return render(request, 'knlInvoice/add_expense.html', {
+                'trip': trip,
+                'total_revenue': total_revenue,
+                'total_expenses': total_expenses,
+                'profit': profit,
+                'expense_types': TripExpense.EXPENSE_TYPE_CHOICES,
+            })
+    
+    return render(request, 'knlInvoice/add_expense.html', {
+        'trip': trip,
+        'total_revenue': total_revenue,
+        'total_expenses': total_expenses,
+        'profit': profit,
+        'expense_types': TripExpense.EXPENSE_TYPE_CHOICES,
+    })
+
+
+# ============================================
+# EDIT EXPENSE
 # ============================================
 
 @login_required(login_url='knlInvoice:login')
@@ -653,46 +1016,57 @@ def edit_expense(request, trip_id, expense_id):
     trip = get_object_or_404(Trip, pk=trip_id)
     expense = get_object_or_404(TripExpense, pk=expense_id, trip=trip)
     
+    # Get trip financial data for context
+    total_revenue = float(trip.revenue or 0)
+    total_expenses = trip.get_total_expenses()
+    profit = total_revenue - total_expenses
+    
     if request.method == 'POST':
-        amount = float(request.POST.get('amount', expense.amount))
-        expense_date = request.POST.get('expense_date', expense.expense_date)
-        category = request.POST.get('category', expense.category)
-        description = request.POST.get('description', expense.description)
-        notes = request.POST.get('notes', expense.notes)
+        try:
+            amount = float(request.POST.get('amount', expense.amount))
+            date = request.POST.get('date', expense.date)
+            expenseType = request.POST.get('expenseType', expense.expenseType)  # ✅ CORRECT
+            description = request.POST.get('description', expense.description)
+            notes = request.POST.get('notes', expense.notes)
+            
+            if amount <= 0:
+                messages.error(request, '❌ Expense amount must be greater than zero.')
+                return render(request, 'knlInvoice/edit_expense.html', {
+                    'trip': trip,
+                    'expense': expense,
+                    'total_revenue': total_revenue,
+                    'total_expenses': total_expenses,
+                    'profit': profit,
+                    'expense_types': TripExpense.EXPENSE_TYPE_CHOICES,
+                })
+            
+            # Update expense with CORRECT field names
+            expense.amount = amount
+            expense.date = date
+            expense.expenseType = expenseType  # ✅ CORRECT
+            expense.description = description
+            expense.notes = notes
+            expense.save()
+            
+            messages.success(request, '✅ Expense updated successfully!')
+            return redirect('knlInvoice:expense-list', pk=trip.pk)
         
-        if amount <= 0:
-            messages.error(request, 'Expense amount must be greater than zero.')
-            return render(request, 'knlInvoice/edit_expense.html', {
-                'expense': expense,
-                'trip': trip,
-                'page_title': f'Edit Expense - {trip.tripNumber}',
-            })
-        
-        expense.amount = amount
-        expense.expense_date = expense_date
-        expense.category = category
-        expense.description = description
-        expense.notes = notes
-        expense.save()
-        
-        messages.success(request, 'Expense updated successfully!')
-        return redirect('knlInvoice:trip-detail', pk=trip.pk)
+        except ValueError:
+            messages.error(request, '❌ Invalid expense amount.')
     
     return render(request, 'knlInvoice/edit_expense.html', {
-        'page_title': f'Edit Expense - {trip.tripNumber}',
-        'expense': expense,
         'trip': trip,
-        'categories': [
-            ('fuel', 'Fuel'),
-            ('maintenance', 'Maintenance'),
-            ('toll', 'Toll'),
-            ('accommodation', 'Accommodation'),
-            ('food', 'Food'),
-            ('labor', 'Labor'),
-            ('other', 'Other'),
-        ],
+        'expense': expense,
+        'total_revenue': total_revenue,
+        'total_expenses': total_expenses,
+        'profit': profit,
+        'expense_types': TripExpense.EXPENSE_TYPE_CHOICES,
     })
 
+
+# ============================================
+# DELETE EXPENSE
+# ============================================
 
 @login_required(login_url='knlInvoice:login')
 @require_http_methods(["POST"])
@@ -701,82 +1075,10 @@ def delete_expense(request, trip_id, expense_id):
     trip = get_object_or_404(Trip, pk=trip_id)
     expense = get_object_or_404(TripExpense, pk=expense_id, trip=trip)
     
+    expense_amount = expense.amount
     expense.delete()
-    messages.success(request, 'Expense deleted successfully!')
-    return redirect('knlInvoice:trip-detail', pk=trip.pk)
-
-
-@login_required(login_url='knlInvoice:login')
-def expense_create(request, pk):
-    """Create new expense for trip"""
-    trip = get_object_or_404(Trip, pk=pk)
-    
-    if request.method == 'POST':
-        try:
-            amount = float(request.POST.get('amount', 0))
-            expense_date = request.POST.get('expense_date')
-            category = request.POST.get('category', 'other')
-            description = request.POST.get('description', '')
-            notes = request.POST.get('notes', '')
-            
-            if amount <= 0:
-                messages.error(request, 'Expense amount must be greater than zero.')
-                return render(request, 'knlInvoice/expense_form.html', {
-                    'trip': trip,
-                    'page_title': f'Add Expense - {trip.tripNumber}',
-                    'categories': [
-                        ('fuel', 'Fuel'),
-                        ('maintenance', 'Maintenance'),
-                        ('toll', 'Toll'),
-                        ('accommodation', 'Accommodation'),
-                        ('food', 'Food'),
-                        ('labor', 'Labor'),
-                        ('other', 'Other'),
-                    ],
-                })
-            
-            TripExpense.objects.create(
-                trip=trip,
-                amount=amount,
-                expense_date=expense_date,
-                category=category,
-                description=description,
-                notes=notes,
-            )
-            
-            messages.success(request, f'Expense of ₦{amount:,.2f} added successfully!')
-            return redirect('knlInvoice:trip-detail', pk=trip.pk)
-            
-        except ValueError:
-            messages.error(request, 'Invalid expense amount.')
-            return render(request, 'knlInvoice/expense_form.html', {
-                'trip': trip,
-                'page_title': f'Add Expense - {trip.tripNumber}',
-                'categories': [
-                    ('fuel', 'Fuel'),
-                    ('maintenance', 'Maintenance'),
-                    ('toll', 'Toll'),
-                    ('accommodation', 'Accommodation'),
-                    ('food', 'Food'),
-                    ('labor', 'Labor'),
-                    ('other', 'Other'),
-                ],
-            })
-    
-    return render(request, 'knlInvoice/expense_form.html', {
-        'page_title': f'Add Expense - {trip.tripNumber}',
-        'trip': trip,
-        'categories': [
-            ('fuel', 'Fuel'),
-            ('maintenance', 'Maintenance'),
-            ('toll', 'Toll'),
-            ('accommodation', 'Accommodation'),
-            ('food', 'Food'),
-            ('labor', 'Labor'),
-            ('other', 'Other'),
-        ],
-    })
-
+    messages.success(request, f'✅ Expense of ₦{expense_amount:,.2f} deleted successfully!')
+    return redirect('knlInvoice:expense-list', pk=trip.pk)
 
 # ============================================
 # PDF CONTEXT & GENERATION FUNCTIONS
@@ -844,8 +1146,13 @@ def generate_pdf_weasyprint(invoice):
 
 def generate_pdf_reportlab(invoice):
     """
-    Fallback: Generate PDF using ReportLab
-    ⚠️ SECONDARY METHOD - Used if WeasyPrint not available
+    FIXED: Generate professional LANDSCAPE PDF using ReportLab
+    
+    ✅ NOW WITHOUT HRFlat (compatibility fix)
+    ✅ Landscape orientation (A4 landscape)
+    ✅ KNL-Company title
+    ✅ Professional Kamrate branding
+    ✅ Works with all ReportLab versions
     
     Returns: BytesIO object or None if failed
     Requires: pip install reportlab
@@ -854,119 +1161,614 @@ def generate_pdf_reportlab(invoice):
         return None
     
     try:
+        # ✅ LANDSCAPE: Use A4 landscape instead of portrait
         buffer = BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        doc = SimpleDocTemplate(
+            buffer, 
+            pagesize=landscape(A4),  # ✅ LANDSCAPE!
+            rightMargin=15,
+            leftMargin=15,
+            topMargin=15,
+            bottomMargin=15
+        )
         elements = []
         
         styles = getSampleStyleSheet()
         
-        context = get_invoice_pdf_context(invoice)
-        
-        # Title
+        # ===== HEADER SECTION =====
+        # Title style
         title_style = ParagraphStyle(
             'CustomTitle',
             parent=styles['Heading1'],
             fontSize=24,
-            textColor=colors.HexColor('#001F4D'),
-            spaceAfter=6,
+            textColor=colors.HexColor('#001F4D'),  # Kamrate blue
+            spaceAfter=3,
             alignment=TA_CENTER,
             fontName='Helvetica-Bold'
         )
         
-        elements.append(Paragraph("KAMRATE NIGERIA LIMITED", title_style))
-        elements.append(Paragraph(f"Invoice {invoice.invoice_number}", styles['Heading2']))
-        elements.append(Spacer(1, 0.3*inch))
+        subtitle_style = ParagraphStyle(
+            'Subtitle',
+            parent=styles['Normal'],
+            fontSize=12,
+            textColor=colors.HexColor('#666'),
+            alignment=TA_CENTER,
+            spaceAfter=12,
+        )
         
-        # Client Info
-        try:
-            client_name = invoice.client.clientName
-            client_email = getattr(invoice.client, 'emailAddress', getattr(invoice.client, 'email', 'N/A'))
-        except:
-            client_name = "Client"
-            client_email = "N/A"
+        # ✅ KNL-COMPANY TITLE (matching template design)
+        client_first_words = ' '.join(invoice.client.clientName.split()[:2]).upper()
+        elements.append(Paragraph(f"KNL-{client_first_words}", title_style))
+        elements.append(Paragraph(f"Invoice #{invoice.invoice_number}", subtitle_style))
         
-        elements.append(Paragraph(f"<b>Bill To:</b> {client_name}", styles['Normal']))
-        elements.append(Paragraph(f"Email: {client_email}", styles['Normal']))
-        elements.append(Spacer(1, 0.2*inch))
+        # ✅ DIVIDER: Use a colored table row instead of HRFlat
+        divider_data = [[''], ]
+        divider_table = Table(divider_data, colWidths=[6.4*inch])
+        divider_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#FF9500')),
+            ('HEIGHT', (0, 0), (-1, -1), 3),  # 3pt height line
+        ]))
+        elements.append(divider_table)
+        elements.append(Spacer(1, 0.15*inch))
         
-        # Items Table
+        # ===== CLIENT & INVOICE INFO (2 COLUMNS) =====
+        client_style = ParagraphStyle(
+            'ClientInfo',
+            parent=styles['Normal'],
+            fontSize=10,
+            leading=12,
+        )
+        
+        client_label_style = ParagraphStyle(
+            'ClientLabel',
+            parent=styles['Normal'],
+            fontSize=9,
+            fontName='Helvetica-Bold',
+            textColor=colors.HexColor('#001F4D'),
+            spaceAfter=3,
+        )
+        
+        # Left column: Client info
+        client_info = [
+            Paragraph("<b>Bill To:</b>", client_label_style),
+            Paragraph(f"<b>{invoice.client.clientName}</b>", client_style),
+            Paragraph(f"Email: {invoice.client.emailAddress}", client_style),
+            Paragraph(f"Phone: {invoice.client.phoneNumber}", client_style),
+        ]
+        
+        # Right column: Invoice details
+        invoice_info = [
+            Paragraph("<b>Invoice Details:</b>", client_label_style),
+            Paragraph(f"<b>Invoice Number:</b> {invoice.invoice_number}", client_style),
+            Paragraph(f"<b>Payment Terms:</b> {invoice.paymentTerms or 'Net 30'}", client_style),
+            Paragraph(f"<b>Created:</b> {invoice.date_created.strftime('%d %b %Y')}", client_style),
+        ]
+        
+        # Create 2-column table for client info
+        info_table = Table(
+            [[client_info, invoice_info]],
+            colWidths=[3.2*inch, 3.2*inch]
+        )
+        info_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        elements.append(info_table)
+        elements.append(Spacer(1, 0.15*inch))
+        
+        # ===== ITEMS TABLE =====
         items = invoice.items.all()
+        
         if items.exists():
-            items_data = [['Description', 'Qty', 'Unit Price', 'Total']]
+            # Build items data
+            items_data = [['Description', 'Qty', 'Unit Price', 'Total', 'Status']]
             
             for item in items:
-                # ✅ IMPORTANT: Convert to float BEFORE multiplication to avoid Decimal type errors
+                # ✅ Convert Decimal to float BEFORE operations
                 qty = float(item.quantity) if item.quantity else 1.0
                 unit_price = float(item.unit_price) if item.unit_price else 0.0
                 line_total = qty * unit_price
                 
                 items_data.append([
-                    (item.description or item.product.title)[:40],
+                    item.description or (item.product.title if item.product else ""),
                     f"{qty:.1f}",
                     f"₦{unit_price:,.0f}",
-                    f"₦{line_total:,.0f}"
+                    f"₦{line_total:,.0f}",
+                    "Item"
                 ])
             
-            items_table = Table(items_data, colWidths=[3*inch, 0.8*inch, 1.2*inch, 1.2*inch])
+            # Create items table
+            items_table = Table(
+                items_data,
+                colWidths=[2.8*inch, 0.8*inch, 1.4*inch, 1.4*inch, 0.8*inch]
+            )
+            
+            # Style items table
             items_table.setStyle(TableStyle([
+                # Header styling
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#001F4D')),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
                 ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('GRID', (0, 0), (-1, -1), 1, colors.grey),
-                ('FONT', (0, 1), (-1, -1), 'Helvetica', 9),
+                ('FONTSIZE', (0, 0), (-1, 0), 10),
+                ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, 0), 'MIDDLE'),
+                ('TOPPADDING', (0, 0), (-1, 0), 8),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                
+                # Body styling
+                ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+                ('FONTSIZE', (0, 1), (-1, -1), 9),
+                ('ALIGN', (0, 0), (0, -1), 'LEFT'),
+                ('ALIGN', (1, 1), (-1, -1), 'CENTER'),
+                ('ALIGN', (2, 1), (-1, -1), 'RIGHT'),
+                ('ALIGN', (3, 1), (-1, -1), 'RIGHT'),
+                ('VALIGN', (0, 1), (-1, -1), 'MIDDLE'),
+                ('TOPPADDING', (0, 1), (-1, -1), 6),
+                ('BOTTOMPADDING', (0, 1), (-1, -1), 6),
+                
+                # Alternating row colors
+                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#f9f9f9')]),
+                
+                # Borders
+                ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#ddd')),
+                ('LINEABOVE', (0, 0), (-1, 0), 1.5, colors.HexColor('#001F4D')),
+                ('LINEBELOW', (0, 0), (-1, 0), 1.5, colors.HexColor('#001F4D')),
+                
+                # Total row
+                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#e3f2fd')),
+                ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, -1), (-1, -1), 10),
+                ('LINEABOVE', (0, -1), (-1, -1), 2, colors.HexColor('#FF9500')),
+                ('LINEBELOW', (0, -1), (-1, -1), 2, colors.HexColor('#001F4D')),
             ]))
             
             elements.append(items_table)
-            elements.append(Spacer(1, 0.2*inch))
+            elements.append(Spacer(1, 0.15*inch))
         
-        # ✅ IMPORTANT: Convert Decimal context values to float BEFORE using them
-        subtotal = float(context['subtotal']) if context['subtotal'] else 0.0
-        vat_amount = float(context['vat_amount']) if context['vat_amount'] else 0.0
-        total = float(context['total_with_vat']) if context['total_with_vat'] else 0.0
+        # ===== SUMMARY SECTION =====
+        # ✅ Convert Decimal to float for calculations
+        subtotal = float(invoice.subtotal or 0)
+        tax_amount = float(invoice.tax_amount or 0)
+        total = float(invoice.total or 0)
         
-        totals_data = [
-            ['', '', 'Subtotal:', f"₦{subtotal:,.0f}"],
-            ['', '', 'VAT (7.5%):', f"₦{vat_amount:,.0f}"],
-            ['', '', 'TOTAL:', f"₦{total:,.0f}"],
+        summary_style = ParagraphStyle(
+            'Summary',
+            parent=styles['Normal'],
+            fontSize=10,
+            alignment=TA_RIGHT,
+        )
+        
+        summary_label_style = ParagraphStyle(
+            'SummaryLabel',
+            parent=styles['Normal'],
+            fontSize=10,
+            fontName='Helvetica-Bold',
+            textColor=colors.HexColor('#001F4D'),
+        )
+        
+        # Create summary table
+        summary_data = [
+            ['', 'Subtotal:', f"₦{subtotal:,.2f}"],
+            ['', f'Tax ({invoice.tax_rate or 7.5}%):', f"₦{tax_amount:,.2f}"],
+            ['', 'TOTAL DUE:', f"₦{total:,.2f}"],
         ]
         
-        totals_table = Table(totals_data, colWidths=[2*inch, 2*inch, 1.2*inch, 1.2*inch])
-        totals_table.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'RIGHT'),
-            ('FONT', (0, 0), (-1, -1), 'Helvetica', 9),
-            ('FONT', (2, 2), (2, 2), 'Helvetica-Bold', 11),
-            ('TEXTCOLOR', (3, 2), (3, 2), colors.HexColor('#FF9500')),
-            ('BACKGROUND', (2, 2), (-1, 2), colors.HexColor('#e3f2fd')),
-            ('LINEABOVE', (2, 2), (-1, 2), 2, colors.HexColor('#001F4D')),
+        summary_table = Table(
+            summary_data,
+            colWidths=[4.0*inch, 1.4*inch, 1.4*inch]
+        )
+        
+        summary_table.setStyle(TableStyle([
+            ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            
+            # Total row styling
+            ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor('#e3f2fd')),
+            ('FONTNAME', (0, 2), (-1, 2), 'Helvetica-Bold'),
+            ('FONTSIZE', (1, 2), (1, 2), 12),
+            ('TEXTCOLOR', (2, 2), (2, 2), colors.HexColor('#FF9500')),
+            ('LINEABOVE', (0, 2), (-1, 2), 2, colors.HexColor('#001F4D')),
+            ('LINEBELOW', (0, 2), (-1, 2), 2, colors.HexColor('#FF9500')),
         ]))
         
-        elements.append(totals_table)
-        elements.append(Spacer(1, 0.3*inch))
+        elements.append(summary_table)
+        elements.append(Spacer(1, 0.15*inch))
         
-        # Footer
+        # ===== PAYMENT DETAILS SECTION =====
+        payment_label_style = ParagraphStyle(
+            'PaymentLabel',
+            parent=styles['Normal'],
+            fontSize=9,
+            fontName='Helvetica-Bold',
+            textColor=colors.HexColor('#001F4D'),
+        )
+        
+        payment_value_style = ParagraphStyle(
+            'PaymentValue',
+            parent=styles['Normal'],
+            fontSize=9,
+        )
+        
+        # 3-column payment details
+        payment_data = [[
+            [
+                Paragraph("<b>Bank Details:</b>", payment_label_style),
+                Paragraph("KAMRATE NIGERIA LIMITED", payment_value_style),
+                Paragraph("0004662938", payment_value_style),
+            ],
+            [
+                Paragraph("<b>Bank Information:</b>", payment_label_style),
+                Paragraph("JAIZ BANK", payment_value_style),
+                Paragraph("JAIZNGLA", payment_value_style),
+            ],
+            [
+                Paragraph("<b>Tax Details:</b>", payment_label_style),
+                Paragraph("20727419-0001", payment_value_style),
+                Paragraph("1421251", payment_value_style),
+            ],
+        ]]
+        
+        payment_table = Table(payment_data, colWidths=[2.1*inch, 2.1*inch, 2.1*inch])
+        payment_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#f5f5f5')),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 10),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('BORDER', (0, 0), (-1, -1), 0.5, colors.HexColor('#ddd')),
+        ]))
+        
+        elements.append(payment_table)
+        elements.append(Spacer(1, 0.15*inch))
+        
+        # ===== FOOTER =====
         footer_style = ParagraphStyle(
             'Footer',
             parent=styles['Normal'],
             fontSize=8,
-            textColor=colors.grey,
-            alignment=TA_CENTER
+            textColor=colors.HexColor('#999'),
+            alignment=TA_CENTER,
         )
-        elements.append(Paragraph(
-            "© 2026 Kamrate Nigeria Limited. All rights reserved.",
-            footer_style
-        ))
         
+        footer_company_style = ParagraphStyle(
+            'FooterCompany',
+            parent=styles['Normal'],
+            fontSize=8,
+            textColor=colors.white,
+            alignment=TA_CENTER,
+        )
+        
+        # Company info footer (in colored bar)
+        footer_data = [[
+            Paragraph("KAMRATE NIGERIA LIMITED | 33, Creek Road, Apapa, Lagos | +234 803 484 9228", footer_company_style)
+        ]]
+        
+        footer_table = Table(footer_data, colWidths=[6.4*inch])
+        footer_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#FF9500')),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ]))
+        
+        elements.append(footer_table)
+        
+        # Build PDF
         doc.build(elements)
         buffer.seek(0)
         
-        logger.info(f"✅ PDF generated with ReportLab for invoice {invoice.invoice_number}")
+        logger.info(f"✅ Professional LANDSCAPE PDF generated with ReportLab for invoice {invoice.invoice_number}")
         return buffer
         
     except Exception as e:
-        logger.error(f"❌ ReportLab error for invoice {invoice.invoice_number}: {str(e)}")
+        logger.error(f"❌ ReportLab error for invoice {invoice.invoice_number}: {str(e)}", exc_info=True)
         return None
+    
 
+def generate_pdf_reportlab_trip(trip_invoice):
+    """
+    Generate professional trip-based invoice PDF
+    
+    ✅ Based on Trip data, not Products
+    ✅ Shows trip manifest with container details
+    ✅ Professional Kamrate format
+    ✅ Matches reference document
+    
+    Returns: BytesIO object or None if failed
+    """
+    if not REPORTLAB_AVAILABLE:
+        return None
+    
+    try:
+        trip = trip_invoice.trip
+        client = trip_invoice.client
+        
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer, 
+            pagesize=landscape(A4),
+            rightMargin=12,
+            leftMargin=12,
+            topMargin=12,
+            bottomMargin=20
+        )
+        elements = []
+        
+        styles = getSampleStyleSheet()
+        
+        # ===== HEADER SECTION =====
+        header_value_style = ParagraphStyle(
+            'HeaderValue',
+            parent=styles['Normal'],
+            fontSize=9,
+            leading=10,
+        )
+        
+        # Client address on left
+        client_address = f"""
+<b>{client.clientName if client else 'Client'}</b><br/>
+{getattr(client, 'addressLine1', '') if client else ''}<br/>
+{getattr(client, 'state', '') if client else ''}
+        """
+        
+        # Company info on right
+        company_info = f"""
+<b>KAMRATE NIGERIA LIMITED</b><br/>
+Rc: 1421251<br/>
+{trip_invoice.issue_date.strftime('%d %B %Y')}
+        """
+        
+        # Header table
+        header_data = [[
+            Paragraph(client_address, header_value_style),
+            Paragraph(company_info, header_value_style)
+        ]]
+        
+        header_table = Table(header_data, colWidths=[3.5*inch, 3.5*inch])
+        header_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        elements.append(header_table)
+        elements.append(Spacer(1, 0.1*inch))
+        
+        # ===== INVOICE REFERENCE =====
+        title_style = ParagraphStyle(
+            'Title',
+            parent=styles['Heading1'],
+            fontSize=14,
+            fontName='Helvetica-Bold',
+            textColor=colors.HexColor('#001F4D'),
+            alignment=TA_CENTER,
+            spaceAfter=3,
+        )
+        
+        # Generate invoice reference
+        client_code = (client.clientName.split()[0][:2].upper() if client else 'XX')
+        invoice_ref = f"KNL/{client_code}/26/{trip_invoice.invoice_number}"
+        
+        elements.append(Paragraph(invoice_ref, title_style))
+        elements.append(Spacer(1, 0.1*inch))
+        
+        # ===== TRIP MANIFEST TABLE =====
+        # This is the key part - showing trip details instead of products
+        
+        items_data = [[
+            'DATE LOADED',
+            'AA FILE REFERENCE',
+            'CONTAINER NO',
+            'TERMINAL',
+            'TRUCK NO',
+            'LENGTH',
+            'DESTINATION',
+            'AMOUNT (₦)'
+        ]]
+        
+        # For trip-based invoice, we show ONE row (the trip itself)
+        # But if you have multiple containers in a trip, add them here
+        
+        # Get trip details
+        trip_date = trip.startDate.strftime('%d/%m/%Y') if trip.startDate else '01/01/2026'
+        truck_plate = trip.truck.plateNumber if trip.truck else 'TRK-001'
+        origin = trip.origin
+        destination = trip.destination
+        
+        # Determine container length from cargo description or default
+        container_length = '20FT'  # Default
+        if '40' in trip.cargoDescription:
+            container_length = '40FT'
+        
+        # Calculate amount per trip
+        trip_revenue = float(trip.revenue)
+        
+        items_data.append([
+            trip_date,
+            trip.tripNumber,
+            'CONTAINER-001',  # Could be extended to support multiple containers
+            'APAPA',  # Or get from trip model if available
+            truck_plate,
+            container_length,
+            destination,
+            f"{trip_revenue:,.2f}"
+        ])
+        
+        # Total row
+        items_data.append([
+            '', '', '', '', '', '', 'TOTAL',
+            f"{trip_revenue:,.2f}"
+        ])
+        
+        # Create table
+        items_table = Table(
+            items_data,
+            colWidths=[0.9*inch, 1.0*inch, 0.9*inch, 0.7*inch, 0.9*inch, 0.65*inch, 1.0*inch, 1.0*inch]
+        )
+        
+        # Style table
+        items_table.setStyle(TableStyle([
+            # Header
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#001F4D')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 8),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('TOPPADDING', (0, 0), (-1, 0), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+            
+            # Body
+            ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -2), 8),
+            ('ALIGN', (0, 0), (6, -2), 'LEFT'),
+            ('ALIGN', (7, 0), (7, -2), 'RIGHT'),
+            ('TOPPADDING', (0, 1), (-1, -2), 4),
+            ('BOTTOMPADDING', (0, 1), (-1, -2), 4),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.HexColor('#f5f5f5')]),
+            
+            # Borders
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#999')),
+            
+            # Total row
+            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#FFCC00')),
+            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, -1), (-1, -1), 9),
+            ('ALIGN', (0, -1), (6, -1), 'RIGHT'),
+            ('ALIGN', (7, -1), (7, -1), 'RIGHT'),
+        ]))
+        
+        elements.append(items_table)
+        elements.append(Spacer(1, 0.1*inch))
+        
+        # ===== SUMMARY SECTION =====
+        subtotal = float(trip_invoice.subtotal)
+        tax_amount = float(trip_invoice.tax_amount)
+        total = float(trip_invoice.total)
+        
+        summary_data = [
+            ['', 'Subtotal:', f"₦{subtotal:,.2f}"],
+            ['', f'Tax ({trip_invoice.tax_rate}%):', f"₦{tax_amount:,.2f}"],
+            ['', 'TOTAL DUE:', f"₦{total:,.2f}"],
+        ]
+        
+        summary_table = Table(
+            summary_data,
+            colWidths=[4.0*inch, 1.4*inch, 1.4*inch]
+        )
+        
+        summary_table.setStyle(TableStyle([
+            ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            
+            # Total row
+            ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor('#e3f2fd')),
+            ('FONTNAME', (0, 2), (-1, 2), 'Helvetica-Bold'),
+            ('FONTSIZE', (1, 2), (1, 2), 12),
+            ('TEXTCOLOR', (2, 2), (2, 2), colors.HexColor('#FF9500')),
+            ('LINEABOVE', (0, 2), (-1, 2), 2, colors.HexColor('#001F4D')),
+            ('LINEBELOW', (0, 2), (-1, 2), 2, colors.HexColor('#FF9500')),
+        ]))
+        
+        elements.append(summary_table)
+        elements.append(Spacer(1, 0.1*inch))
+        
+        # ===== AMOUNT IN WORDS =====
+        amount_words = f"₦{total:,.2f}"
+        try:
+            from num2words import num2words
+            amount_words = num2words(int(total), lang='en').upper()
+        except:
+            pass
+        
+        words_style = ParagraphStyle(
+            'AmountWords',
+            parent=styles['Normal'],
+            fontSize=9,
+            fontName='Helvetica-Bold',
+            textColor=colors.HexColor('#001F4D'),
+        )
+        
+        elements.append(Paragraph(
+            f"TOTAL AMOUNT IN WORDS: {amount_words} NAIRA ONLY",
+            words_style
+        ))
+        elements.append(Spacer(1, 0.1*inch))
+        
+        # ===== BANK DETAILS =====
+        bank_value_style = ParagraphStyle(
+            'BankValue',
+            parent=styles['Normal'],
+            fontSize=9,
+        )
+        
+        bank_details = """
+<b>ACCOUNT NAME:</b> KAMRATE NIGERIA LIMITED<br/>
+<b>ACCOUNT NO:</b> 0004662938<br/>
+<b>JAIZ BANK</b><br/>
+<b>TIN:</b> 20727419-0001
+        """
+        
+        elements.append(Paragraph(bank_details, bank_value_style))
+        elements.append(Spacer(1, 0.15*inch))
+        
+        # ===== SIGNATURE =====
+        sig_style = ParagraphStyle(
+            'Signature',
+            parent=styles['Normal'],
+            fontSize=9,
+        )
+        
+        elements.append(Paragraph("_" * 40, sig_style))
+        elements.append(Paragraph("Ayinla O Kamaldeen", sig_style))
+        elements.append(Paragraph("MD/CEO", sig_style))
+        
+        # ===== FOOTER =====
+        elements.append(Spacer(1, 0.2*inch))
+        
+        footer_style = ParagraphStyle(
+            'Footer',
+            parent=styles['Normal'],
+            fontSize=7,
+            textColor=colors.white,
+            alignment=TA_CENTER,
+        )
+        
+        footer_data = [[
+            Paragraph(
+                "33, Creek Road, Ibu Boulevard, Apapa, Lagos. 08134834928, 08026826552, 09126220281 | "
+                "www.kamratelimited.com | info@kamratelimited.com, kamratelimited@gmail.com",
+                footer_style
+            )
+        ]]
+        
+        footer_table = Table(footer_data, colWidths=[7.0*inch])
+        footer_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#001F4D')),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ]))
+        
+        elements.append(footer_table)
+        
+        # Build PDF
+        doc.build(elements)
+        buffer.seek(0)
+        
+        logger.info(f"✅ Trip invoice PDF generated: {trip_invoice.invoice_number}")
+        return buffer
+        
+    except Exception as e:
+        logger.error(f"❌ Trip PDF generation error: {str(e)}", exc_info=True)
+        return None
+    
 # ============================================
 # PDF VIEW FUNCTIONS - INVOICE BUTTONS
 # ============================================
@@ -1513,3 +2315,610 @@ def get_trip_profitability_data(request):
         
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+    
+# ===== TRIP INVOICE VIEWS =====
+
+@login_required
+def trip_invoice_list(request):
+    """
+    List all trip invoices with filtering and pagination
+    """
+    # Get all trip invoices for logged-in user
+    invoices = TripInvoice.objects.filter(user=request.user).select_related('trip', 'client')
+    
+    # Calculate statistics
+    total_count = invoices.count()
+    paid_count = invoices.filter(status='paid').count()
+    pending_count = invoices.filter(status='pending').count()
+    overdue_count = invoices.filter(status='overdue').count()
+    
+    # Filter by status
+    status_filter = request.GET.get('status')
+    if status_filter:
+        invoices = invoices.filter(status=status_filter)
+    
+    # Search
+    search_query = request.GET.get('search')
+    if search_query:
+        invoices = invoices.filter(
+            Q(invoice_number__icontains=search_query) |
+            Q(trip__tripNumber__icontains=search_query) |
+            Q(client__clientName__icontains=search_query)
+        )
+    
+    # Order by date created (newest first)
+    invoices = invoices.order_by('-date_created')
+    
+    # Pagination
+    paginator = Paginator(invoices, 15)  # 15 invoices per page
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'invoices': page_obj.object_list,
+        'page_obj': page_obj,
+        'is_paginated': page_obj.has_other_pages(),
+        'total_count': total_count,
+        'paid_count': paid_count,
+        'pending_count': pending_count,
+        'overdue_count': overdue_count,
+    }
+    
+    return render(request, 'knlInvoice/trip_invoice_list.html', context)
+
+
+@login_required
+def trip_invoice_detail(request, slug):
+    """
+    View trip invoice details
+    """
+    invoice = get_object_or_404(TripInvoice, slug=slug, user=request.user)
+    
+    # Get related data
+    trip = invoice.trip
+    client = invoice.client
+    payments = invoice.payments.all().order_by('-payment_date')
+    
+    context = {
+        'invoice': invoice,
+        'trip': trip,
+        'client': client,
+        'payments': payments,
+    }
+    
+    return render(request, 'knlInvoice/trip_invoice_detail.html', context)
+
+
+@login_required
+def create_trip_invoice(request, trip_id):
+    """
+    Create a new trip invoice from a trip
+    """
+    trip = get_object_or_404(Trip, id=trip_id, user=request.user)
+    
+    if request.method == 'POST':
+        try:
+            # Generate invoice number
+            invoice_count = TripInvoice.objects.filter(user=request.user).count() + 1
+            invoice_number = f"TRP-{trip.tripNumber}-INV-{timezone.now().year}"
+            
+            # Get client if provided
+            client_id = request.POST.get('client')
+            client = None
+            if client_id:
+                client = get_object_or_404(Client, id=client_id)
+            else:
+                # Try to get client from trip if available
+                if hasattr(trip, 'client'):
+                    client = trip.client
+            
+            # Create invoice
+            invoice = TripInvoice.objects.create(
+                trip=trip,
+                invoice_number=invoice_number,
+                client=client,
+                user=request.user,
+                issue_date=request.POST.get('issue_date', timezone.now().date()),
+                due_date=request.POST.get('due_date'),
+                subtotal=trip.revenue,
+                tax_rate=float(request.POST.get('tax_rate', 7.5)),
+                status=request.POST.get('status', 'draft'),
+                paymentTerms=request.POST.get('paymentTerms', '14 days'),
+                notes=request.POST.get('notes', ''),
+            )
+            
+            # Calculate totals
+            invoice.calculate_totals()
+            invoice.save()
+            
+            messages.success(request, f'✅ Invoice {invoice_number} created successfully!')
+            return redirect('tripinvoice-detail', slug=invoice.slug)
+            
+        except Exception as e:
+            logger.error(f"Error creating trip invoice: {str(e)}", exc_info=True)
+            messages.error(request, f'❌ Error creating invoice: {str(e)}')
+            return redirect('trip-detail', pk=trip_id)
+    
+    # GET request - show form
+    clients = Client.objects.all().order_by('clientName')
+    
+    context = {
+        'trip': trip,
+        'clients': clients,
+    }
+    
+    return render(request, 'knlInvoice/create_trip_invoice.html', context)
+
+
+@login_required
+def trip_invoice_pdf(request, slug):
+    """
+    Download trip invoice as PDF
+    """
+    invoice = get_object_or_404(TripInvoice, slug=slug, user=request.user)
+    
+    try:
+        # Use the PDF generator function
+        pdf_bytes = generate_pdf_reportlab_trip(invoice)
+        
+        if pdf_bytes:
+            response = HttpResponse(pdf_bytes, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="INV-{invoice.invoice_number}.pdf"'
+            return response
+        else:
+            messages.error(request, 'Could not generate PDF')
+            return redirect('tripinvoice-detail', slug=slug)
+            
+    except Exception as e:
+        logger.error(f"PDF generation error: {str(e)}", exc_info=True)
+        messages.error(request, 'Could not generate PDF')
+        return redirect('tripinvoice-detail', slug=slug)
+
+
+@login_required
+def trip_invoice_email(request, slug):
+    """
+    Send trip invoice via email
+    """
+    invoice = get_object_or_404(TripInvoice, slug=slug, user=request.user)
+    
+    try:
+        if request.method == 'POST':
+            # Generate PDF
+            pdf_bytes = generate_pdf_reportlab_trip(invoice)
+            
+            if not pdf_bytes:
+                # Fallback to ReportLab if WeasyPrint fails
+                pdf_bytes = generate_pdf_reportlab_trip(invoice)
+            
+            # Get client email
+            client_email = invoice.client.emailAddress if invoice.client else None
+            
+            if not client_email:
+                messages.error(request, 'Client email address not found')
+                return redirect('tripinvoice-detail', slug=slug)
+            
+            # Prepare email context
+            email_context = {
+                'invoice': invoice,
+                'trip': invoice.trip,
+                'client': invoice.client,
+                'company_name': 'KAMRATE NIGERIA LIMITED',
+                'company_email': 'info@kamratelimited.com',
+                'company_phone': '+234 803 484 9228',
+                'company_address': '33, Creek Road, Ibu Boulevard, Apapa, Lagos',
+            }
+            
+            # Render HTML email
+            html_message = render_to_string('knlInvoice/emails/trip_invoice_email.html', email_context)
+            
+            # Plain text fallback
+            plain_message = f"""
+Dear {invoice.client.clientName if invoice.client else 'Valued Client'},
+
+Please find attached invoice {invoice.invoice_number} for trip {invoice.trip.tripNumber}.
+
+Total Amount Due: ₦{invoice.total:,.2f}
+Outstanding Amount: ₦{invoice.outstanding_amount:,.2f}
+
+Payment Details:
+Account Name: KAMRATE NIGERIA LIMITED
+Account Number: 0004662938
+Bank: JAIZ BANK
+TIN: 20727419-0001
+
+Thank you for your business!
+
+Best regards,
+KAMRATE NIGERIA LIMITED
+            """
+            
+            # Create and send email
+            email = EmailMessage(
+                subject=f'Invoice {invoice.invoice_number} from Kamrate Nigeria Limited',
+                body=plain_message,
+                from_email='invoices@kamratelimited.com',
+                to=[client_email],
+            )
+            
+            # Attach HTML version
+            email.attach_alternative(html_message, "text/html")
+            
+            # Attach PDF
+            if pdf_bytes:
+                email.attach(
+                    f'INV-{invoice.invoice_number}.pdf',
+                    pdf_bytes.read() if hasattr(pdf_bytes, 'read') else pdf_bytes,
+                    'application/pdf'
+                )
+            
+            # Send email
+            email.send()
+            
+            # Update status to 'sent'
+            invoice.status = 'sent'
+            invoice.save()
+            
+            messages.success(request, f'✅ Invoice sent to {client_email}')
+            return redirect('tripinvoice-detail', slug=slug)
+        
+        # GET request - show confirmation
+        return render(request, 'knlInvoice/trip_invoice_detail.html', {'invoice': invoice})
+        
+    except Exception as e:
+        logger.error(f"Email sending error: {str(e)}", exc_info=True)
+        messages.error(request, f'❌ Error sending email: {str(e)}')
+        return redirect('tripinvoice-detail', slug=slug)
+
+
+@login_required
+def trip_invoice_record_payment(request, slug):
+    """
+    Record payment against a trip invoice
+    """
+    invoice = get_object_or_404(TripInvoice, slug=slug, user=request.user)
+    
+    if request.method == 'POST':
+        try:
+            amount = float(request.POST.get('amount', 0))
+            payment_date = request.POST.get('payment_date', timezone.now().date())
+            payment_method = request.POST.get('payment_method')
+            reference_number = request.POST.get('reference_number', '')
+            notes = request.POST.get('notes', '')
+            
+            if amount <= 0:
+                messages.error(request, 'Amount must be greater than 0')
+                return redirect('tripinvoice-detail', slug=slug)
+            
+            # Create payment record
+            payment = PaymentRecord.objects.create(
+                invoice=invoice,
+                amount=amount,
+                payment_date=payment_date,
+                payment_method=payment_method,
+                reference_number=reference_number,
+                notes=notes,
+            )
+            
+            # The PaymentRecord.save() method should update the invoice
+            # But we can also call it explicitly
+            invoice.mark_as_paid(amount)
+            invoice.save()
+            
+            messages.success(request, f'✅ Payment of ₦{amount:,.2f} recorded successfully')
+            
+        except Exception as e:
+            logger.error(f"Payment recording error: {str(e)}", exc_info=True)
+            messages.error(request, f'❌ Error recording payment: {str(e)}')
+    
+    return redirect('tripinvoice-detail', slug=slug)
+
+
+# ===== PDF GENERATOR FUNCTION =====
+
+def generate_pdf_reportlab_trip(trip_invoice):
+    """
+    Generate professional trip-based invoice PDF
+    Uses ReportLab for PDF generation
+    """
+    from reportlab.lib.pagesizes import A4, landscape
+    from reportlab.lib.units import inch
+    from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+    from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
+    from reportlab.lib import colors
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    
+    REPORTLAB_AVAILABLE = True
+    
+    if not REPORTLAB_AVAILABLE:
+        return None
+    
+    try:
+        trip = trip_invoice.trip
+        client = trip_invoice.client
+        
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(
+            buffer, 
+            pagesize=landscape(A4),
+            rightMargin=12,
+            leftMargin=12,
+            topMargin=12,
+            bottomMargin=20
+        )
+        elements = []
+        
+        styles = getSampleStyleSheet()
+        
+        # ===== HEADER SECTION =====
+        header_value_style = ParagraphStyle(
+            'HeaderValue',
+            parent=styles['Normal'],
+            fontSize=9,
+            leading=10,
+        )
+        
+        client_address = f"""
+<b>{client.clientName if client else 'Client'}</b><br/>
+{getattr(client, 'addressLine1', '') if client else ''}<br/>
+{getattr(client, 'state', '') if client else ''}
+        """
+        
+        company_info = f"""
+<b>KAMRATE NIGERIA LIMITED</b><br/>
+Rc: 1421251<br/>
+{trip_invoice.issue_date.strftime('%d %B %Y')}
+        """
+        
+        header_data = [[
+            Paragraph(client_address, header_value_style),
+            Paragraph(company_info, header_value_style)
+        ]]
+        
+        header_table = Table(header_data, colWidths=[3.5*inch, 3.5*inch])
+        header_table.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        elements.append(header_table)
+        elements.append(Spacer(1, 0.1*inch))
+        
+        # ===== INVOICE REFERENCE =====
+        title_style = ParagraphStyle(
+            'Title',
+            parent=styles['Heading1'],
+            fontSize=14,
+            fontName='Helvetica-Bold',
+            textColor=colors.HexColor('#001F4D'),
+            alignment=TA_CENTER,
+            spaceAfter=3,
+        )
+        
+        client_code = (client.clientName.split()[0][:2].upper() if client else 'XX')
+        invoice_ref = f"KNL/{client_code}/26/{trip_invoice.invoice_number}"
+        
+        elements.append(Paragraph(invoice_ref, title_style))
+        elements.append(Spacer(1, 0.1*inch))
+        
+        # ===== TRIP MANIFEST TABLE =====
+        items_data = [[
+            'DATE LOADED',
+            'AA FILE REFERENCE',
+            'CONTAINER NO',
+            'TERMINAL',
+            'TRUCK NO',
+            'LENGTH',
+            'DESTINATION',
+            'AMOUNT (₦)'
+        ]]
+        
+        trip_date = trip.startDate.strftime('%d/%m/%Y') if trip.startDate else '01/01/2026'
+        truck_plate = trip.truck.plateNumber if trip.truck else 'TRK-001'
+        destination = trip.destination
+        
+        container_length = '20FT'
+        if '40' in trip.cargoDescription:
+            container_length = '40FT'
+        
+        trip_revenue = float(trip.revenue)
+        
+        items_data.append([
+            trip_date,
+            trip.tripNumber,
+            'CONTAINER-001',
+            'APAPA',
+            truck_plate,
+            container_length,
+            destination,
+            f"{trip_revenue:,.2f}"
+        ])
+        
+        items_data.append([
+            '', '', '', '', '', '', 'TOTAL',
+            f"{trip_revenue:,.2f}"
+        ])
+        
+        items_table = Table(
+            items_data,
+            colWidths=[0.9*inch, 1.0*inch, 0.9*inch, 0.7*inch, 0.9*inch, 0.65*inch, 1.0*inch, 1.0*inch]
+        )
+        
+        items_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#001F4D')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 8),
+            ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+            ('TOPPADDING', (0, 0), (-1, 0), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+            
+            ('FONTNAME', (0, 1), (-1, -2), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -2), 8),
+            ('ALIGN', (0, 0), (6, -2), 'LEFT'),
+            ('ALIGN', (7, 0), (7, -2), 'RIGHT'),
+            ('TOPPADDING', (0, 1), (-1, -2), 4),
+            ('BOTTOMPADDING', (0, 1), (-1, -2), 4),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.HexColor('#f5f5f5')]),
+            
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor('#999')),
+            
+            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#FFCC00')),
+            ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, -1), (-1, -1), 9),
+            ('ALIGN', (0, -1), (6, -1), 'RIGHT'),
+            ('ALIGN', (7, -1), (7, -1), 'RIGHT'),
+        ]))
+        
+        elements.append(items_table)
+        elements.append(Spacer(1, 0.1*inch))
+        
+        # ===== SUMMARY =====
+        subtotal = float(trip_invoice.subtotal)
+        tax_amount = float(trip_invoice.tax_amount)
+        total = float(trip_invoice.total)
+        
+        summary_data = [
+            ['', 'Subtotal:', f"₦{subtotal:,.2f}"],
+            ['', f'Tax ({trip_invoice.tax_rate}%):', f"₦{tax_amount:,.2f}"],
+            ['', 'TOTAL DUE:', f"₦{total:,.2f}"],
+        ]
+        
+        summary_table = Table(
+            summary_data,
+            colWidths=[4.0*inch, 1.4*inch, 1.4*inch]
+        )
+        
+        summary_table.setStyle(TableStyle([
+            ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+            ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('TOPPADDING', (0, 0), (-1, -1), 6),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
+            
+            ('BACKGROUND', (0, 2), (-1, 2), colors.HexColor('#e3f2fd')),
+            ('FONTNAME', (0, 2), (-1, 2), 'Helvetica-Bold'),
+            ('FONTSIZE', (1, 2), (1, 2), 12),
+            ('TEXTCOLOR', (2, 2), (2, 2), colors.HexColor('#FF9500')),
+            ('LINEABOVE', (0, 2), (-1, 2), 2, colors.HexColor('#001F4D')),
+            ('LINEBELOW', (0, 2), (-1, 2), 2, colors.HexColor('#FF9500')),
+        ]))
+        
+        elements.append(summary_table)
+        elements.append(Spacer(1, 0.1*inch))
+        
+        # ===== BANK DETAILS =====
+        bank_value_style = ParagraphStyle(
+            'BankValue',
+            parent=styles['Normal'],
+            fontSize=9,
+        )
+        
+        bank_details = """
+<b>ACCOUNT NAME:</b> KAMRATE NIGERIA LIMITED<br/>
+<b>ACCOUNT NO:</b> 0004662938<br/>
+<b>JAIZ BANK</b><br/>
+<b>TIN:</b> 20727419-0001
+        """
+        
+        elements.append(Paragraph(bank_details, bank_value_style))
+        elements.append(Spacer(1, 0.15*inch))
+        
+        # ===== FOOTER =====
+        elements.append(Spacer(1, 0.2*inch))
+        
+        footer_style = ParagraphStyle(
+            'Footer',
+            parent=styles['Normal'],
+            fontSize=7,
+            textColor=colors.white,
+            alignment=TA_CENTER,
+        )
+        
+        footer_data = [[
+            Paragraph(
+                "33, Creek Road, Ibu Boulevard, Apapa, Lagos. 08134834928, 08026826552, 09126220281 | "
+                "www.kamratelimited.com | info@kamratelimited.com, kamratelimited@gmail.com",
+                footer_style
+            )
+        ]]
+        
+        footer_table = Table(footer_data, colWidths=[7.0*inch])
+        footer_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#001F4D')),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ]))
+        
+        elements.append(footer_table)
+        
+        # Build PDF
+        doc.build(elements)
+        buffer.seek(0)
+        
+        logger.info(f"✅ Trip invoice PDF generated: {trip_invoice.invoice_number}")
+        return buffer
+        
+    except Exception as e:
+        logger.error(f"❌ Trip PDF generation error: {str(e)}", exc_info=True)
+        return None
+    
+
+@login_required
+@require_http_methods(["POST"])
+def quick_add_truck(request):
+    """
+    AJAX endpoint to add truck quickly from trip form
+    
+    Returns JSON with success status and new truck data
+    """
+    try:
+        form = QuickAddTruckForm(request.POST)
+        
+        if form.is_valid():
+            truck = form.save()
+            
+            return JsonResponse({
+                'success': True,
+                'truck_id': truck.id,
+                'truck_plate': truck.plateNumber,
+                'truck_model': truck.model,
+                'truck_capacity': str(truck.capacity),
+                'message': f'✅ Truck {truck.plateNumber} added successfully!',
+                'redirect': request.GET.get('next', '/trips/')
+            })
+        else:
+            # Return form errors
+            errors_dict = {}
+            for field, errors in form.errors.items():
+                errors_dict[field] = [str(e) for e in errors]
+            
+            return JsonResponse({
+                'success': False,
+                'errors': errors_dict,
+                'message': '❌ Please fix the errors below'
+            }, status=400)
+            
+    except Exception as e:
+        logger.error(f"Error adding truck: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'errors': {'general': [str(e)]},
+            'message': f'❌ Error: {str(e)}'
+        }, status=500)
+
+
+@login_required
+def get_trucks_json(request):
+    """
+    Get all active trucks as JSON for dropdown refresh
+    """
+    from .models import Truck
+    
+    trucks = Truck.objects.filter(status='ACTIVE').values('id', 'plateNumber', 'model', 'capacity').order_by('plateNumber')
+    
+    return JsonResponse({
+        'success': True,
+        'trucks': list(trucks)
+    })

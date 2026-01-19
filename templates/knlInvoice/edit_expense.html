@@ -1,0 +1,358 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %}Edit Expense - Kamrate Nigeria Limited{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid mt-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <!-- Page Header -->
+      <div class="mb-4">
+        <h1 class="page-title mb-1">
+          <i class="fas fa-edit"></i> Edit Expense
+        </h1>
+        <p class="text-muted">
+          Trip: <strong>{{ trip.tripNumber }}</strong> | 
+          Route: <strong>{{ trip.origin }} → {{ trip.destination }}</strong>
+        </p>
+      </div>
+
+      <!-- Original Expense Info Card -->
+      <div class="card mb-4" style="border-left: 5px solid #FF9500; background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);">
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <p><strong>Original Amount:</strong></p>
+              <p style="font-size: 20px; color: #001f4d; font-weight: bold;">
+                ₦{{ expense.amount|floatformat:2 }}
+              </p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Expense Date:</strong></p>
+              <p style="font-size: 16px; color: #666;">
+                {{ expense.date|date:"d M Y H:i" }}
+              </p>
+            </div>
+          </div>
+          <hr style="border-top: 2px dashed #ddd; margin: 15px 0;">
+          <div class="row">
+            <div class="col-md-6">
+              <p><strong>Expense Type:</strong></p>
+              <p style="font-size: 14px; color: #666;">
+                {% for value, label in expense_types %}
+                  {% if value == expense.expenseType %}
+                    {{ label }}
+                  {% endif %}
+                {% endfor %}
+              </p>
+            </div>
+            <div class="col-md-6">
+              <p><strong>Description:</strong></p>
+              <p style="font-size: 14px; color: #666;">
+                {{ expense.description }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Expense Form Card -->
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white py-4" style="background-color: #001f4d !important;">
+          <h5 class="mb-0"><i class="fas fa-receipt"></i> Update Expense Details</h5>
+        </div>
+
+        <div class="card-body p-4">
+          <!-- Display Messages -->
+          {% if messages %}
+            {% for message in messages %}
+              <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+              </div>
+            {% endfor %}
+          {% endif %}
+
+          <form method="post" id="expenseForm">
+            {% csrf_token %}
+
+            <!-- Section 1: Expense Amount -->
+            <fieldset class="mb-4">
+              <legend class="fs-5 fw-bold text-dark mb-3">
+                <i class="fas fa-naira-sign" style="color: #ff9500"></i> Expense Amount
+              </legend>
+
+              <div class="mb-3">
+                <label for="amount" class="form-label fw-500">
+                  Amount (₦) <span class="text-danger">*</span>
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text">₦</span>
+                  <input 
+                    type="number" 
+                    class="form-control" 
+                    id="amount" 
+                    name="amount" 
+                    placeholder="2500" 
+                    step="0.01" 
+                    min="0.01"
+                    value="{{ expense.amount }}"
+                    required 
+                  />
+                </div>
+                <small class="text-muted">Change the expense amount if needed</small>
+              </div>
+            </fieldset>
+
+            <!-- Section 2: Expense Details -->
+            <fieldset class="mb-4">
+              <legend class="fs-5 fw-bold text-dark mb-3">
+                <i class="fas fa-tags" style="color: #ff9500"></i> Expense Information
+              </legend>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="date" class="form-label fw-500">
+                    Expense Date <span class="text-danger">*</span>
+                  </label>
+                  <input 
+                    type="datetime-local" 
+                    class="form-control" 
+                    id="date" 
+                    name="date" 
+                    value="{% if expense.date %}{{ expense.date|date:'Y-m-dTH:i' }}{% endif %}"
+                    required 
+                  />
+                  <small class="text-muted">When was this expense incurred?</small>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label for="expenseType" class="form-label fw-500">
+                    Expense Type <span class="text-danger">*</span>
+                  </label>
+                  <select class="form-select" id="expenseType" name="expenseType" required>
+                    <option value="">-- Select Expense Type --</option>
+                    {% for value, label in expense_types %}
+                      <option value="{{ value }}" {% if expense.expenseType == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                  </select>
+                  <small class="text-muted">What type of expense?</small>
+                </div>
+              </div>
+
+              <div class="mb-3">
+                <label for="description" class="form-label fw-500">
+                  Description <span class="text-danger">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="description" 
+                  name="description" 
+                  placeholder="e.g., Fuel at Lagos, Vehicle maintenance"
+                  value="{{ expense.description }}"
+                  required
+                />
+                <small class="text-muted">Brief description of the expense</small>
+              </div>
+
+              <div class="mb-3">
+                <label for="notes" class="form-label fw-500">
+                  Notes <span class="text-muted">(Optional)</span>
+                </label>
+                <textarea 
+                  class="form-control" 
+                  id="notes" 
+                  name="notes" 
+                  rows="3" 
+                  placeholder="Additional details about this expense">{{ expense.notes|default:'' }}</textarea>
+                <small class="text-muted">Add any additional information</small>
+              </div>
+            </fieldset>
+
+            <!-- Form Actions -->
+            <div class="border-top pt-3 mt-4">
+              <div class="d-flex gap-2">
+                <button 
+                  type="submit" 
+                  class="btn btn-lg" 
+                  style="background-color: #001f4d; color: white; min-width: 150px;">
+                  <i class="fas fa-save"></i> Update Expense
+                </button>
+
+                <a 
+                  href="{% url 'knlInvoice:expense-list' trip.pk %}" 
+                  class="btn btn-secondary btn-lg">
+                  <i class="fas fa-times"></i> Cancel
+                </a>
+
+                <!-- Delete Button -->
+                <form method="post" action="{% url 'knlInvoice:delete-expense' trip.pk expense.pk %}" style="display: inline;" onsubmit="return confirm('Are you sure you want to delete this expense? This action cannot be undone.');">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-danger btn-lg">
+                    <i class="fas fa-trash"></i> Delete
+                  </button>
+                </form>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Help Text -->
+      <div class="alert alert-info mt-4" role="alert">
+        <i class="fas fa-lightbulb"></i>
+        <strong>Tip:</strong> Edit this expense record to correct details. The trip profitability will be automatically recalculated based on the updated expense.
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+  .container-fluid {
+    max-width: 80%;
+    padding-right: 20px;
+    padding-left: 150px;
+  }
+  
+  .page-title {
+    color: #001f4d;
+    font-weight: 700;
+    font-size: 28px;
+    margin-bottom: 10px;
+  }
+
+  fieldset {
+    border: none;
+    padding: 20px;
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    margin-bottom: 20px;
+  }
+
+  legend {
+    width: auto;
+    padding: 0 10px;
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #001f4d;
+  }
+
+  .form-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .form-control,
+  .form-select {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 12px 15px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+  }
+
+  .form-control:focus,
+  .form-select:focus {
+    border-color: #ff9500;
+    box-shadow: 0 0 0 3px rgba(255, 149, 0, 0.15);
+    outline: none;
+  }
+
+  .input-group-text {
+    background-color: #f8f9fa;
+    border: 1px solid #ddd;
+    padding: 12px 15px;
+  }
+
+  .btn {
+    border-radius: 5px;
+    font-weight: 600;
+    padding: 12px 24px;
+    transition: all 0.3s ease;
+  }
+
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .btn-secondary {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
+  }
+
+  .btn-danger {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: white;
+  }
+
+  .text-danger {
+    color: #dc3545;
+  }
+
+  .text-muted {
+    color: #6c757d;
+    font-size: 0.85rem;
+  }
+
+  .card {
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+  }
+
+  .gap-2 {
+    gap: 10px;
+    display: flex;
+  }
+
+  .alert {
+    border-radius: 5px;
+    border-left: 4px solid;
+  }
+
+  .alert-info {
+    border-left-color: #17a2b8;
+    background-color: #d1ecf1;
+    color: #0c5460;
+  }
+
+  .alert-error {
+    background-color: #f8d7da;
+    color: #721c24;
+  }
+
+  .alert-success {
+    background-color: #d4edda;
+    color: #155724;
+  }
+
+  @media (max-width: 992px) {
+    .col-lg-8 {
+      max-width: 100%;
+      flex: 0 0 100%;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .page-title {
+      font-size: 24px;
+    }
+
+    .col-md-6 {
+      max-width: 100%;
+      flex: 0 0 100%;
+    }
+  }
+</style>
+
+{% endblock %}

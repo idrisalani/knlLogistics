@@ -51,7 +51,12 @@ urlpatterns = [
     # ============================================================================
     # EXPENSES MANAGEMENT (Phase 3)
     # ============================================================================
-    path('trips/<int:pk>/expenses/new/', views.expense_create, name='expense-create'),
+    # path('trips/<int:pk>/expenses/new/', views.expense_create, name='expense-create'),
+    # path('trips/<int:trip_id>/expenses/<int:expense_id>/edit/', views.edit_expense, name='edit-expense'),
+    # path('trips/<int:trip_id>/expenses/<int:expense_id>/delete/', views.delete_expense, name='delete-expense'),
+    # EXPENSE MANAGEMENT
+    path('trips/<int:pk>/expenses/', views.expense_list, name='expense-list'),
+    path('trips/<int:pk>/expenses/add/', views.expense_create, name='add-expense'),
     path('trips/<int:trip_id>/expenses/<int:expense_id>/edit/', views.edit_expense, name='edit-expense'),
     path('trips/<int:trip_id>/expenses/<int:expense_id>/delete/', views.delete_expense, name='delete-expense'),
 
@@ -71,6 +76,22 @@ urlpatterns = [
     path('invoices/<int:pk>/items/<int:item_id>/edit/', views.edit_invoice_item, name='edit-invoice-item'),
     path('invoices/<int:pk>/items/<int:item_id>/delete/', views.delete_invoice_item, name='delete-invoice-item'),
     path('invoices/<int:pk>/items/json/', views.invoice_items_json, name='invoice-items-json'),
+
+    path('trip-invoices/', views.trip_invoice_list, name='tripinvoice-list'),
+    path('trip-invoices/<slug:slug>/', views.trip_invoice_detail, name='tripinvoice-detail'),
+    path('trip-invoices/<slug:slug>/pdf/', views.trip_invoice_pdf, name='tripinvoice-pdf'),
+    path('trip-invoices/<slug:slug>/email/', views.trip_invoice_email, name='tripinvoice-email'),
+    path('trip-invoices/<slug:slug>/payment/', views.record_payment, name='tripinvoice-record-payment'),
+    path('trips/<int:trip_id>/invoice/create/', views.create_trip_invoice, name='create-trip-invoice'),
+
+    path('trips/', views.trips_list, name='trips-list'),
+    path('trips/new/', views.trip_create, name='trip-create'),
+    path('trips/<int:id>/', views.trip_detail, name='trip-detail'),
+    path('trips/<int:id>/edit/', views.trip_edit, name='trip-edit'),
+    path('trips/<int:id>/delete/', views.trip_delete, name='trip-delete'),
+    
+    # ← ADD THIS: Trip invoice creation
+    path('trips/<int:id>/invoice/', views.trip_invoice_create, name='trip-invoice-create'),
 
     # ============================================================================
     # PAYMENTS (Phase 2)

@@ -659,3 +659,158 @@ class Settings(models.Model):
         self.last_updated = timezone.localtime(timezone.now())
 
         super(Settings, self).save(*args, **kwargs)
+
+
+class TripInvoice(models.Model):
+    """
+    Trip-Based Invoice Model
+    
+    Used for invoicing trips with container manifest details
+    Extends the Invoice functionality specifically for trip operations
+    """
+    
+    # Link to Trip
+    trip = models.OneToOneField(
+        'Trip',
+        on_delete=models.CASCADE,
+        related_name='invoice',
+        help_text="Trip being invoiced"
+    )
+    
+    # Reuse Invoice fields
+    invoice_number = models.CharField(max_length=50, unique=True, db_index=True)
+    client = models.ForeignKey(
+        Client,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='trip_invoices'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='trip_invoices'
+    )
+    
+    # Dates
+    issue_date = models.DateField(default=timezone.now)
+    due_date = models.DateField(null=True, blank=True)
+    
+    # Financial
+    subtotal = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    tax_rate = models.FloatField(default=7.5)  # Nigeria VAT
+    tax_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    total = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    amount_paid = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    outstanding_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
+    
+    # Status
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('sent', 'Sent'),
+        ('pending', 'Pending Payment'),
+        ('paid', 'Paid'),
+        ('overdue', 'Overdue'),
+        ('cancelled', 'Cancelled'),
+    ]
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='draft',
+        db_index=True
+    )
+    
+    # Payment terms
+    TERMS = [
+        ('14 days', '14 days'),
+        ('30 days', '30 days'),
+        ('60 days', '60 days'),
+        ('immediate', 'Immediate'),
+    ]
+    paymentTerms = models.CharField(
+        choices=TERMS,
+        default='14 days',
+        max_length=100
+    )
+    
+    # Additional info
+    notes = models.TextField(null=True, blank=True)
+    payment_method = models.CharField(max_length=100, null=True, blank=True)
+    
+    # Tracking
+    uniqueId = models.CharField(null=True, blank=True, max_length=100)
+    slug = models.SlugField(max_length=500, unique=True, blank=True, null=True)
+    date_created = models.DateTimeField(auto_now_add=True)
+    last_updated = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-date_created']
+        verbose_name = 'Trip Invoice'
+        verbose_name_plural = 'Trip Invoices'
+        indexes = [
+            models.Index(fields=['invoice_number']),
+            models.Index(fields=['client']),
+            models.Index(fields=['status']),
+            models.Index(fields=['-date_created']),
+        ]
+    
+    def __str__(self):
+        return f'Trip Invoice {self.invoice_number}'
+    
+    def get_absolute_url(self):
+        return reverse('tripinvoice-detail', kwargs={'slug': self.slug})
+    
+    def calculate_totals(self):
+        """Calculate totals based on trip revenue"""
+        if self.trip:
+            # Use trip revenue as subtotal
+            self.subtotal = self.trip.revenue
+            self.tax_amount = self.subtotal * (self.tax_rate / 100)
+            self.total = self.subtotal + self.tax_amount
+            self.outstanding_amount = self.total - self.amount_paid
+    
+    def mark_as_paid(self, amount=None):
+        """Mark invoice as paid"""
+        if amount is None:
+            amount = self.outstanding_amount
+        
+        self.amount_paid += amount
+        self.outstanding_amount = self.total - self.amount_paid
+        
+        if self.outstanding_amount <= 0:
+            self.status = 'paid'
+            self.outstanding_amount = 0
+        else:
+            self.status = 'pending'
+    
+    @property
+    def is_overdue(self):
+        """Check if invoice is overdue"""
+        from django.utils import timezone
+        if self.due_date and self.status != 'paid':
+            return self.due_date < timezone.now().date()
+        return False
+    
+    @property
+    def is_paid(self):
+        """Check if invoice is fully paid"""
+        return self.status == 'paid' or self.outstanding_amount <= 0
+    
+    def save(self, *args, **kwargs):
+        if self.date_created is None:
+            self.date_created = timezone.localtime(timezone.now())
+        
+        if self.uniqueId is None:
+            self.uniqueId = str(uuid4()).split('-')[4]
+            self.slug = slugify(f'{self.invoice_number} {self.uniqueId}')
+        
+        self.slug = slugify(f'{self.invoice_number} {self.uniqueId}')
+        
+        # Calculate totals from trip
+        self.calculate_totals()
+        
+        # Update status if overdue
+        if self.is_overdue and self.status not in ['paid', 'cancelled']:
+            self.status = 'overdue'
+        
+        super(TripInvoice, self).save(*args, **kwargs)

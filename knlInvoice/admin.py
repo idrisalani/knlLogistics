@@ -1,9 +1,8 @@
 from django.contrib import admin
 from .models import (
     Truck, Trip, TripExpense, Client, Product, 
-    Invoice, InvoiceItem, PaymentRecord, Settings
+    Invoice, InvoiceItem, PaymentRecord, Settings, TripInvoice
 )
-
 
 # ============================================================================
 # EXISTING MODELS (No Changes - Kept for reference)
@@ -251,3 +250,33 @@ class PaymentRecordAdmin(admin.ModelAdmin):
         """Display formatted amount"""
         return f"₦{obj.amount:,.2f}"
     amount_formatted.short_description = "Amount"
+
+
+@admin.register(TripInvoice)
+class TripInvoiceAdmin(admin.ModelAdmin):
+    list_display = ('invoice_number', 'trip', 'client', 'status', 'total', 'date_created')
+    list_filter = ('status', 'date_created', 'client')
+    search_fields = ('invoice_number', 'trip__tripNumber', 'client__clientName')
+    readonly_fields = ('uniqueId', 'slug', 'date_created', 'last_updated')
+    
+    fieldsets = (
+        ('Invoice Information', {
+            'fields': ('invoice_number', 'status', 'uniqueId', 'slug')
+        }),
+        ('Trip & Client', {
+            'fields': ('trip', 'client', 'user')
+        }),
+        ('Dates', {
+            'fields': ('issue_date', 'due_date')
+        }),
+        ('Financial', {
+            'fields': ('subtotal', 'tax_rate', 'tax_amount', 'total', 'amount_paid', 'outstanding_amount')
+        }),
+        ('Payment', {
+            'fields': ('paymentTerms', 'payment_method', 'notes')
+        }),
+        ('System', {
+            'fields': ('date_created', 'last_updated'),
+            'classes': ('collapse',)
+        }),
+    )

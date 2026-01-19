@@ -1,0 +1,433 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ invoice.invoice_number }} - Trip Invoice - Kamrate{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1 class="h3 font-weight-bold">
+                <i class="fas fa-file-invoice-dollar"></i> {{ invoice.invoice_number }}
+            </h1>
+            <p class="text-muted">
+                Trip: <strong>{{ invoice.trip.tripNumber }}</strong> | 
+                Client: <strong>{{ invoice.client.clientName }}</strong>
+            </p>
+        </div>
+        <div class="col-md-4 text-right">
+            <a href="{% url 'tripinvoice-list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    {% if messages %}
+    <div class="alert alert-info alert-dismissible fade show" role="alert">
+        {% for message in messages %}
+            {{ message }}
+        {% endfor %}
+        <button type="button" class="close" data-dismiss="alert">
+            <span>&times;</span>
+        </button>
+    </div>
+    {% endif %}
+
+    <!-- Invoice Actions -->
+    <div class="card mb-4 border-left-primary">
+        <div class="card-header bg-primary text-white">
+            <h6 class="m-0 font-weight-bold">Invoice Actions</h6>
+        </div>
+        <div class="card-body">
+            <div class="btn-group" role="group">
+                <a href="{% url 'tripinvoice-pdf' invoice.slug %}" class="btn btn-success" target="_blank" title="Download PDF">
+                    <i class="fas fa-download"></i> Download PDF
+                </a>
+                <a href="{% url 'tripinvoice-email' invoice.slug %}" class="btn btn-info" title="Send via Email">
+                    <i class="fas fa-envelope"></i> Email Invoice
+                </a>
+                <a href="{% url 'tripinvoice-edit' invoice.slug %}" class="btn btn-warning" title="Edit">
+                    <i class="fas fa-edit"></i> Edit
+                </a>
+                {% if invoice.status != 'paid' %}
+                <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#recordPaymentModal">
+                    <i class="fas fa-money-bill-alt"></i> Record Payment
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Status & Overview -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="text-muted text-uppercase small font-weight-bold mb-2">Status</div>
+                    <div>
+                        {% if invoice.status == 'draft' %}
+                            <span class="badge badge-secondary badge-lg px-3">Draft</span>
+                        {% elif invoice.status == 'sent' %}
+                            <span class="badge badge-info badge-lg px-3">Sent</span>
+                        {% elif invoice.status == 'pending' %}
+                            <span class="badge badge-warning badge-lg px-3">Pending</span>
+                        {% elif invoice.status == 'paid' %}
+                            <span class="badge badge-success badge-lg px-3">Paid</span>
+                        {% elif invoice.status == 'overdue' %}
+                            <span class="badge badge-danger badge-lg px-3">Overdue</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-left-success">
+                <div class="card-body">
+                    <div class="text-success text-uppercase small font-weight-bold mb-1">Amount Paid</div>
+                    <div class="h4 mb-0">₦{{ invoice.amount_paid|floatformat:2 }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-left-warning">
+                <div class="card-body">
+                    <div class="text-warning text-uppercase small font-weight-bold mb-1">Outstanding</div>
+                    <div class="h4 mb-0">₦{{ invoice.outstanding_amount|floatformat:2 }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card h-100 border-left-primary">
+                <div class="card-body">
+                    <div class="text-primary text-uppercase small font-weight-bold mb-1">Total Due</div>
+                    <div class="h4 mb-0">₦{{ invoice.total|floatformat:2 }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Two Column Layout -->
+    <div class="row">
+        <!-- Left Column: Trip & Client Info -->
+        <div class="col-md-6">
+            <!-- Trip Information -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white py-3">
+                    <h6 class="m-0 font-weight-bold">Trip Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <small class="text-muted text-uppercase font-weight-bold">Trip Number</small>
+                        </div>
+                        <div class="col-sm-8">
+                            <strong>{{ invoice.trip.tripNumber }}</strong>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <small class="text-muted text-uppercase font-weight-bold">Origin</small>
+                        </div>
+                        <div class="col-sm-8">
+                            <strong>{{ invoice.trip.origin }}</strong>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <small class="text-muted text-uppercase font-weight-bold">Destination</small>
+                        </div>
+                        <div class="col-sm-8">
+                            <strong>{{ invoice.trip.destination }}</strong>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <small class="text-muted text-uppercase font-weight-bold">Truck</small>
+                        </div>
+                        <div class="col-sm-8">
+                            <strong>{{ invoice.trip.truck.plateNumber }}</strong> ({{ invoice.trip.truck.model }})
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <small class="text-muted text-uppercase font-weight-bold">Distance</small>
+                        </div>
+                        <div class="col-sm-8">
+                            <strong>{{ invoice.trip.distance }} km</strong>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <small class="text-muted text-uppercase font-weight-bold">Trip Date</small>
+                        </div>
+                        <div class="col-sm-8">
+                            <strong>{{ invoice.trip.startDate|date:"d M Y H:i" }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Client Information -->
+            <div class="card">
+                <div class="card-header bg-info text-white py-3">
+                    <h6 class="m-0 font-weight-bold">Client Information</h6>
+                </div>
+                <div class="card-body">
+                    {% if invoice.client %}
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <small class="text-muted text-uppercase font-weight-bold">Company Name</small>
+                        </div>
+                        <div class="col-sm-8">
+                            <strong>{{ invoice.client.clientName }}</strong>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <small class="text-muted text-uppercase font-weight-bold">Email</small>
+                        </div>
+                        <div class="col-sm-8">
+                            <a href="mailto:{{ invoice.client.emailAddress }}">{{ invoice.client.emailAddress }}</a>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <small class="text-muted text-uppercase font-weight-bold">Phone</small>
+                        </div>
+                        <div class="col-sm-8">
+                            <a href="tel:{{ invoice.client.phoneNumber }}">{{ invoice.client.phoneNumber }}</a>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <small class="text-muted text-uppercase font-weight-bold">Address</small>
+                        </div>
+                        <div class="col-sm-8">
+                            <strong>{{ invoice.client.addressLine1 }}, {{ invoice.client.state }}</strong>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <small class="text-muted text-uppercase font-weight-bold">Tax Number</small>
+                        </div>
+                        <div class="col-sm-8">
+                            <strong>{{ invoice.client.taxNumber }}</strong>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No client assigned to this invoice.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Financial & Dates -->
+        <div class="col-md-6">
+            <!-- Invoice Dates -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white py-3">
+                    <h6 class="m-0 font-weight-bold">Invoice Dates</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <small class="text-muted text-uppercase font-weight-bold">Issue Date</small>
+                        </div>
+                        <div class="col-sm-8">
+                            <strong>{{ invoice.issue_date|date:"d M Y" }}</strong>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <small class="text-muted text-uppercase font-weight-bold">Due Date</small>
+                        </div>
+                        <div class="col-sm-8">
+                            {% if invoice.due_date %}
+                                <strong>{{ invoice.due_date|date:"d M Y" }}</strong>
+                                {% if invoice.is_overdue %}
+                                    <span class="badge badge-danger ml-2">OVERDUE</span>
+                                {% endif %}
+                            {% else %}
+                                <span class="text-muted">Not set</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <small class="text-muted text-uppercase font-weight-bold">Payment Terms</small>
+                        </div>
+                        <div class="col-sm-8">
+                            <strong>{{ invoice.paymentTerms }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Financial Breakdown -->
+            <div class="card">
+                <div class="card-header bg-warning text-dark py-3">
+                    <h6 class="m-0 font-weight-bold">Financial Summary</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-sm-8">
+                            <small class="text-muted">Subtotal (Trip Revenue)</small>
+                        </div>
+                        <div class="col-sm-4 text-right">
+                            <strong>₦{{ invoice.subtotal|floatformat:2 }}</strong>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row mb-2">
+                        <div class="col-sm-8">
+                            <small class="text-muted">Tax ({{ invoice.tax_rate }}%)</small>
+                        </div>
+                        <div class="col-sm-4 text-right">
+                            <strong>₦{{ invoice.tax_amount|floatformat:2 }}</strong>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row mb-3">
+                        <div class="col-sm-8">
+                            <strong class="text-lg">TOTAL</strong>
+                        </div>
+                        <div class="col-sm-4 text-right">
+                            <strong class="text-lg text-primary">₦{{ invoice.total|floatformat:2 }}</strong>
+                        </div>
+                    </div>
+                    <div class="alert alert-light" role="alert">
+                        <small>Amount in words: <strong>{{ invoice.total|floatformat:0|default:"Amount" }} Naira Only</strong></small>
+                    </div>
+                    <hr>
+                    <div class="row mb-2">
+                        <div class="col-sm-8">
+                            <small class="text-success">Amount Paid</small>
+                        </div>
+                        <div class="col-sm-4 text-right">
+                            <strong class="text-success">₦{{ invoice.amount_paid|floatformat:2 }}</strong>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-sm-8">
+                            <strong class="text-warning">Outstanding</strong>
+                        </div>
+                        <div class="col-sm-4 text-right">
+                            <strong class="text-warning">₦{{ invoice.outstanding_amount|floatformat:2 }}</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes Section -->
+    {% if invoice.notes %}
+    <div class="card mt-4">
+        <div class="card-header bg-secondary text-white py-3">
+            <h6 class="m-0 font-weight-bold">Notes</h6>
+        </div>
+        <div class="card-body">
+            {{ invoice.notes }}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Payment Records -->
+    <div class="card mt-4">
+        <div class="card-header bg-dark text-white py-3">
+            <h6 class="m-0 font-weight-bold">Payment Records</h6>
+        </div>
+        <div class="card-body">
+            {% if invoice.payments.all %}
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Method</th>
+                            <th>Reference</th>
+                            <th>Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payment in invoice.payments.all %}
+                        <tr>
+                            <td>{{ payment.payment_date|date:"d M Y" }}</td>
+                            <td><strong class="text-success">₦{{ payment.amount|floatformat:2 }}</strong></td>
+                            <td>{{ payment.get_payment_method_display }}</td>
+                            <td>{{ payment.reference_number|default:"-" }}</td>
+                            <td>{{ payment.notes|truncatewords:10|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-muted">No payment records yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Record Payment Modal -->
+<div class="modal fade" id="recordPaymentModal" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Record Payment</h5>
+                <button type="button" class="close text-white" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form method="post" action="{% url 'tripinvoice-record-payment' invoice.slug %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="amount">Amount (₦)</label>
+                        <input type="number" class="form-control" id="amount" name="amount" step="0.01" required placeholder="0.00">
+                        <small class="form-text text-muted">Outstanding: ₦{{ invoice.outstanding_amount|floatformat:2 }}</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="payment_method">Payment Method</label>
+                        <select class="form-control" id="payment_method" name="payment_method" required>
+                            <option value="">Select method...</option>
+                            <option value="bank_transfer">Bank Transfer</option>
+                            <option value="cash">Cash</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="online">Online Payment</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="reference">Reference Number</label>
+                        <input type="text" class="form-control" id="reference" name="reference_number" placeholder="e.g., Bank transaction ID">
+                    </div>
+                    <div class="form-group">
+                        <label for="notes">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Any additional notes..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Record Payment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
