@@ -189,6 +189,7 @@ def dashboard(request):
     context = {
         'page_title': 'Dashboard',
         'invoices': invoices,
+        'manifest_invoices': manifest_invoices,  # ✅ NEW: Manifest invoices
         'total_invoices': total_invoices,
         'total_revenue': float(total_revenue or 0),
         'pending_invoices': pending_invoices,
@@ -196,12 +197,13 @@ def dashboard(request):
         'outstanding_amount': float(outstanding or 0),
         'this_month_revenue': float(this_month_revenue or 0),
         'thirty_days_revenue': float(thirty_days_revenue or 0),
-        'trips': trips,
         'total_trips': total_trips,
         'total_trip_revenue': float(total_trip_revenue or 0),
         'total_expenses': float(total_expenses or 0),
         'total_profit': float(total_profit or 0),
-        'profit_margin': round(profit_margin, 2),
+        'profit_margin': profit_margin,
+        'trips': trips,
+        'clients': clients,
         'products': products,
         'total_clients': total_clients,
         'monthly_revenue': monthly_revenue,
