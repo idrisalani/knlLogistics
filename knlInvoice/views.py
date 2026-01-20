@@ -185,11 +185,18 @@ def dashboard(request):
     pending_count = user_invoices.filter(status__in=['pending', 'sent']).count()
     overdue_count = user_invoices.filter(status='overdue').count()
     
+    # ✅ GET MANIFEST INVOICES (NEW!)
+    manifest_invoices = TripInvoice.objects.all().order_by('-issue_date')[:5]
+    
+    # ✅ GET CLIENTS FOR DASHBOARD (NEW!)
+    clients = Client.objects.all().order_by('-date_created')[:5]
+    
     # ✅ FIX: Convert all Decimal values to float for template rendering
     context = {
         'page_title': 'Dashboard',
         'invoices': invoices,
-        'manifest_invoices': manifest_invoices,  # ✅ NEW: Manifest invoices
+        'manifest_invoices': manifest_invoices,  # ✅ ADD THIS
+        'clients': clients,  # ✅ ADD THIS
         'total_invoices': total_invoices,
         'total_revenue': float(total_revenue or 0),
         'pending_invoices': pending_invoices,
@@ -197,13 +204,12 @@ def dashboard(request):
         'outstanding_amount': float(outstanding or 0),
         'this_month_revenue': float(this_month_revenue or 0),
         'thirty_days_revenue': float(thirty_days_revenue or 0),
+        'trips': trips,
         'total_trips': total_trips,
         'total_trip_revenue': float(total_trip_revenue or 0),
         'total_expenses': float(total_expenses or 0),
         'total_profit': float(total_profit or 0),
-        'profit_margin': profit_margin,
-        'trips': trips,
-        'clients': clients,
+        'profit_margin': round(profit_margin, 2),
         'products': products,
         'total_clients': total_clients,
         'monthly_revenue': monthly_revenue,
