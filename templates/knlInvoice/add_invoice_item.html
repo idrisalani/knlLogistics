@@ -1,0 +1,389 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+
+{% block css %}
+<style>
+  :root {
+    --kamrate-orange: #FF9500;
+    --kamrate-blue: #001F4D;
+    --kamrate-green: #0D7A3D;
+  }
+
+  /* ===== PAGE HEADER ===== */
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 3px solid var(--kamrate-orange);
+  }
+
+  .page-header h1 {
+    color: var(--kamrate-blue);
+    font-weight: 800;
+    font-size: 2rem;
+    margin: 0;
+  }
+
+  .breadcrumb {
+    color: #6c757d;
+    font-size: 0.95rem;
+  }
+
+  .breadcrumb a {
+    color: var(--kamrate-orange);
+    text-decoration: none;
+    font-weight: 600;
+  }
+
+  .breadcrumb a:hover {
+    text-decoration: underline;
+  }
+
+  /* ===== FORM SECTION ===== */
+  .form-section {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 30px;
+  }
+
+  .form-section h2 {
+    color: var(--kamrate-blue);
+    font-weight: 700;
+    font-size: 1.3rem;
+    margin: 0 0 25px 0;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+  }
+
+  /* ===== FORM GROUPS ===== */
+  .form-group {
+    margin-bottom: 25px;
+  }
+
+  .form-group label {
+    display: block;
+    font-weight: 700;
+    color: var(--kamrate-blue);
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .form-group.required label::after {
+    content: " *";
+    color: #dc3545;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    background: white;
+    color: var(--kamrate-blue);
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--kamrate-orange);
+    box-shadow: 0 0 0 3px rgba(255, 149, 0, 0.1);
+  }
+
+  .form-group input::placeholder,
+  .form-group select::placeholder,
+  .form-group textarea::placeholder {
+    color: #6c757d;
+  }
+
+  .form-hint {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 6px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  /* ===== BUTTONS ===== */
+  .button-group {
+    display: flex;
+    gap: 12px;
+    margin-top: 30px;
+    padding-top: 25px;
+    border-top: 2px solid #f0f0f0;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--kamrate-orange), #E68A00);
+    color: white;
+    flex: 1;
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #E68A00, #CC7A00);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(255, 149, 0, 0.3);
+  }
+
+  .btn-secondary {
+    background: white;
+    color: var(--kamrate-blue);
+    border: 2px solid var(--kamrate-blue);
+    flex: 1;
+  }
+
+  .btn-secondary:hover {
+    background: var(--kamrate-blue);
+    color: white;
+  }
+
+  /* ===== INVOICE INFO ===== */
+  .invoice-info-card {
+    background: #f8f9fa;
+    border-left: 4px solid var(--kamrate-orange);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 30px;
+  }
+
+  .invoice-info-card h3 {
+    color: var(--kamrate-blue);
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .invoice-info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+  }
+
+  .invoice-info-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .invoice-info-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+    margin-bottom: 4px;
+  }
+
+  .invoice-info-value {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--kamrate-blue);
+  }
+
+  .invoice-info-value.amount {
+    color: var(--kamrate-green);
+    font-size: 1.1rem;
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 768px) {
+    .page-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 15px;
+    }
+
+    .page-header h1 {
+      font-size: 1.5rem;
+    }
+
+    .form-section {
+      padding: 20px;
+    }
+
+    .form-row {
+      grid-template-columns: 1fr;
+      gap: 15px;
+    }
+
+    .button-group {
+      flex-direction: column;
+    }
+
+    .btn {
+      width: 100%;
+    }
+
+    .invoice-info-grid {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<main>
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div>
+      <h1>
+        <i class="fas fa-plus-circle" style="color: var(--kamrate-orange); margin-right: 10px;"></i>
+        Add Item to Invoice
+      </h1>
+      <div class="breadcrumb">
+        <a href="{% url 'knlInvoice:invoices-list' %}">Invoices</a>
+        /
+        <a href="{% url 'knlInvoice:invoice-detail' invoice.pk %}">{{ invoice.invoice_number }}</a>
+        / Add Item
+      </div>
+    </div>
+  </div>
+
+  <!-- INVOICE INFO CARD -->
+  <div class="invoice-info-card">
+    <h3><i class="fas fa-info-circle" style="color: var(--kamrate-orange); margin-right: 8px;"></i>Invoice Information</h3>
+    <div class="invoice-info-grid">
+      <div class="invoice-info-item">
+        <span class="invoice-info-label">Invoice Number</span>
+        <span class="invoice-info-value">{{ invoice.invoice_number }}</span>
+      </div>
+      <div class="invoice-info-item">
+        <span class="invoice-info-label">Client</span>
+        <span class="invoice-info-value">{{ invoice.client.clientName }}</span>
+      </div>
+      <div class="invoice-info-item">
+        <span class="invoice-info-label">Current Total</span>
+        <span class="invoice-info-value amount">₦{{ invoice.total|floatformat:0 }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORM SECTION -->
+  <div class="form-section">
+    <h2>Item Details</h2>
+
+    <form method="POST" class="add-item-form">
+      {% csrf_token %}
+
+      <!-- DESCRIPTION -->
+      <div class="form-group required">
+        <label for="id_description">
+          <i class="fas fa-pen"></i> Item Description
+        </label>
+        <input
+          type="text"
+          id="id_description"
+          name="description"
+          placeholder="e.g., Container Transport (40FT)"
+          required
+        >
+        <div class="form-hint">What is this item/service?</div>
+      </div>
+
+      <!-- QUANTITY & UNIT PRICE ROW -->
+      <div class="form-row">
+        <div class="form-group required">
+          <label for="id_quantity">
+            <i class="fas fa-cubes"></i> Quantity
+          </label>
+          <input
+            type="number"
+            id="id_quantity"
+            name="quantity"
+            value="1"
+            min="1"
+            step="1"
+            required
+          >
+          <div class="form-hint">Number of units</div>
+        </div>
+
+        <div class="form-group required">
+          <label for="id_unit_price">
+            <i class="fas fa-money-bill-wave"></i> Unit Price (₦)
+          </label>
+          <input
+            type="number"
+            id="id_unit_price"
+            name="unit_price"
+            placeholder="0.00"
+            min="0"
+            step="0.01"
+            required
+          >
+          <div class="form-hint">Price per unit</div>
+        </div>
+      </div>
+
+      <!-- PRODUCT SELECTION (OPTIONAL) -->
+      <div class="form-group">
+        <label for="id_product">
+          <i class="fas fa-box"></i> Product (Optional)
+        </label>
+        <select id="id_product" name="product">
+          <option value="">-- Select a product --</option>
+          {% for product in products %}
+            <option value="{{ product.id }}">{{ product.title }}</option>
+          {% endfor %}
+        </select>
+        <div class="form-hint">Link this item to an existing product (optional)</div>
+      </div>
+
+      <!-- BUTTON GROUP -->
+      <div class="button-group">
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-check-circle"></i> Add Item
+        </button>
+        <a href="{% url 'knlInvoice:invoice-detail' invoice.pk %}" class="btn btn-secondary">
+          <i class="fas fa-times-circle"></i> Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- BACK LINK -->
+  <div style="margin-top: 20px; text-align: center;">
+    <a href="{% url 'knlInvoice:invoice-detail' invoice.pk %}" style="color: var(--kamrate-orange); text-decoration: none; font-weight: 700;">
+      <i class="fas fa-arrow-left"></i> Back to Invoice
+    </a>
+  </div>
+
+</main>
+
+{% endblock %}

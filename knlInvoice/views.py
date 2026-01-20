@@ -2679,33 +2679,79 @@ def trip_invoice_create(request):
     
     if request.method == 'POST':
         try:
+            # ✅ FIX: Parse dates properly from form strings
+            from datetime import datetime as dt
+            
+            # Parse issue date from string to date object
+            try:
+                issue_date = dt.strptime(request.POST.get('issue_date', ''), '%m/%d/%Y').date()
+            except (ValueError, TypeError):
+                issue_date = timezone.now().date()
+            
+            # Parse due date from string to date object
+            try:
+                due_date = dt.strptime(request.POST.get('due_date', ''), '%m/%d/%Y').date()
+            except (ValueError, TypeError):
+                due_date = None
+            
             # Get form data
-            invoice_number = request.POST.get('invoice_number')
+            invoice_number = request.POST.get('invoice_number', '').strip()
             client_id = request.POST.get('client')
-            issue_date = request.POST.get('issue_date', timezone.now().date())
-            due_date = request.POST.get('due_date')
             tax_rate = float(request.POST.get('tax_rate', 7.5))
             payment_terms = request.POST.get('payment_terms', '14 days')
             notes = request.POST.get('notes', '')
             
-            # Get selected trips (from JavaScript containers array)
-            containers_json = request.POST.get('containers', '[]')
-            selected_trips = json.loads(containers_json) if containers_json else []
+            # ✅ FIX: Get selected trips - handle both JSON and comma-separated
+            containers_data = request.POST.get('containers', '[]')
+            
+            try:
+                selected_trips = json.loads(containers_data) if containers_data else []
+            except (json.JSONDecodeError, ValueError):
+                # Try comma-separated format
+                if containers_data:
+                    try:
+                        selected_trips = [int(x.strip()) for x in containers_data.split(',') if x.strip()]
+                    except (ValueError, AttributeError):
+                        selected_trips = []
+                else:
+                    selected_trips = []
+            
+            # Ensure it's a list
+            if not isinstance(selected_trips, list):
+                selected_trips = [selected_trips] if selected_trips else []
             
             if not selected_trips:
                 messages.error(request, '❌ Please select at least one trip!')
                 return render(request, 'knlInvoice/trip_invoice_create.html', {
                     'clients': Client.objects.all(),
-                    'available_trips': Trip.objects.all().order_by('-startDate'),  # ✅ FIX: Get ALL trips
+                    'available_trips': Trip.objects.all().order_by('-startDate'),
                     'payment_terms': TripInvoice.TERMS,
                 })
             
-            # Validate invoice number is unique (if provided)
-            if invoice_number and TripInvoice.objects.filter(invoice_number=invoice_number).exists():
-                messages.error(request, '❌ Invoice number already exists!')
+            # ✅ FIX: Auto-generate invoice number if not provided
+            if not invoice_number:
+                # Generate invoice number based on pattern
+                # You can customize this pattern as needed
+                from django.utils import timezone as tz
+                today = tz.now().date()
+                
+                # Format: KNL/[DATE]/TI-[SEQUENCE]
+                # Example: KNL/20260120/TI-001
+                date_str = today.strftime('%Y%m%d')
+                
+                # Get count of invoices created today
+                today_count = TripInvoice.objects.filter(
+                    issue_date__date=today
+                ).count() + 1
+                
+                invoice_number = f"KNL/{date_str}/TI-{today_count:03d}"
+            
+            # Validate invoice number is unique
+            if TripInvoice.objects.filter(invoice_number=invoice_number).exists():
+                messages.error(request, f'❌ Invoice number {invoice_number} already exists!')
                 return render(request, 'knlInvoice/trip_invoice_create.html', {
                     'clients': Client.objects.all(),
-                    'available_trips': Trip.objects.all().order_by('-startDate'),  # ✅ FIX: Get ALL trips
+                    'available_trips': Trip.objects.all().order_by('-startDate'),
                     'payment_terms': TripInvoice.TERMS,
                 })
             
@@ -2719,6 +2765,7 @@ def trip_invoice_create(request):
             
             # Create invoice
             invoice = TripInvoice.objects.create(
+                invoice_number=invoice_number,  # ✅ Now has a value!
                 client=client,
                 user=request.user,
                 issue_date=issue_date,
@@ -2734,17 +2781,17 @@ def trip_invoice_create(request):
                 try:
                     trip = Trip.objects.get(pk=trip_id)
                     
-                    # Get trip details - use all the fields from the old view
+                    # Get trip details
                     date_loaded = trip.startDate.date() if trip.startDate else timezone.now().date()
                     file_reference = trip.tripNumber if hasattr(trip, 'tripNumber') else ''
-                    container_number = ''  # Can be filled in detail view
-                    terminal = ''  # Can be filled in detail view
+                    container_number = ''
+                    terminal = ''
                     truck_number = trip.truck.plateNumber if trip.truck else ''
-                    container_length = '20FT'  # Default
+                    container_length = '20FT'
                     destination = trip.destination
                     amount = Decimal(str(trip.revenue))
                     
-                    # Add as line item using the model's add_trip method
+                    # Add as line item
                     invoice.add_trip(
                         trip=trip,
                         date_loaded=date_loaded,
@@ -2766,7 +2813,7 @@ def trip_invoice_create(request):
             invoice.calculate_totals()
             invoice.save()
             
-            messages.success(request, f'✅ Manifest Invoice created with {invoice.line_items.count()} containers!')
+            messages.success(request, f'✅ Manifest Invoice {invoice.invoice_number} created with {invoice.line_items.count()} containers!')
             return redirect('knlInvoice:trip-invoice-detail', pk=invoice.pk)
         
         except Exception as e:
@@ -2774,20 +2821,17 @@ def trip_invoice_create(request):
             messages.error(request, f'❌ Error creating invoice: {str(e)}')
             return render(request, 'knlInvoice/trip_invoice_create.html', {
                 'clients': Client.objects.all(),
-                'available_trips': Trip.objects.all().order_by('-startDate'),  # ✅ FIX: Get ALL trips
+                'available_trips': Trip.objects.all().order_by('-startDate'),
                 'payment_terms': TripInvoice.TERMS,
             })
     
     # GET REQUEST - Show create form
-    
-    # ✅ FIX: Get ALL trips instead of just completed
-    # This matches the real-world usage shown in the invoice PDF
     available_trips = Trip.objects.all().order_by('-startDate')
     clients = Client.objects.all().order_by('clientName')
     
     context = {
         'page_title': 'Create Manifest Invoice',
-        'available_trips': available_trips,  # ✅ Now includes ALL trips
+        'available_trips': available_trips,
         'clients': clients,
         'payment_terms': TripInvoice.TERMS,
     }
@@ -2934,68 +2978,78 @@ def trip_invoice_edit(request, pk):
 
 @login_required(login_url='knlInvoice:login')
 def trip_invoice_add_trip(request, pk):
-    """Add another trip to an existing invoice"""
-    invoice = get_object_or_404(TripInvoice, pk=pk)
+    """Add additional trips to existing manifest invoice"""
     
-    # Only allow adding to draft invoices
-    if invoice.status not in ['draft']:
-        messages.error(request, '❌ Can only add trips to draft invoices!')
-        return redirect('knlInvoice:trip-invoice-detail', pk=invoice.pk)
+    try:
+        invoice = TripInvoice.objects.get(pk=pk)
+    except TripInvoice.DoesNotExist:
+        messages.error(request, '❌ Invoice not found!')
+        return redirect('knlInvoice:trip-invoice-list')
     
     if request.method == 'POST':
         try:
-            trip_id = request.POST.get('trip')
-            trip = get_object_or_404(Trip, pk=trip_id)
+            trip_id = request.POST.get('trip_id')
+            amount = request.POST.get('amount', '').strip()
             
-            # Check if trip already on invoice
-            if invoice.line_items.filter(trip=trip).exists():
-                messages.error(request, '❌ This trip is already on the invoice!')
+            if not trip_id:
+                messages.error(request, '❌ Please select a trip!')
                 return redirect('knlInvoice:trip-invoice-add-trip', pk=invoice.pk)
             
-            # Get trip details
-            date_loaded = request.POST.get('date_loaded', trip.startDate.date())
-            file_reference = request.POST.get('file_reference', '')
-            container_number = request.POST.get('container_number', '')
-            terminal = request.POST.get('terminal', '')
-            truck_number = request.POST.get('truck_number', trip.truck.plateNumber if trip.truck else '')
-            container_length = request.POST.get('container_length', '20FT')
-            destination = request.POST.get('destination', trip.destination)
-            amount = float(request.POST.get('amount', trip.revenue))
+            # Get the trip
+            try:
+                trip = Trip.objects.get(pk=trip_id)
+            except Trip.DoesNotExist:
+                messages.error(request, '❌ Trip not found!')
+                return redirect('knlInvoice:trip-invoice-add-trip', pk=invoice.pk)
+            
+            # Use provided amount or trip revenue
+            if amount:
+                try:
+                    amount = Decimal(str(amount))
+                except (ValueError, TypeError):
+                    amount = Decimal(str(trip.revenue))
+            else:
+                amount = Decimal(str(trip.revenue))
             
             # Add to invoice
             invoice.add_trip(
                 trip=trip,
-                date_loaded=date_loaded,
-                file_reference=file_reference,
-                container_number=container_number,
-                terminal=terminal,
-                truck_number=truck_number,
-                container_length=container_length,
-                destination=destination,
+                date_loaded=trip.startDate.date() if trip.startDate else timezone.now().date(),
+                file_reference=trip.tripNumber if hasattr(trip, 'tripNumber') else '',
+                container_number='',
+                terminal='',
+                truck_number=trip.truck.plateNumber if trip.truck else '',
+                container_length='20FT',
+                destination=trip.destination,
                 amount=amount,
             )
             
-            messages.success(request, f'✅ Trip {trip.tripNumber} added to invoice!')
-            return redirect('knlInvoice:trip-invoice-detail', pk=invoice.pk)
+            # Recalculate
+            invoice.calculate_totals()
+            invoice.save()
+            
+            messages.success(request, f'✅ Container added! Now {invoice.line_items.count()} containers.')
+            return redirect('knlInvoice:trip-invoice-add-trip', pk=invoice.pk)
         
         except Exception as e:
-            messages.error(request, f'❌ Error adding trip: {str(e)}')
+            logger.error(f"Error adding trip: {str(e)}")
+            messages.error(request, f'❌ Error: {str(e)}')
+            return redirect('knlInvoice:trip-invoice-add-trip', pk=invoice.pk)
     
-    # Get trips not already on this invoice
-    available_trips = Trip.objects.filter(
-        status='completed'
-    ).exclude(
-        invoice_items__invoice=invoice
+    # GET - Show form
+    # Get all trips that aren't already in this invoice
+    already_added = invoice.line_items.values_list('trip_id', flat=True)
+    available_trips = Trip.objects.exclude(
+        id__in=already_added
     ).order_by('-startDate')
     
     context = {
-        'page_title': f'Add Trip to Invoice {invoice.invoice_number}',
+        'page_title': 'Add Containers to Invoice',
         'invoice': invoice,
-        'available_trips': available_trips,
+        'available_trips': available_trips,  # ✅ THIS IS THE KEY LINE!
     }
     
     return render(request, 'knlInvoice/trip_invoice_add_trip.html', context)
-
 
 # ============================================
 # REMOVE TRIP FROM INVOICE

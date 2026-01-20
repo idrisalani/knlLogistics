@@ -1,0 +1,510 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %}Add Containers - Invoice {{ invoice.invoice_number }}{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+  :root {
+    --kamrate-orange: #FF9500;
+    --kamrate-blue: #001F4D;
+    --kamrate-green: #0D7A3D;
+    --text-dark: #1a1a1a;
+    --text-light: #6c757d;
+    --border-light: #e9ecef;
+    --bg-light: #f8f9fa;
+  }
+
+  main {
+    padding: 40px 20px !important;
+  }
+
+  .container-add-trip {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  /* ===== PAGE HEADER ===== */
+  .page-header {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    margin-bottom: 30px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    border-top: 5px solid var(--kamrate-orange);
+  }
+
+  .header-flex {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .header-content h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--kamrate-blue);
+    margin: 0 0 8px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .header-content h1 i {
+    color: var(--kamrate-orange);
+    font-size: 2.2rem;
+  }
+
+  .header-content p {
+    color: var(--text-light);
+    margin: 0;
+  }
+
+  .back-button {
+    padding: 12px 24px;
+    border-radius: 8px;
+    background: var(--kamrate-blue);
+    color: white;
+    text-decoration: none;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+  }
+
+  .back-button:hover {
+    background: #003d7a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 31, 77, 0.3);
+  }
+
+  /* ===== INVOICE SUMMARY CARD ===== */
+  .invoice-summary {
+    background: linear-gradient(135deg, var(--bg-light), white);
+    border-left: 4px solid var(--kamrate-orange);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .invoice-summary h3 {
+    color: var(--kamrate-blue);
+    margin: 0 0 16px 0;
+    font-size: 1rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 20px;
+  }
+
+  .summary-item {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .summary-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--text-light);
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  .summary-value {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--text-dark);
+  }
+
+  .summary-value.highlight {
+    color: var(--kamrate-orange);
+  }
+
+  /* ===== CURRENT CONTAINERS ===== */
+  .current-containers {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  }
+
+  .current-containers h3 {
+    color: var(--kamrate-blue);
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin: 0 0 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .current-containers h3 i {
+    color: var(--kamrate-orange);
+  }
+
+  .containers-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .container-item {
+    background: var(--bg-light);
+    border: 2px solid var(--border-light);
+    border-radius: 10px;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+  }
+
+  .container-item:hover {
+    border-color: var(--kamrate-orange);
+    background: white;
+    box-shadow: 0 2px 8px rgba(255, 149, 0, 0.15);
+  }
+
+  .container-info {
+    flex: 1;
+  }
+
+  .container-number {
+    font-weight: 800;
+    color: var(--kamrate-blue);
+    font-size: 1rem;
+    margin-bottom: 4px;
+  }
+
+  .container-details {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    display: flex;
+    gap: 12px;
+  }
+
+  .container-amount {
+    font-size: 1.1rem;
+    font-weight: 800;
+    color: var(--kamrate-green);
+  }
+
+  /* ===== FORM SECTION ===== */
+  .form-section {
+    background: white;
+    border-radius: 16px;
+    padding: 40px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  .form-section h2 {
+    color: var(--kamrate-blue);
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin: 0 0 30px 0;
+    padding-bottom: 20px;
+    border-bottom: 2px solid var(--border-light);
+  }
+
+  .form-group {
+    margin-bottom: 24px;
+  }
+
+  .form-group label {
+    display: block;
+    font-weight: 700;
+    color: var(--kamrate-blue);
+    margin-bottom: 10px;
+    font-size: 0.95rem;
+  }
+
+  .form-group.required label::after {
+    content: " *";
+    color: #dc3545;
+  }
+
+  .form-group select,
+  .form-group input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid var(--border-light);
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all 0.3s ease;
+    background: white;
+    color: var(--text-dark);
+  }
+
+  .form-group select:focus,
+  .form-group input:focus {
+    outline: none;
+    border-color: var(--kamrate-orange);
+    box-shadow: 0 0 0 3px rgba(255, 149, 0, 0.1);
+  }
+
+  .form-group input::placeholder {
+    color: var(--text-light);
+  }
+
+  .form-hint {
+    font-size: 0.85rem;
+    color: var(--text-light);
+    margin-top: 6px;
+  }
+
+  /* ===== FORM BUTTONS ===== */
+  .form-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 30px;
+    padding-top: 30px;
+    border-top: 2px solid var(--border-light);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px 28px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--kamrate-orange), #E68A00);
+    color: white;
+    flex: 1;
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #E68A00, #CC7A00);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(255, 149, 0, 0.3);
+  }
+
+  .btn-secondary {
+    background: white;
+    color: var(--kamrate-blue);
+    border: 2px solid var(--kamrate-blue);
+    flex: 1;
+  }
+
+  .btn-secondary:hover {
+    background: var(--kamrate-blue);
+    color: white;
+    transform: translateY(-2px);
+  }
+
+  /* ===== EMPTY STATE ===== */
+  .empty-containers {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-light);
+  }
+
+  .empty-containers i {
+    font-size: 3rem;
+    color: var(--border-light);
+    margin-bottom: 16px;
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 768px) {
+    main {
+      padding: 20px !important;
+    }
+
+    .page-header {
+      padding: 25px;
+    }
+
+    .header-flex {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .header-content h1 {
+      font-size: 1.5rem;
+    }
+
+    .back-button {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .form-section {
+      padding: 25px;
+    }
+
+    .containers-list {
+      grid-template-columns: 1fr;
+    }
+
+    .container-item {
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
+    }
+
+    .form-buttons {
+      flex-direction: column;
+    }
+
+    .btn {
+      width: 100%;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="container-add-trip">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <div class="header-flex">
+      <div class="header-content">
+        <h1>
+          <i class="fas fa-plus-circle"></i>
+          Add More Containers
+        </h1>
+        <p>Invoice: <strong>{{ invoice.invoice_number }}</strong></p>
+      </div>
+      <a href="{% url 'knlInvoice:trip-invoice-detail' pk=invoice.pk %}" class="back-button">
+        <i class="fas fa-arrow-left"></i> Back
+      </a>
+    </div>
+  </div>
+
+  <!-- INVOICE SUMMARY -->
+  <div class="invoice-summary">
+    <h3><i class="fas fa-chart-pie"></i> Invoice Overview</h3>
+    <div class="summary-grid">
+      <div class="summary-item">
+        <span class="summary-label">Client</span>
+        <span class="summary-value">{{ invoice.client.clientName }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Containers</span>
+        <span class="summary-value highlight">{{ invoice.line_items.count }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Subtotal</span>
+        <span class="summary-value">₦{{ invoice.subtotal|floatformat:0 }}</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">Total (Inc. Tax)</span>
+        <span class="summary-value highlight">₦{{ invoice.total|floatformat:0 }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- CURRENT CONTAINERS -->
+  {% if invoice.line_items.all %}
+  <div class="current-containers">
+    <h3>
+      <i class="fas fa-shipping-fast"></i>
+      Current Containers ({{ invoice.line_items.count }})
+    </h3>
+    <div class="containers-list">
+      {% for item in invoice.line_items.all %}
+      <div class="container-item">
+        <div class="container-info">
+          <div class="container-number">{{ item.container_number|default:"—" }}</div>
+          <div class="container-details">
+            <span>📍 {{ item.destination }}</span>
+            <span>🔢 {{ item.trip.tripNumber }}</span>
+          </div>
+        </div>
+        <div class="container-amount">₦{{ item.amount|floatformat:0 }}</div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% else %}
+  <div class="current-containers">
+    <div class="empty-containers">
+      <i class="fas fa-inbox"></i>
+      <p>No containers added yet</p>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- ADD CONTAINER FORM -->
+  <div class="form-section">
+    <h2>
+      <i class="fas fa-plus"></i> Add Container to Invoice
+    </h2>
+
+    <form method="POST" id="addContainerForm">
+      {% csrf_token %}
+
+      <!-- SELECT TRIP -->
+      <div class="form-group required">
+        <label for="tripSelect">
+          <i class="fas fa-truck"></i> Select Trip/Container
+        </label>
+        <select name="trip_id" id="tripSelect" required>
+          <option value="">-- Choose a trip --</option>
+          {% for trip in available_trips %}
+            <option value="{{ trip.id }}">
+              {{ trip.tripNumber }} - {{ trip.destination }} (₦{{ trip.revenue|floatformat:0 }})
+            </option>
+          {% endfor %}
+        </select>
+        <div class="form-hint">Select the trip you want to add to this invoice</div>
+      </div>
+
+      <!-- CUSTOM AMOUNT (OPTIONAL) -->
+      <div class="form-group">
+        <label for="amountInput">
+          <i class="fas fa-money-bill-wave"></i> Amount (₦) - Optional
+        </label>
+        <input 
+          type="number" 
+          name="amount" 
+          id="amountInput" 
+          step="0.01"
+          placeholder="Leave blank to use trip revenue"
+        >
+        <div class="form-hint">If left blank, the trip's revenue will be used</div>
+      </div>
+
+      <!-- ACTION BUTTONS -->
+      <div class="form-buttons">
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-check-circle"></i>
+          Add Container
+        </button>
+        <a href="{% url 'knlInvoice:trip-invoice-detail' pk=invoice.pk %}" class="btn btn-secondary">
+          Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+
+</div>
+
+{% endblock %}
