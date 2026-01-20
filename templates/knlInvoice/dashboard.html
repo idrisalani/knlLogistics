@@ -146,6 +146,15 @@
     color: var(--kamrate-green);
   }
 
+  /* ===== LOSS CARD STYLING ===== */
+  .stat-card.loss {
+    border-left-color: #DC3545;
+  }
+
+  .stat-card.loss .stat-value {
+    color: #DC3545;
+  }
+
   /* ===== SECTIONS ===== */
   .section {
     margin-bottom: 40px;
@@ -400,7 +409,7 @@
     <a href="?period=all" class="btn-filter {% if period == 'all' %}active{% endif %}">All Time</a>
   </div>
 
-  <!-- PRIMARY STATS (4 Cards) - FIXED FIELD NAMES -->
+  <!-- PRIMARY STATS (4 Cards) - WITH PROFIT/LOSS FIX -->
   <div class="stats-container">
     <div class="stat-card">
       <h3>Total Invoices</h3>
@@ -414,10 +423,19 @@
       <h3>Total Trips</h3>
       <p class="stat-value">{{ total_trips|default:0 }}</p>
     </div>
-    <div class="stat-card positive">
-      <h3>Total Profit</h3>
-      <p class="stat-value">₦{{ total_profit|floatformat:0|default:"0" }}</p>
-    </div>
+
+    <!-- ✅ FIX: PROFIT/LOSS WITH CONDITIONAL STYLING -->
+    {% if total_profit >= 0 %}
+      <div class="stat-card positive">
+        <h3>✓ Total Profit</h3>
+        <p class="stat-value">₦{{ total_profit|floatformat:0|default:"0" }}</p>
+      </div>
+    {% else %}
+      <div class="stat-card loss">
+        <h3>❌ Total Loss</h3>
+        <p class="stat-value">₦{{ total_profit|floatformat:0|default:"0" }}</p>
+      </div>
+    {% endif %}
   </div>
 
   <!-- TIME-BASED STATS (2 Cards) -->
@@ -446,10 +464,18 @@
       <h3>Outstanding Amount</h3>
       <p class="stat-value">₦{{ outstanding_amount|floatformat:0|default:"0" }}</p>
     </div>
-    <div class="stat-card positive">
-      <h3>Profit Margin</h3>
-      <p class="stat-value">{{ profit_margin|floatformat:1|default:"0" }}%</p>
-    </div>
+    <!-- ✅ FIX: PROFIT/LOSS MARGIN WITH CONDITIONAL STYLING -->
+    {% if profit_margin >= 0 %}
+      <div class="stat-card positive">
+        <h3>✓ PROFIT MARGIN</h3>
+        <p class="stat-value">{{ profit_margin|floatformat:1|default:"0" }}%</p>
+      </div>
+    {% else %}
+      <div class="stat-card" style="border-left-color: #DC3545;">
+        <h3>❌ LOSS MARGIN</h3>
+        <p class="stat-value" style="color: #DC3545;">{{ profit_margin|floatformat:1|default:"0" }}%</p>
+      </div>
+    {% endif %}
   </div>
 
   <!-- ANALYTICS & CHARTS SECTION -->
@@ -489,7 +515,7 @@
             <th>Trip #</th>
             <th>Revenue</th>
             <th>Expenses</th>
-            <th>Profit</th>
+            <th>Profit/Loss</th>
             <th>Margin %</th>
             <th>Status</th>
           </tr>
@@ -549,7 +575,67 @@
     {% endif %}
   </div>
 
-  <!-- INVOICES SECTION - FIXED FIELD NAMES -->
+  <!-- MANIFEST INVOICES SECTION -->
+  <div class="section">
+    <div class="section-header">
+      <h2>📦 Recent Manifest Invoices</h2>
+      <a href="{% url 'knlInvoice:trip-invoice-create' %}" class="btn-small">+ New Manifest Invoice</a>
+    </div>
+
+    {% if manifest_invoices %}
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Invoice #</th>
+              <th>Client</th>
+              <th>Containers</th>
+              <th>Total Amount</th>
+              <th>Status</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for invoice in manifest_invoices %}
+            <tr>
+              <td><strong>{{ invoice.invoice_number }}</strong></td>
+              <td>{{ invoice.client.clientName|default:"—" }}</td>
+              <td>
+                <span class="badge" style="background-color: #e3f2fd; color: #1565c0;">
+                  🚚 {{ invoice.line_items.count }} containers
+                </span>
+              </td>
+              <td><strong>₦{{ invoice.total|floatformat:0 }}</strong></td>
+              <td>
+                {% if invoice.status == 'draft' %}
+                  <span class="badge badge-pending">📝 Draft</span>
+                {% elif invoice.status == 'sent' %}
+                  <span class="badge badge-pending">→ Sent</span>
+                {% elif invoice.status == 'paid' %}
+                  <span class="badge badge-paid">✓ Paid</span>
+                {% else %}
+                  <span class="badge badge-overdue">⚠ {{ invoice.get_status_display }}</span>
+                {% endif %}
+              </td>
+              <td>{{ invoice.issue_date|date:"d M Y" }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="table-container">
+        <div class="empty-state">
+          <div class="empty-state-icon">📦</div>
+          <h3>No Manifest Invoices Yet</h3>
+          <p>Create your first manifest invoice to consolidate multiple containers</p>
+          <a href="{% url 'knlInvoice:trip-invoice-create' %}" class="btn-action">+ Create Manifest Invoice</a>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- STANDARD INVOICES SECTION -->
   <div class="section">
     <div class="section-header">
       <h2>📄 Recent Invoices</h2>

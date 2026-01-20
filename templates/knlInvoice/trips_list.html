@@ -1,507 +1,222 @@
 {% extends 'partials/base.html' %}
 {% load static %}
 
-{% block title %}Trips - Kamrate Nigeria Limited{% endblock %}
+{% block title %}Truck Trips - Kamrate{% endblock %}
 
 {% block content %}
-
-<div class="container-fluid mt-4">
-  <!-- Page Header with Title and Action Buttons -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
+<main>
+  <!-- Page Header -->
+  <div class="page-header">
     <div>
-      <h1 class="page-title mb-1">
-        <i class="fas fa-truck"></i> Truck Trips
-      </h1>
+      <h1>🚚 Truck Trips</h1>
       <p class="text-muted">Manage and track all truck trips</p>
     </div>
-    <div class="btn-group" role="group">
-      <button type="button" class="btn btn-outline-secondary">
-        <i class="fas fa-print"></i> Print
-      </button>
-      <button type="button" class="btn btn-outline-secondary">
-        <i class="fas fa-download"></i> Export
-      </button>
-      <a href="/trips/new/" class="btn btn-warning btn-lg">
-        <i class="fas fa-plus"></i> New Trip
+    <div class="btn-group">
+      <a href="{% url 'knlInvoice:trip-create' %}" class="btn btn-primary" style="background-color: var(--kamrate-orange); border-color: var(--kamrate-orange); font-weight: 700;">
+        ➕ New Trip
+      </a>
+      <a href="{% url 'knlInvoice:trip-invoice-list' %}" class="btn btn-outline-secondary">
+        📋 Manifest Invoices
       </a>
     </div>
   </div>
 
-  <div class="row">
-    <!-- Left: Trips List (8 columns) -->
-    <div class="col-lg-9">
-      <!-- KPIs Section -->
-      <div class="row mb-4">
-        <!-- Total Trips -->
-        <div class="col-md-6 mb-3">
-          <div class="card stat-card border-0 shadow-sm h-100">
-            <div class="card-body p-4">
-              <div class="d-flex align-items-center justify-content-between">
-                <div>
-                  <p class="text-muted mb-1 small font-weight-bold">TOTAL TRIPS</p>
-                  <h3 class="mb-0" style="color: #001f4d;">{{ total_trips }}</h3>
-                </div>
-                <div class="stat-icon" style="background-color: #001f4d; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px;">
-                  <i class="fas fa-chart-line"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Total Revenue -->
-        <div class="col-md-6 mb-3">
-          <div class="card stat-card border-0 shadow-sm h-100">
-            <div class="card-body p-4">
-              <div class="d-flex align-items-center justify-content-between">
-                <div>
-                  <p class="text-muted mb-1 small font-weight-bold">TOTAL REVENUE</p>
-                  <h3 class="mb-0" style="color: #27ae60;">₦{{ total_revenue|floatformat:0 }}</h3>
-                </div>
-                <div class="stat-icon" style="background-color: #27ae60; color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px;">
-                  <i class="fas fa-money-bill-wave"></i>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>
+    {% endfor %}
+  {% endif %}
 
-      <!-- All Trips Section -->
-      <div class="card shadow-sm border-0">
-        <div class="card-header bg-white border-bottom p-3">
-          <h5 class="mb-0" style="color: #001f4d; font-weight: 700;">All Trips</h5>
-        </div>
-
-        <div class="card-body p-0">
-          {% if trips %}
-            <div class="table-responsive">
-              <table class="table table-hover mb-0">
-                <thead style="background-color: #f8f9fa;">
-                  <tr>
-                    <th style="color: #001f4d; font-weight: 700; padding: 15px;">TRIP #</th>
-                    <th style="color: #001f4d; font-weight: 700; padding: 15px;">DATE</th>
-                    <th style="color: #001f4d; font-weight: 700; padding: 15px;">TRUCK</th>
-                    <th style="color: #001f4d; font-weight: 700; padding: 15px;">ROUTE</th>
-                    <th style="color: #001f4d; font-weight: 700; padding: 15px;">AMOUNT</th>
-                    <th style="color: #001f4d; font-weight: 700; padding: 15px;">STATUS</th>
-                    <th style="color: #001f4d; font-weight: 700; padding: 15px;">ACTIONS</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for trip in trips %}
-                    <tr>
-                      <td style="padding: 15px;">
-                        <span class="badge" style="background-color: #001f4d; color: white; padding: 8px 12px; font-weight: 600;">{{ trip.tripNumber }}</span>
-                      </td>
-                      <td style="padding: 15px; color: #333;">{{ trip.startDate|date:"d M Y" }}</td>
-                      <td style="padding: 15px;">
-                        <strong style="color: #001f4d;">{{ trip.truck.plateNumber }}</strong>
-                      </td>
-                      <td style="padding: 15px; color: #333;">
-                        {{ trip.origin }} <i class="fas fa-arrow-right text-muted"></i> {{ trip.destination }}
-                      </td>
-                      <td style="padding: 15px;">
-                        <strong style="color: #27ae60; font-weight: 700;">₦{{ trip.revenue|floatformat:0 }}</strong>
-                      </td>
-                      <td style="padding: 15px;">
-                        {% if trip.status == 'COMPLETED' %}
-                          <span class="badge" style="background-color: #27ae60; color: white; padding: 6px 10px; font-weight: 600; border-radius: 4px;">COMPLETED</span>
-                        {% elif trip.status == 'IN_PROGRESS' %}
-                          <span class="badge" style="background-color: #f39c12; color: white; padding: 6px 10px; font-weight: 600; border-radius: 4px;">IN PROGRESS</span>
-                        {% elif trip.status == 'PENDING' %}
-                          <span class="badge" style="background-color: #95a5a6; color: white; padding: 6px 10px; font-weight: 600; border-radius: 4px;">PENDING</span>
-                        {% else %}
-                          <span class="badge" style="background-color: #95a5a6; color: white; padding: 6px 10px; font-weight: 600; border-radius: 4px;">{{ trip.status|upper }}</span>
-                        {% endif %}
-                      </td>
-                      <td style="padding: 15px;">
-                        <div class="btn-group btn-group-sm" role="group">
-                          <a href="/trips/{{ trip.id }}/" class="btn btn-outline-primary" style="color: #001f4d; border-color: #001f4d; padding: 5px 10px; font-size: 12px;" title="View Trip">
-                            <i class="fas fa-eye"></i> View
-                          </a>
-                          <a href="/trips/{{ trip.id }}/edit/" class="btn btn-outline-warning" style="color: #f39c12; border-color: #f39c12; padding: 5px 10px; font-size: 12px; margin-left: 5px;" title="Edit Trip">
-                            <i class="fas fa-edit"></i> Edit
-                          </a>
-                        </div>
-                      </td>
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-            </div>
-          {% else %}
-            <div class="alert alert-info m-4">
-              <i class="fas fa-info-circle"></i> No trips found. 
-              <a href="/trips/new/" style="font-weight: 600;">Create a new trip</a> to get started.
-            </div>
-          {% endif %}
+  <!-- Summary Cards (3 columns - matching Manifest Invoices) -->
+  <div class="row mb-4">
+    <!-- Total Trips -->
+    <div class="col-md-4">
+      <div class="card" style="border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div class="card-body">
+          <h6 class="text-muted mb-2" style="font-weight: 700; font-size: 0.85rem;">TOTAL TRIPS</h6>
+          <h3 style="color: var(--kamrate-blue); margin: 0; font-weight: 800; font-size: 2rem;">{{ total_trips }}</h3>
         </div>
       </div>
     </div>
 
-    <!-- Right: Invoice Builder (4 columns) -->
-    <div class="col-lg-3">
-      <div class="card shadow-sm border-0" style="position: sticky; top: 20px;">
-        <div class="card-header" style="background: linear-gradient(135deg, #ff9500 0%, #e68a00 100%); color: white; padding: 20px; border: none;">
-          <h5 class="mb-0">
-            <i class="fas fa-file-invoice"></i> Invoice Builder
-          </h5>
-          <small class="text-white-50">Add trips to generate invoice</small>
+    <!-- Total Revenue -->
+    <div class="col-md-4">
+      <div class="card" style="border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div class="card-body">
+          <h6 class="text-muted mb-2" style="font-weight: 700; font-size: 0.85rem;">TOTAL REVENUE</h6>
+          <h3 style="color: var(--kamrate-orange); margin: 0; font-weight: 800; font-size: 2rem;">₦{{ total_revenue|floatformat:0 }}</h3>
         </div>
+      </div>
+    </div>
 
-        <div class="card-body p-4">
-          <!-- Add Trip to Invoice Section -->
-          <div class="mb-4 pb-4 border-bottom">
-            <label class="form-label fw-600" style="color: #001f4d; margin-bottom: 12px;">
-              <i class="fas fa-plus-circle"></i> Add Trip to Invoice
-            </label>
-            
-            <select id="tripSelect" class="form-select" style="border: 1px solid #ddd; border-radius: 5px; padding: 10px; margin-bottom: 10px;">
-              <option value="">Select a trip...</option>
-              {% for trip in trips %}
-                <option value="{{ trip.id }}" data-trip="{{ trip.tripNumber }}" data-amount="{{ trip.revenue }}" data-destination="{{ trip.destination }}">
-                  {{ trip.tripNumber }} - {{ trip.origin }} → {{ trip.destination }} (₦{{ trip.revenue }})
-                </option>
-              {% endfor %}
-            </select>
-            
-            <button type="button" class="btn btn-warning w-100" onclick="addTripToInvoice()" style="background-color: #ff9500; border-color: #ff9500; font-weight: 600;">
-              <i class="fas fa-plus"></i> Add to Invoice
-            </button>
-          </div>
-
-          <!-- Selected Trips Section -->
-          <div>
-            <label class="form-label fw-600" style="color: #001f4d; margin-bottom: 12px;">
-              <i class="fas fa-list"></i> Invoice Items ({{ selectedTripsCount|default:0 }})
-            </label>
-            
-            <div id="invoiceItems" style="max-height: 400px; overflow-y: auto;">
-              <!-- Items will be added here by JavaScript -->
-              <div class="alert alert-light text-center py-4">
-                <i class="fas fa-inbox" style="font-size: 32px; color: #ccc; display: block; margin-bottom: 10px;"></i>
-                <small class="text-muted">No items added yet</small>
-              </div>
-            </div>
-
-            <!-- Invoice Summary -->
-            <div class="mt-4 pt-4 border-top">
-              <div class="d-flex justify-content-between mb-3">
-                <span style="color: #666;">Subtotal:</span>
-                <strong id="subtotal" style="color: #001f4d;">₦0</strong>
-              </div>
-              <div class="d-flex justify-content-between mb-3">
-                <span style="color: #666;">VAT (7.5%):</span>
-                <strong id="vat" style="color: #e74c3c;">₦0</strong>
-              </div>
-              <div class="d-flex justify-content-between mb-4 pb-4 border-bottom" style="font-size: 16px;">
-                <span style="color: #001f4d; font-weight: 700;">Total:</span>
-                <strong id="total" style="color: #27ae60; font-size: 18px;">₦0</strong>
-              </div>
-
-              <!-- Client Selection -->
-              <div class="mb-4">
-                <label class="form-label fw-600" style="color: #001f4d; margin-bottom: 10px;">
-                  <i class="fas fa-users"></i> Bill To (Client)
-                </label>
-                <select id="clientSelect" class="form-select" style="border: 1px solid #ddd; border-radius: 5px; padding: 10px;">
-                  <option value="">Select client...</option>
-                  {% for client in clients %}
-                    <option value="{{ client.id }}">{{ client.name }}</option>
-                  {% endfor %}
-                </select>
-              </div>
-
-              <!-- Action Buttons -->
-              <div class="d-flex gap-2">
-                <button type="button" class="btn btn-danger flex-grow-1" onclick="clearInvoice()" style="border-radius: 5px;">
-                  <i class="fas fa-trash"></i> Clear
-                </button>
-                <button type="button" class="btn btn-success flex-grow-1" onclick="generateInvoice()" style="background-color: #27ae60; border-color: #27ae60; border-radius: 5px; font-weight: 600;">
-                  <i class="fas fa-file-invoice"></i> Generate Invoice
-                </button>
-              </div>
-
-              <small class="text-muted d-block mt-3 text-center">
-                <i class="fas fa-info-circle"></i> Add trips and select client to create invoice
-              </small>
-            </div>
-          </div>
+    <!-- Completed Trips -->
+    <div class="col-md-4">
+      <div class="card" style="border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div class="card-body">
+          <h6 class="text-muted mb-2" style="font-weight: 700; font-size: 0.85rem;">COMPLETED</h6>
+          <h3 style="color: #0D7A3D; margin: 0; font-weight: 800; font-size: 2rem;">{{ completed_count }}</h3>
         </div>
       </div>
     </div>
   </div>
-</div>
+
+  <!-- Trips Table Card -->
+  <div class="card" style="border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <!-- Card Header -->
+    <div class="card-header" style="background-color: #f8f9fa; border-bottom: 2px solid var(--kamrate-orange); padding: 20px;">
+      <h5 style="color: var(--kamrate-blue); font-weight: 800; margin: 0;">All Trips</h5>
+    </div>
+
+    <!-- Card Body -->
+    <div class="card-body p-0">
+      {% if trips %}
+        <!-- Responsive Table -->
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <!-- Table Header -->
+            <thead style="background-color: #f8f9fa; border-bottom: 2px solid #e9ecef;">
+              <tr>
+                <th style="padding: 15px; color: var(--kamrate-blue); font-weight: 800; font-size: 0.9rem;">Trip #</th>
+                <th style="padding: 15px; color: var(--kamrate-blue); font-weight: 800; font-size: 0.9rem;">Date</th>
+                <th style="padding: 15px; color: var(--kamrate-blue); font-weight: 800; font-size: 0.9rem;">Truck</th>
+                <th style="padding: 15px; color: var(--kamrate-blue); font-weight: 800; font-size: 0.9rem;">Route</th>
+                <th style="padding: 15px; color: var(--kamrate-blue); font-weight: 800; font-size: 0.9rem;">Revenue</th>
+                <th style="padding: 15px; color: var(--kamrate-blue); font-weight: 800; font-size: 0.9rem;">Status</th>
+                <th style="padding: 15px; color: var(--kamrate-blue); font-weight: 800; font-size: 0.9rem;">Actions</th>
+              </tr>
+            </thead>
+
+            <!-- Table Body -->
+            <tbody>
+              {% for trip in trips %}
+              <tr style="border-bottom: 1px solid #e9ecef; transition: all 0.2s ease;">
+                <!-- Trip Number Badge -->
+                <td style="padding: 15px; vertical-align: middle;">
+                  <span class="badge" style="background-color: var(--kamrate-blue); color: white; padding: 6px 10px; font-weight: 600;">
+                    {{ trip.tripNumber }}
+                  </span>
+                </td>
+
+                <!-- Date -->
+                <td style="padding: 15px; color: #333; vertical-align: middle;">
+                  {{ trip.startDate|date:"M d, Y" }}
+                </td>
+
+                <!-- Truck -->
+                <td style="padding: 15px; vertical-align: middle;">
+                  <strong style="color: var(--kamrate-blue);">{{ trip.truck.plateNumber }}</strong>
+                </td>
+
+                <!-- Route -->
+                <td style="padding: 15px; color: #333; vertical-align: middle;">
+                  {{ trip.origin }} → {{ trip.destination }}
+                </td>
+
+                <!-- Revenue -->
+                <td style="padding: 15px; vertical-align: middle;">
+                  <strong style="color: #0D7A3D; font-weight: 800;">₦{{ trip.revenue|floatformat:0 }}</strong>
+                </td>
+
+                <!-- Status Badge -->
+                <td style="padding: 15px; vertical-align: middle;">
+                  {% if trip.status == 'COMPLETED' %}
+                    <span class="badge" style="background-color: #0D7A3D; color: white; padding: 6px 10px; font-weight: 600; border-radius: 4px;">✓ Completed</span>
+                  {% elif trip.status == 'IN_PROGRESS' %}
+                    <span class="badge" style="background-color: var(--kamrate-orange); color: white; padding: 6px 10px; font-weight: 600; border-radius: 4px;">⟳ In Progress</span>
+                  {% elif trip.status == 'PENDING' %}
+                    <span class="badge" style="background-color: #95a5a6; color: white; padding: 6px 10px; font-weight: 600; border-radius: 4px;">⏳ Pending</span>
+                  {% else %}
+                    <span class="badge" style="background-color: #95a5a6; color: white; padding: 6px 10px; font-weight: 600; border-radius: 4px;">{{ trip.status }}</span>
+                  {% endif %}
+                </td>
+
+                <!-- Actions -->
+                <td style="padding: 15px; vertical-align: middle;">
+                  <div style="display: flex; gap: 5px;">
+                    <a href="{% url 'knlInvoice:trip-detail' pk=trip.pk %}" 
+                       class="btn btn-sm btn-outline-primary" 
+                       title="View Trip Details"
+                       style="padding: 6px 10px; font-size: 0.85rem;">
+                      👁️ View
+                    </a>
+                    <a href="{% url 'knlInvoice:trip-update' pk=trip.pk %}" 
+                       class="btn btn-sm btn-outline-secondary" 
+                       title="Edit Trip"
+                       style="padding: 6px 10px; font-size: 0.85rem;">
+                      ✏️ Edit
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <!-- Empty State -->
+        <div class="alert alert-info m-4 p-5 text-center" style="border: none; background-color: #d1ecf1; border-radius: 8px;">
+          <h5 style="color: var(--kamrate-blue); font-weight: 800; margin-bottom: 10px;">🚚 No Trips Yet</h5>
+          <p class="text-muted mb-3">Create your first trip to get started</p>
+          <a href="{% url 'knlInvoice:trip-create' %}" 
+             class="btn btn-primary" 
+             style="background-color: var(--kamrate-orange); border-color: var(--kamrate-orange); font-weight: 700;">
+            ➕ Create First Trip
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</main>
 
 <style>
-  .container-fluid {
-    max-width: 70%;
-    padding-right: 20px;
-    padding-left: 60px;
+  /* Hover effect for table rows */
+  .table tbody tr:hover {
+    background-color: #f8f9fa;
+    transition: all 0.2s ease;
   }
 
-  .page-title {
-    color: #001f4d;
-    font-weight: 700;
-    font-size: 28px;
-  }
-
-  .stat-card {
-    transition: all 0.3s ease;
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-  }
-
-  .stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0, 31, 77, 0.15) !important;
-  }
-
+  /* Card hover effect */
   .card {
     border-radius: 8px;
     overflow: hidden;
-    border: 1px solid #e9ecef;
-  }
-
-  .btn-group {
-    gap: 10px;
-  }
-
-  .btn-outline-secondary {
-    color: #6c757d;
-    border-color: #6c757d;
-    font-weight: 600;
-    border-radius: 4px;
-    padding: 10px 20px;
-  }
-
-  .btn-outline-secondary:hover {
-    background-color: #6c757d;
-    color: white;
-  }
-
-  .btn-warning {
-    background-color: #ff9500 !important;
-    border-color: #ff9500 !important;
-    color: white !important;
-    font-weight: 700;
-    border-radius: 4px;
-    padding: 10px 24px;
-  }
-
-  .btn-warning:hover {
-    background-color: #e68a00 !important;
-    border-color: #e68a00 !important;
-  }
-
-  .table thead th {
-    border-bottom: 2px solid #001f4d;
-    background-color: #f8f9fa;
-    vertical-align: middle;
-  }
-
-  .table tbody tr {
-    border-bottom: 1px solid #e9ecef;
-  }
-
-  .table tbody tr:hover {
-    background-color: #f8f9fa;
-  }
-
-  .table tbody td {
-    vertical-align: middle;
-  }
-
-  .badge {
-    font-weight: 600;
-    border-radius: 4px;
-  }
-
-  .text-muted {
-    color: #6c757d;
-  }
-
-  .font-weight-bold {
-    font-weight: 700;
-  }
-
-  .form-select {
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    padding: 10px 15px;
     transition: all 0.3s ease;
   }
 
-  .form-select:focus {
-    border-color: #ff9500;
-    box-shadow: 0 0 0 4px rgba(255, 149, 0, 0.15);
+  .card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
   }
 
-  .invoice-item {
-    background-color: #f8f9fa;
-    border-left: 4px solid #ff9500;
-    padding: 12px;
-    margin-bottom: 8px;
-    border-radius: 4px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .invoice-item-trip {
+  /* Button styling */
+  .btn {
+    border-radius: 5px;
     font-weight: 600;
-    color: #001f4d;
+    transition: all 0.3s ease;
   }
 
-  .invoice-item-amount {
-    color: #27ae60;
-    font-weight: 700;
+  .btn:hover {
+    transform: translateY(-2px);
   }
 
-  .invoice-item-remove {
-    color: #e74c3c;
-    cursor: pointer;
-    font-size: 16px;
+  /* Badge styling */
+  .badge {
+    border-radius: 4px;
+    font-weight: 600;
   }
 
-  .invoice-item-remove:hover {
-    transform: scale(1.2);
-  }
-
-  @media (max-width: 992px) {
-    .col-lg-8,
-    .col-lg-4 {
-      margin-bottom: 20px;
-    }
-
-    .card {
-      position: static !important;
-    }
-  }
-
+  /* Responsive adjustments */
   @media (max-width: 768px) {
-    .page-title {
-      font-size: 20px;
-    }
-
-    .btn-lg {
-      padding: 8px 16px;
-      font-size: 14px;
-    }
-
-    .table {
+    .table thead th, .table tbody td {
+      padding: 10px 8px !important;
       font-size: 0.85rem;
     }
 
-    .table thead th,
-    .table tbody td {
-      padding: 10px 8px !important;
+    .btn-sm {
+      padding: 4px 8px !important;
+      font-size: 0.75rem;
     }
   }
 </style>
-
-<script>
-  let selectedTrips = [];
-
-  function addTripToInvoice() {
-    const select = document.getElementById('tripSelect');
-    const tripId = select.value;
-    const option = select.options[select.selectedIndex];
-
-    if (!tripId) {
-      alert('Please select a trip');
-      return;
-    }
-
-    // Check if trip already added
-    if (selectedTrips.find(t => t.id === tripId)) {
-      alert('This trip is already in the invoice');
-      return;
-    }
-
-    const trip = {
-      id: tripId,
-      number: option.dataset.trip,
-      amount: parseFloat(option.dataset.amount),
-      destination: option.dataset.destination
-    };
-
-    selectedTrips.push(trip);
-    updateInvoiceDisplay();
-    select.value = '';
-  }
-
-  function removeTrip(tripId) {
-    selectedTrips = selectedTrips.filter(t => t.id !== tripId);
-    updateInvoiceDisplay();
-  }
-
-  function updateInvoiceDisplay() {
-    const itemsContainer = document.getElementById('invoiceItems');
-
-    if (selectedTrips.length === 0) {
-      itemsContainer.innerHTML = `
-        <div class="alert alert-light text-center py-4">
-          <i class="fas fa-inbox" style="font-size: 32px; color: #ccc; display: block; margin-bottom: 10px;"></i>
-          <small class="text-muted">No items added yet</small>
-        </div>
-      `;
-    } else {
-      itemsContainer.innerHTML = selectedTrips.map(trip => `
-        <div class="invoice-item">
-          <div>
-            <div class="invoice-item-trip">${trip.number}</div>
-            <small class="text-muted">${trip.destination}</small>
-          </div>
-          <div style="text-align: right;">
-            <div class="invoice-item-amount">₦${trip.amount.toLocaleString()}</div>
-            <i class="fas fa-times invoice-item-remove" onclick="removeTrip('${trip.id}')"></i>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    // Calculate totals
-    const subtotal = selectedTrips.reduce((sum, t) => sum + t.amount, 0);
-    const vat = subtotal * 0.075;
-    const total = subtotal + vat;
-
-    document.getElementById('subtotal').textContent = '₦' + subtotal.toLocaleString();
-    document.getElementById('vat').textContent = '₦' + vat.toLocaleString();
-    document.getElementById('total').textContent = '₦' + total.toLocaleString();
-  }
-
-  function clearInvoice() {
-    if (confirm('Clear all items from invoice?')) {
-      selectedTrips = [];
-      updateInvoiceDisplay();
-    }
-  }
-
-  function generateInvoice() {
-    const clientSelect = document.getElementById('clientSelect');
-    const clientId = clientSelect.value;
-
-    if (selectedTrips.length === 0) {
-      alert('Please add at least one trip to the invoice');
-      return;
-    }
-
-    if (!clientId) {
-      alert('Please select a client to bill');
-      return;
-    }
-
-    // Create invoice with selected trips
-    const tripIds = selectedTrips.map(t => t.id).join(',');
-    const url = `/invoices/new/?trips=${tripIds}&client=${clientId}`;
-    window.location.href = url;
-  }
-
-  // Initialize
-  document.addEventListener('DOMContentLoaded', function() {
-    updateInvoiceDisplay();
-  });
-</script>
-
 {% endblock %}

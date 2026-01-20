@@ -1,7 +1,8 @@
 from django.contrib import admin
 from .models import (
     Truck, Trip, TripExpense, Client, Product, 
-    Invoice, InvoiceItem, PaymentRecord, Settings, TripInvoice
+    Invoice, InvoiceItem, PaymentRecord, Settings, TripInvoice,
+    TripInvoiceLineItem
 )
 
 # ============================================================================
@@ -252,31 +253,93 @@ class PaymentRecordAdmin(admin.ModelAdmin):
     amount_formatted.short_description = "Amount"
 
 
+# ============================================
+# TRIP INVOICE ADMIN (FIXED - MANIFEST INVOICING)
+# ============================================
+
+
+class TripInvoiceLineItemInline(admin.TabularInline):
+    '''Inline admin for containers on manifest invoices'''
+    model = TripInvoiceLineItem
+    extra = 1
+    readonly_fields = ['date_created', 'uniqueId']
+    fields = ['trip', 'date_loaded', 'file_reference', 'container_number', 
+              'terminal', 'truck_number', 'container_length', 'destination', 'amount']
+
+
+@admin.register(TripInvoiceLineItem)
+class TripInvoiceLineItemAdmin(admin.ModelAdmin):
+    '''Admin for individual containers on manifest invoices'''
+    list_display = ['invoice', 'container_number', 'file_reference', 'destination', 'amount_formatted', 'date_created']
+    list_filter = ['date_created', 'terminal']
+    search_fields = ['invoice__invoice_number', 'container_number', 'file_reference']
+    readonly_fields = ['uniqueId', 'date_created']
+    
+    def amount_formatted(self, obj):
+        return f"₦{obj.amount:,.2f}"
+    amount_formatted.short_description = "Amount"
+
+
 @admin.register(TripInvoice)
 class TripInvoiceAdmin(admin.ModelAdmin):
-    list_display = ('invoice_number', 'trip', 'client', 'status', 'total', 'date_created')
+    '''Admin for manifest invoices (FIXED - removed trip field reference)'''
+    list_display = (
+        'invoice_number', 
+        'client',           # ✅ Replaced 'trip' with client
+        'trip_count',       # ✅ How many containers
+        'total_formatted', 
+        'status', 
+        'date_created'
+    )
+    
     list_filter = ('status', 'date_created', 'client')
-    search_fields = ('invoice_number', 'trip__tripNumber', 'client__clientName')
-    readonly_fields = ('uniqueId', 'slug', 'date_created', 'last_updated')
+    search_fields = ('invoice_number', 'client__clientName')
+    readonly_fields = (
+        'uniqueId', 
+        'slug', 
+        'date_created', 
+        'last_updated',
+        'subtotal',
+        'tax_amount',
+        'total',
+        'outstanding_amount'
+    )
     
     fieldsets = (
         ('Invoice Information', {
-            'fields': ('invoice_number', 'status', 'uniqueId', 'slug')
-        }),
-        ('Trip & Client', {
-            'fields': ('trip', 'client', 'user')
+            'fields': ('invoice_number', 'status', 'client', 'user', 'uniqueId', 'slug')
         }),
         ('Dates', {
             'fields': ('issue_date', 'due_date')
         }),
-        ('Financial', {
+        ('Financial Information', {
             'fields': ('subtotal', 'tax_rate', 'tax_amount', 'total', 'amount_paid', 'outstanding_amount')
         }),
-        ('Payment', {
-            'fields': ('paymentTerms', 'payment_method', 'notes')
+        ('Payment Details', {
+            'fields': ('payment_terms', 'payment_method', 'notes')
         }),
-        ('System', {
+        ('Company Bank Details', {
+            'fields': (
+                'account_name', 'account_number', 'bank_name', 'tin',
+                'company_name', 'company_address', 'company_phone',
+                'company_website', 'company_email'
+            ),
+            'classes': ('collapse',)
+        }),
+        ('System Information', {
             'fields': ('date_created', 'last_updated'),
             'classes': ('collapse',)
         }),
     )
+    
+    inlines = [TripInvoiceLineItemInline]
+    
+    def trip_count(self, obj):
+        '''Display number of containers on invoice'''
+        return obj.line_items.count()
+    trip_count.short_description = "Containers"
+    
+    def total_formatted(self, obj):
+        '''Display formatted total'''
+        return f"₦{obj.total:,.2f}"
+    total_formatted.short_description = "Total"

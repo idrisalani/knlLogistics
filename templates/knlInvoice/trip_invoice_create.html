@@ -1,0 +1,370 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %}Create Manifest Invoice - Kamrate{% endblock %}
+
+{% block content %}
+<main>
+  <div class="page-header">
+    <h1>✨ Create Manifest Invoice</h1>
+    <p class="text-muted">Create a new invoice with multiple containers</p>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="row">
+    <!-- Left: Form (8 cols) -->
+    <div class="col-lg-8">
+      <!-- Invoice Details Card -->
+      <div class="card mb-4" style="border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div class="card-header" style="background-color: #f8f9fa; border-bottom: 2px solid var(--kamrate-orange); padding: 20px;">
+          <h5 style="color: var(--kamrate-blue); font-weight: 800; margin: 0;">
+            📋 Invoice Information
+          </h5>
+        </div>
+        <div class="card-body p-4">
+          <form method="POST" id="invoiceForm">
+            {% csrf_token %}
+
+            <!-- Section 1: Client & Dates -->
+            <fieldset class="mb-4" style="border: none; padding: 0;">
+              <div class="row mb-3">
+                <div class="col-md-6">
+                  <label for="id_client" class="form-label" style="font-weight: 600;">
+                    Client <span class="text-muted">(Optional)</span>
+                  </label>
+                  <select name="client" id="id_client" class="form-select" style="border: 1px solid #ddd; border-radius: 5px; padding: 10px;">
+                    <option value="">-- Select Client --</option>
+                    {% for client in clients %}
+                      <option value="{{ client.pk }}">{{ client.clientName }}</option>
+                    {% endfor %}
+                  </select>
+                  <small class="text-muted">Select the client to bill</small>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="id_invoice_number" class="form-label" style="font-weight: 600;">
+                    Invoice Number
+                  </label>
+                  <input type="text" class="form-control" value="Auto-generated" readonly style="background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 5px; padding: 10px;">
+                  <small class="text-muted">Automatically generated</small>
+                </div>
+              </div>
+
+              <div class="row mb-0">
+                <div class="col-md-6">
+                  <label for="id_issue_date" class="form-label" style="font-weight: 600;">
+                    Issue Date <span class="text-danger">*</span>
+                  </label>
+                  <input type="date" name="issue_date" id="id_issue_date" class="form-control" required style="border: 1px solid #ddd; border-radius: 5px; padding: 10px;">
+                  <small class="text-muted">Date invoice is created</small>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="id_due_date" class="form-label" style="font-weight: 600;">
+                    Due Date
+                  </label>
+                  <input type="date" name="due_date" id="id_due_date" class="form-control" style="border: 1px solid #ddd; border-radius: 5px; padding: 10px;">
+                  <small class="text-muted">When payment is due</small>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Section 2: Financial Info -->
+            <fieldset class="mb-4" style="border: none; padding: 0;">
+              <h6 style="color: var(--kamrate-blue); font-weight: 700; margin-bottom: 15px;">
+                💰 Financial Information
+              </h6>
+
+              <div class="row mb-0">
+                <div class="col-md-6">
+                  <label for="id_tax_rate" class="form-label" style="font-weight: 600;">
+                    Tax Rate (%) <span class="text-danger">*</span>
+                  </label>
+                  <div class="input-group">
+                    <input type="number" name="tax_rate" id="id_tax_rate" class="form-control" value="7.5" step="0.01" required style="border: 1px solid #ddd; border-radius: 5px 0 0 5px; padding: 10px;">
+                    <span class="input-group-text" style="background-color: #f8f9fa; border: 1px solid #ddd; border-left: none;">%</span>
+                  </div>
+                  <small class="text-muted">Nigeria VAT: 7.5%</small>
+                </div>
+
+                <div class="col-md-6">
+                  <label for="id_payment_terms" class="form-label" style="font-weight: 600;">
+                    Payment Terms <span class="text-danger">*</span>
+                  </label>
+                  <select name="payment_terms" id="id_payment_terms" class="form-select" required style="border: 1px solid #ddd; border-radius: 5px; padding: 10px;">
+                    <option value="immediate">Immediate</option>
+                    <option value="14_days">14 Days</option>
+                    <option value="30_days" selected>30 Days</option>
+                    <option value="60_days">60 Days</option>
+                  </select>
+                  <small class="text-muted">Payment deadline</small>
+                </div>
+              </div>
+            </fieldset>
+
+            <!-- Section 3: Notes -->
+            <fieldset style="border: none; padding: 0;">
+              <h6 style="color: var(--kamrate-blue); font-weight: 700; margin-bottom: 15px;">
+                📝 Notes
+              </h6>
+
+              <div class="mb-0">
+                <label for="id_notes" class="form-label" style="font-weight: 600;">
+                  Additional Notes
+                </label>
+                <textarea name="notes" id="id_notes" class="form-control" rows="3" placeholder="Any special instructions..." style="border: 1px solid #ddd; border-radius: 5px; padding: 10px;"></textarea>
+                <small class="text-muted">Optional special instructions</small>
+              </div>
+            </fieldset>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: Container Selection (4 cols) -->
+    <div class="col-lg-4">
+      <!-- Add Container Panel (Sticky) -->
+      <div class="card" style="border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: sticky; top: 20px;">
+        <div class="card-header" style="background: linear-gradient(135deg, var(--kamrate-orange) 0%, #e68a00 100%); color: white; padding: 20px;">
+          <h5 style="margin: 0; font-weight: 800;">
+            ➕ Add Containers
+          </h5>
+          <small style="color: rgba(255,255,255,0.8);">Add trips to generate invoice</small>
+        </div>
+
+        <div class="card-body p-4">
+          <!-- Container Selection -->
+          <div class="mb-4">
+            <label for="tripSelect" class="form-label" style="font-weight: 600; color: var(--kamrate-blue);">
+              📦 Select Container/Trip
+            </label>
+            <select id="tripSelect" class="form-select" style="border: 1px solid #ddd; border-radius: 5px; padding: 10px;">
+              <option value="">-- Select a trip --</option>
+              {% for trip in available_trips %}
+                <option value="{{ trip.id }}" data-trip="{{ trip.tripNumber }}" data-amount="{{ trip.revenue }}" data-destination="{{ trip.destination }}">
+                  {{ trip.tripNumber }} - {{ trip.origin }} → {{ trip.destination }} (₦{{ trip.revenue|floatformat:0 }})
+                </option>
+              {% endfor %}
+            </select>
+            <small class="text-muted">Choose a trip to add to invoice</small>
+          </div>
+
+          <!-- Add Button -->
+          <button type="button" class="btn btn-primary w-100" onclick="addContainer()" style="background-color: var(--kamrate-orange); border-color: var(--kamrate-orange); font-weight: 700; padding: 12px; border-radius: 5px; margin-bottom: 20px;">
+            ➕ Add Container
+          </button>
+
+          <!-- Selected Containers -->
+          <h6 style="color: var(--kamrate-blue); font-weight: 700; margin-bottom: 15px;">
+            📋 Invoice Items ({{ selectedTripsCount|default:0 }})
+          </h6>
+
+          <div id="containersList" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;">
+            <div class="alert alert-light text-center py-4" style="background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 5px;">
+              <p style="margin: 0; color: #999;">
+                <i class="fas fa-inbox" style="font-size: 24px; display: block; margin-bottom: 10px;"></i>
+                No containers added yet
+              </p>
+            </div>
+          </div>
+
+          <!-- Summary -->
+          <div style="border-top: 1px solid #e9ecef; padding-top: 15px;">
+            <div class="d-flex justify-content-between mb-2">
+              <span style="color: #666;">Subtotal:</span>
+              <strong id="subtotal" style="color: var(--kamrate-blue);">₦0</strong>
+            </div>
+            <div class="d-flex justify-content-between mb-3">
+              <span style="color: #666;">Tax (7.5%):</span>
+              <strong id="tax" style="color: var(--kamrate-orange);">₦0</strong>
+            </div>
+            <div class="d-flex justify-content-between pb-3" style="border-bottom: 1px solid #e9ecef; margin-bottom: 15px;">
+              <span style="font-weight: 700; color: var(--kamrate-blue);">Total:</span>
+              <strong id="total" style="color: #0D7A3D; font-size: 1.1rem;">₦0</strong>
+            </div>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+              <button type="button" class="btn btn-danger" onclick="clearContainers()" style="border-radius: 5px; font-weight: 700;">
+                🗑️ Clear All
+              </button>
+              <button type="button" class="btn btn-success" onclick="createInvoice()" style="background-color: #0D7A3D; border-color: #0D7A3D; border-radius: 5px; font-weight: 700;">
+                ✓ Create Invoice
+              </button>
+            </div>
+
+            <small class="text-muted" style="display: block; margin-top: 12px; text-align: center;">
+              ℹ️ Add containers and review totals before creating
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<style>
+  .form-control, .form-select {
+    transition: all 0.3s ease;
+  }
+
+  .form-control:focus, .form-select:focus {
+    border-color: var(--kamrate-orange) !important;
+    box-shadow: 0 0 0 3px rgba(255, 149, 0, 0.15) !important;
+  }
+
+  .container-item {
+    background-color: #f8f9fa;
+    border-left: 4px solid var(--kamrate-orange);
+    padding: 12px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .container-item-trip {
+    font-weight: 600;
+    color: var(--kamrate-blue);
+  }
+
+  .container-item-amount {
+    color: #0D7A3D;
+    font-weight: 700;
+  }
+
+  .container-item-remove {
+    color: #dc3545;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+  }
+
+  .container-item-remove:hover {
+    transform: scale(1.2);
+  }
+
+  @media (max-width: 992px) {
+    .card {
+      position: static !important;
+      margin-bottom: 20px;
+    }
+  }
+</style>
+
+<script>
+  let selectedContainers = [];
+
+  function addContainer() {
+    const select = document.getElementById('tripSelect');
+    const tripId = select.value;
+    const option = select.options[select.selectedIndex];
+
+    if (!tripId) {
+      alert('Please select a container/trip');
+      return;
+    }
+
+    // Check if already added
+    if (selectedContainers.find(c => c.id === tripId)) {
+      alert('This container is already in the invoice');
+      return;
+    }
+
+    const container = {
+      id: tripId,
+      number: option.dataset.trip,
+      amount: parseFloat(option.dataset.amount),
+      destination: option.dataset.destination
+    };
+
+    selectedContainers.push(container);
+    updateDisplay();
+    select.value = '';
+  }
+
+  function removeContainer(containerId) {
+    selectedContainers = selectedContainers.filter(c => c.id !== containerId);
+    updateDisplay();
+  }
+
+  function updateDisplay() {
+    const listDiv = document.getElementById('containersList');
+
+    if (selectedContainers.length === 0) {
+      listDiv.innerHTML = `
+        <div class="alert alert-light text-center py-4" style="background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 5px;">
+          <p style="margin: 0; color: #999;">
+            <i class="fas fa-inbox" style="font-size: 24px; display: block; margin-bottom: 10px;"></i>
+            No containers added yet
+          </p>
+        </div>
+      `;
+    } else {
+      listDiv.innerHTML = selectedContainers.map(c => `
+        <div class="container-item">
+          <div>
+            <div class="container-item-trip">${c.number}</div>
+            <small class="text-muted">${c.destination}</small>
+          </div>
+          <div style="text-align: right;">
+            <div class="container-item-amount">₦${c.amount.toLocaleString()}</div>
+            <i class="fas fa-times container-item-remove" onclick="removeContainer('${c.id}')"></i>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // Calculate totals
+    const subtotal = selectedContainers.reduce((sum, c) => sum + c.amount, 0);
+    const tax = subtotal * 0.075;
+    const total = subtotal + tax;
+
+    document.getElementById('subtotal').textContent = '₦' + subtotal.toLocaleString();
+    document.getElementById('tax').textContent = '₦' + tax.toLocaleString();
+    document.getElementById('total').textContent = '₦' + total.toLocaleString();
+  }
+
+  function clearContainers() {
+    if (confirm('Clear all containers from invoice?')) {
+      selectedContainers = [];
+      updateDisplay();
+    }
+  }
+
+  function createInvoice() {
+    if (selectedContainers.length === 0) {
+      alert('Please add at least one container to the invoice');
+      return;
+    }
+
+    // Collect container IDs and submit form with them
+    const containerIds = selectedContainers.map(c => c.id).join(',');
+    
+    // Add hidden input with container IDs
+    const form = document.getElementById('invoiceForm');
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'containers';
+    input.value = containerIds;
+    form.appendChild(input);
+
+    // Submit form
+    form.submit();
+  }
+
+  // Initialize
+  document.addEventListener('DOMContentLoaded', function() {
+    updateDisplay();
+  });
+</script>
+{% endblock %}

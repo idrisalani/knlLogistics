@@ -5,6 +5,7 @@ from django.urls import reverse
 from uuid import uuid4
 from django.contrib.auth.models import User
 from django.db.models import Sum
+from decimal import Decimal
 
 
 class Truck(models.Model):
@@ -225,6 +226,7 @@ class Trip(models.Model):
         if self.startDate and self.endDate:
             return self.endDate - self.startDate
         return None
+
 
 class TripExpense(models.Model):
     """Model to track expenses for each trip"""
@@ -462,7 +464,6 @@ class Invoice(models.Model):
     @property
     def is_overdue(self):
         """Check if invoice is overdue"""
-        from django.utils import timezone
         if self.due_date and self.status != 'paid':
             return self.due_date < timezone.now().date()
         return False
@@ -661,42 +662,86 @@ class Settings(models.Model):
         super(Settings, self).save(*args, **kwargs)
 
 
-class TripInvoice(models.Model):
-    """
-    Trip-Based Invoice Model
+# ============================================
+# TRIP INVOICE MODELS (MANIFEST INVOICING)
+# ============================================
+
+class TripInvoiceLineItem(models.Model):
+    """Individual trip/container on a manifest invoice"""
     
-    Used for invoicing trips with container manifest details
-    Extends the Invoice functionality specifically for trip operations
-    """
-    
-    # Link to Trip
-    trip = models.OneToOneField(
-        'Trip',
+    invoice = models.ForeignKey(
+        'TripInvoice',
         on_delete=models.CASCADE,
-        related_name='invoice',
-        help_text="Trip being invoiced"
+        related_name='line_items'
     )
     
-    # Reuse Invoice fields
-    invoice_number = models.CharField(max_length=50, unique=True, db_index=True)
+    trip = models.ForeignKey(
+        'Trip',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='invoice_items'
+    )
+    
+    # Trip Details (denormalized for invoice display)
+    date_loaded = models.DateField()
+    file_reference = models.CharField(max_length=100)  # e.g., ISDD-INB-072
+    container_number = models.CharField(max_length=50)  # e.g., IBP014
+    terminal = models.CharField(max_length=50)  # e.g., EFM
+    truck_number = models.CharField(max_length=50)  # e.g., T13577LA
+    container_length = models.CharField(max_length=20)  # e.g., 20FT, 40FT
+    destination = models.CharField(max_length=100)  # e.g., PORTHARCOURT
+    
+    # Amount
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    
+    # Tracking
+    uniqueId = models.CharField(null=True, blank=True, max_length=100)
+    date_created = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['date_loaded']
+    
+    def __str__(self):
+        return f"{self.invoice.invoice_number} - {self.container_number}"
+    
+    def save(self, *args, **kwargs):
+        if self.uniqueId is None:
+            self.uniqueId = str(uuid4()).split('-')[4]
+        super(TripInvoiceLineItem, self).save(*args, **kwargs)
+
+
+class TripInvoice(models.Model):
+    """
+    Trip-Based Manifest Invoice Model
+    
+    Supports MULTIPLE trips/containers per invoice (like manifest/bulk invoicing)
+    """
+    
+    # Client Information
     client = models.ForeignKey(
-        Client,
+        'Client',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='trip_invoices'
     )
+    
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name='trip_invoices'
     )
     
+    # Invoice Information
+    invoice_number = models.CharField(max_length=50, unique=True, db_index=True)
+    # Format: KNL/JH/26/ISDD-INB-072-EFM/1070
+    
     # Dates
     issue_date = models.DateField(default=timezone.now)
     due_date = models.DateField(null=True, blank=True)
     
-    # Financial
+    # Financial Information
     subtotal = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     tax_rate = models.FloatField(default=7.5)  # Nigeria VAT
     tax_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
@@ -722,12 +767,12 @@ class TripInvoice(models.Model):
     
     # Payment terms
     TERMS = [
+        ('immediate', 'Immediate'),
         ('14 days', '14 days'),
         ('30 days', '30 days'),
         ('60 days', '60 days'),
-        ('immediate', 'Immediate'),
     ]
-    paymentTerms = models.CharField(
+    payment_terms = models.CharField(
         choices=TERMS,
         default='14 days',
         max_length=100
@@ -736,6 +781,44 @@ class TripInvoice(models.Model):
     # Additional info
     notes = models.TextField(null=True, blank=True)
     payment_method = models.CharField(max_length=100, null=True, blank=True)
+    
+    # Company Bank Details (for display on invoice)
+    account_name = models.CharField(
+        max_length=200, 
+        default='KAMRATE NIGERIA LIMITED'
+    )
+    account_number = models.CharField(
+        max_length=50,
+        default='0004662938'
+    )
+    bank_name = models.CharField(
+        max_length=100,
+        default='JAIZ BANK'
+    )
+    tin = models.CharField(
+        max_length=50,
+        default='20727419-0001'
+    )
+    company_name = models.CharField(
+        max_length=200,
+        default='KAMRATE NIGERIA LIMITED'
+    )
+    company_address = models.CharField(
+        max_length=300,
+        default='33, Creek Road, Ibu Boulevard, Apapa, Lagos'
+    )
+    company_phone = models.CharField(
+        max_length=100,
+        default='08134834928, 08026826552'
+    )
+    company_website = models.CharField(
+        max_length=100,
+        default='www.kamratelimited.com'
+    )
+    company_email = models.CharField(
+        max_length=100,
+        default='info@kamratelimited.com'
+    )
     
     # Tracking
     uniqueId = models.CharField(null=True, blank=True, max_length=100)
@@ -755,38 +838,74 @@ class TripInvoice(models.Model):
         ]
     
     def __str__(self):
-        return f'Trip Invoice {self.invoice_number}'
+        return f'Invoice {self.invoice_number}'
     
     def get_absolute_url(self):
-        return reverse('tripinvoice-detail', kwargs={'slug': self.slug})
+        return reverse('knlInvoice:trip-invoice-detail', kwargs={'pk': self.pk})
     
     def calculate_totals(self):
-        """Calculate totals based on trip revenue"""
-        if self.trip:
-            # Use trip revenue as subtotal
-            self.subtotal = self.trip.revenue
-            self.tax_amount = self.subtotal * (self.tax_rate / 100)
-            self.total = self.subtotal + self.tax_amount
-            self.outstanding_amount = self.total - self.amount_paid
+        """Calculate totals from line items"""
+        # Sum all line item amounts
+        items = self.line_items.all()
+        self.subtotal = sum(Decimal(str(item.amount)) for item in items) if items else Decimal('0')
+        
+        # Calculate tax
+        self.tax_amount = self.subtotal * (Decimal(str(self.tax_rate)) / Decimal('100'))
+        
+        # Calculate total
+        self.total = self.subtotal + self.tax_amount
+        
+        # Calculate outstanding
+        self.outstanding_amount = self.total - self.amount_paid
+    
+    def add_trip(self, trip, date_loaded, file_reference, container_number, 
+                 terminal, truck_number, container_length, destination, amount):
+        """Add a trip/container to the invoice"""
+        
+        item = TripInvoiceLineItem.objects.create(
+            invoice=self,
+            trip=trip,
+            date_loaded=date_loaded,
+            file_reference=file_reference,
+            container_number=container_number,
+            terminal=terminal,
+            truck_number=truck_number,
+            container_length=container_length,
+            destination=destination,
+            amount=Decimal(str(amount)),
+        )
+        
+        # Recalculate totals
+        self.calculate_totals()
+        self.save()
+        
+        return item
+    
+    def remove_trip(self, item_id):
+        """Remove a trip/container from the invoice"""
+        TripInvoiceLineItem.objects.filter(id=item_id, invoice=self).delete()
+        
+        # Recalculate totals
+        self.calculate_totals()
+        self.save()
     
     def mark_as_paid(self, amount=None):
         """Mark invoice as paid"""
         if amount is None:
             amount = self.outstanding_amount
         
-        self.amount_paid += amount
+        self.amount_paid += Decimal(str(amount))
         self.outstanding_amount = self.total - self.amount_paid
         
         if self.outstanding_amount <= 0:
             self.status = 'paid'
-            self.outstanding_amount = 0
+            self.outstanding_amount = Decimal('0')
         else:
             self.status = 'pending'
     
     @property
     def is_overdue(self):
         """Check if invoice is overdue"""
-        from django.utils import timezone
         if self.due_date and self.status != 'paid':
             return self.due_date < timezone.now().date()
         return False
@@ -796,18 +915,17 @@ class TripInvoice(models.Model):
         """Check if invoice is fully paid"""
         return self.status == 'paid' or self.outstanding_amount <= 0
     
+    @property
+    def trip_count(self):
+        """Get number of trips/containers on invoice"""
+        return self.line_items.count()
+    
     def save(self, *args, **kwargs):
-        if self.date_created is None:
-            self.date_created = timezone.localtime(timezone.now())
-        
         if self.uniqueId is None:
             self.uniqueId = str(uuid4()).split('-')[4]
-            self.slug = slugify(f'{self.invoice_number} {self.uniqueId}')
         
+        # Generate slug
         self.slug = slugify(f'{self.invoice_number} {self.uniqueId}')
-        
-        # Calculate totals from trip
-        self.calculate_totals()
         
         # Update status if overdue
         if self.is_overdue and self.status not in ['paid', 'cancelled']:

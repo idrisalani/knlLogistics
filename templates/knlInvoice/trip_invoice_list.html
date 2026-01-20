@@ -1,209 +1,166 @@
-{% extends 'base.html' %}
+{% extends 'partials/base.html' %}
 {% load static %}
 
-{% block title %}Trip Invoices - Kamrate Nigeria Limited{% endblock %}
+{% block title %}Manifest Invoices - Kamrate{% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
-    <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h1 class="h3 font-weight-bold">
-                <i class="fas fa-file-invoice-dollar"></i> Trip Invoices
-            </h1>
-            <p class="text-muted">Manage invoices generated from trips</p>
-        </div>
-        <div class="col-md-4 text-right">
-            <a href="{% url 'trips-list' %}" class="btn btn-outline-primary">
-                <i class="fas fa-truck"></i> Go to Trips
-            </a>
-        </div>
+<main>
+  <div class="page-header">
+    <div>
+      <h1>📋 Manifest Invoices</h1>
+      <p class="text-muted">Multi-trip invoice management system</p>
     </div>
-
-    <!-- Stats Cards -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="card border-left-primary shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="text-primary font-weight-bold text-uppercase mb-1">Total Invoices</div>
-                    <div class="h3 mb-0">{{ total_invoices }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-left-success shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="text-success font-weight-bold text-uppercase mb-1">Paid</div>
-                    <div class="h3 mb-0">{{ paid_count }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-left-warning shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="text-warning font-weight-bold text-uppercase mb-1">Pending</div>
-                    <div class="h3 mb-0">{{ pending_count }}</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="card border-left-danger shadow h-100 py-2">
-                <div class="card-body">
-                    <div class="text-danger font-weight-bold text-uppercase mb-1">Overdue</div>
-                    <div class="h3 mb-0">{{ overdue_count }}</div>
-                </div>
-            </div>
-        </div>
+    <div class="btn-group">
+      <a href="{% url 'knlInvoice:trip-invoice-create' %}" class="btn btn-primary" style="background-color: var(--kamrate-orange); border-color: var(--kamrate-orange); font-weight: 700;">
+        ➕ Create New Invoice
+      </a>
+      <a href="{% url 'knlInvoice:trips-list' %}" class="btn btn-outline-secondary">
+        🚚 View Trips
+      </a>
     </div>
+  </div>
 
-    <!-- Filters -->
-    <div class="card mb-4">
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- Summary Cards -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card" style="border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
         <div class="card-body">
-            <form method="get" class="form-inline">
-                <div class="form-group mr-3">
-                    <label for="status" class="mr-2">Status:</label>
-                    <select name="status" id="status" class="form-control">
-                        <option value="">All Statuses</option>
-                        <option value="draft" {% if request.GET.status == 'draft' %}selected{% endif %}>Draft</option>
-                        <option value="sent" {% if request.GET.status == 'sent' %}selected{% endif %}>Sent</option>
-                        <option value="pending" {% if request.GET.status == 'pending' %}selected{% endif %}>Pending</option>
-                        <option value="paid" {% if request.GET.status == 'paid' %}selected{% endif %}>Paid</option>
-                        <option value="overdue" {% if request.GET.status == 'overdue' %}selected{% endif %}>Overdue</option>
-                    </select>
-                </div>
-                <div class="form-group mr-3">
-                    <label for="search" class="mr-2">Search:</label>
-                    <input type="text" name="search" id="search" class="form-control" placeholder="Invoice #, Client..." value="{{ request.GET.search }}">
-                </div>
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-search"></i> Filter
-                </button>
-            </form>
+          <h6 class="text-muted mb-2" style="font-weight: 700;">TOTAL INVOICES</h6>
+          <h3 style="color: var(--kamrate-blue); margin: 0; font-weight: 800;">{{ invoices.count }}</h3>
         </div>
+      </div>
     </div>
 
-    <!-- Invoices Table -->
-    <div class="card shadow">
-        <div class="card-header py-3 bg-primary text-white">
-            <h6 class="m-0 font-weight-bold">Trip Invoices</h6>
+    <div class="col-md-3">
+      <div class="card" style="border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div class="card-body">
+          <h6 class="text-muted mb-2" style="font-weight: 700;">TOTAL REVENUE</h6>
+          <h3 style="color: var(--kamrate-orange); margin: 0; font-weight: 800;">₦{{ total_revenue|floatformat:0 }}</h3>
         </div>
-        <div class="card-body p-0">
-            {% if trip_invoices %}
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="bg-light">
-                        <tr>
-                            <th>Invoice #</th>
-                            <th>Trip #</th>
-                            <th>Client</th>
-                            <th>Amount</th>
-                            <th>Status</th>
-                            <th>Due Date</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for invoice in trip_invoices %}
-                        <tr>
-                            <td>
-                                <strong>{{ invoice.invoice_number }}</strong>
-                            </td>
-                            <td>
-                                <a href="{% url 'trip-detail' invoice.trip.id %}">
-                                    {{ invoice.trip.tripNumber }}
-                                </a>
-                            </td>
-                            <td>
-                                {% if invoice.client %}
-                                    <strong>{{ invoice.client.clientName }}</strong>
-                                {% else %}
-                                    <span class="text-muted">N/A</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <strong class="text-primary">₦{{ invoice.total|floatformat:2 }}</strong>
-                                {% if invoice.outstanding_amount > 0 %}
-                                    <br>
-                                    <small class="text-warning">Outstanding: ₦{{ invoice.outstanding_amount|floatformat:2 }}</small>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if invoice.status == 'draft' %}
-                                    <span class="badge badge-secondary">Draft</span>
-                                {% elif invoice.status == 'sent' %}
-                                    <span class="badge badge-info">Sent</span>
-                                {% elif invoice.status == 'pending' %}
-                                    <span class="badge badge-warning">Pending</span>
-                                {% elif invoice.status == 'paid' %}
-                                    <span class="badge badge-success">Paid</span>
-                                {% elif invoice.status == 'overdue' %}
-                                    <span class="badge badge-danger">Overdue</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if invoice.due_date %}
-                                    {{ invoice.due_date|date:"d M Y" }}
-                                {% else %}
-                                    <span class="text-muted">-</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <div class="btn-group" role="group">
-                                    <a href="{% url 'tripinvoice-detail' invoice.slug %}" class="btn btn-sm btn-outline-primary" title="View">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    <a href="{% url 'tripinvoice-pdf' invoice.slug %}" class="btn btn-sm btn-outline-success" title="Download PDF" target="_blank">
-                                        <i class="fas fa-download"></i>
-                                    </a>
-                                    <a href="{% url 'tripinvoice-email' invoice.slug %}" class="btn btn-sm btn-outline-info" title="Send Email">
-                                        <i class="fas fa-envelope"></i>
-                                    </a>
-                                    <a href="{% url 'tripinvoice-edit' invoice.slug %}" class="btn btn-sm btn-outline-warning" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Pagination -->
-            {% if is_paginated %}
-            <nav aria-label="Page navigation" class="p-3">
-                <ul class="pagination justify-content-center mb-0">
-                    {% if page_obj.has_previous %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page=1">First</a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a>
-                        </li>
-                    {% endif %}
-
-                    <li class="page-item active">
-                        <span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-                    </li>
-
-                    {% if page_obj.has_next %}
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a>
-                        </li>
-                        <li class="page-item">
-                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Last</a>
-                        </li>
-                    {% endif %}
-                </ul>
-            </nav>
-            {% endif %}
-            {% else %}
-            <div class="alert alert-info p-4">
-                <i class="fas fa-info-circle"></i> No trip invoices found.
-                <a href="{% url 'trips-list' %}">Create one from a trip</a>
-            </div>
-            {% endif %}
-        </div>
+      </div>
     </div>
-</div>
+
+    <div class="col-md-3">
+      <div class="card" style="border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div class="card-body">
+          <h6 class="text-muted mb-2" style="font-weight: 700;">AMOUNT PAID</h6>
+          <h3 style="color: #0D7A3D; margin: 0; font-weight: 800;">₦{{ total_paid|floatformat:0 }}</h3>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-3">
+      <div class="card" style="border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div class="card-body">
+          <h6 class="text-muted mb-2" style="font-weight: 700;">OUTSTANDING</h6>
+          <h3 style="color: #dc3545; margin: 0; font-weight: 800;">₦{{ total_outstanding|floatformat:0 }}</h3>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Invoices Table -->
+  <div class="card" style="border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+    <div class="card-header" style="background-color: #f8f9fa; border-bottom: 2px solid var(--kamrate-orange); padding: 20px;">
+      <h5 style="color: var(--kamrate-blue); font-weight: 800; margin: 0;">All Invoices</h5>
+    </div>
+
+    <div class="card-body p-0">
+      {% if invoices %}
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead style="background-color: #f8f9fa; border-bottom: 2px solid #e9ecef;">
+              <tr>
+                <th style="padding: 15px; color: var(--kamrate-blue); font-weight: 800;">Invoice #</th>
+                <th style="padding: 15px; color: var(--kamrate-blue); font-weight: 800;">Client</th>
+                <th style="padding: 15px; color: var(--kamrate-blue); font-weight: 800;">Containers</th>
+                <th style="padding: 15px; color: var(--kamrate-blue); font-weight: 800;">Total</th>
+                <th style="padding: 15px; color: var(--kamrate-blue); font-weight: 800;">Paid</th>
+                <th style="padding: 15px; color: var(--kamrate-blue); font-weight: 800;">Status</th>
+                <th style="padding: 15px; color: var(--kamrate-blue); font-weight: 800;">Due Date</th>
+                <th style="padding: 15px; color: var(--kamrate-blue); font-weight: 800;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for invoice in invoices %}
+              <tr style="border-bottom: 1px solid #e9ecef;">
+                <td style="padding: 15px;">
+                  <strong style="color: var(--kamrate-blue);">{{ invoice.invoice_number }}</strong>
+                </td>
+                <td style="padding: 15px;">
+                  {{ invoice.client.clientName|default:"No Client" }}
+                </td>
+                <td style="padding: 15px;">
+                  <span class="badge bg-info" style="padding: 6px 10px; font-weight: 600;">{{ invoice.line_items.count }}</span>
+                </td>
+                <td style="padding: 15px;">
+                  <strong style="color: #0D7A3D; font-weight: 800;">₦{{ invoice.total|floatformat:2 }}</strong>
+                </td>
+                <td style="padding: 15px;">
+                  <span style="color: #0D7A3D; font-weight: 600;">₦{{ invoice.amount_paid|floatformat:2 }}</span>
+                </td>
+                <td style="padding: 15px;">
+                  <span class="badge" 
+                        style="background-color: 
+                          {% if invoice.status == 'draft' %}#808080
+                          {% elif invoice.status == 'sent' %}#0099ff
+                          {% elif invoice.status == 'pending' %}#ff6600
+                          {% elif invoice.status == 'paid' %}#00cc00
+                          {% elif invoice.status == 'overdue' %}#ff0000
+                          {% else %}#999999{% endif %}; 
+                          padding: 6px 10px; font-weight: 600;">
+                    {{ invoice.get_status_display }}
+                  </span>
+                </td>
+                <td style="padding: 15px;">
+                  {% if invoice.due_date %}
+                    <small>{{ invoice.due_date|date:"d M Y" }}</small>
+                  {% else %}
+                    <span class="text-muted">-</span>
+                  {% endif %}
+                </td>
+                <td style="padding: 15px;">
+                  <div style="display: flex; gap: 5px;">
+                    <a href="{% url 'knlInvoice:trip-invoice-detail' pk=invoice.pk %}" 
+                       class="btn btn-sm btn-outline-primary" title="View">
+                      👁️
+                    </a>
+                    {% if invoice.status == 'draft' %}
+                    <a href="{% url 'knlInvoice:trip-invoice-edit' pk=invoice.pk %}" 
+                       class="btn btn-sm btn-outline-secondary" title="Edit">
+                      ✏️
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'knlInvoice:trip-invoice-delete' pk=invoice.pk %}" 
+                       class="btn btn-sm btn-outline-danger" title="Delete">
+                      🗑️
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="alert alert-info m-4 p-5 text-center">
+          <h5 style="color: var(--kamrate-blue); font-weight: 800; margin-bottom: 10px;">📋 No Invoices Yet</h5>
+          <p class="text-muted mb-3">Create your first manifest invoice to get started</p>
+          <a href="{% url 'knlInvoice:trip-invoice-create' %}" class="btn btn-primary" style="background-color: var(--kamrate-orange); border-color: var(--kamrate-orange);">
+            ➕ Create First Invoice
+          </a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</main>
 {% endblock %}

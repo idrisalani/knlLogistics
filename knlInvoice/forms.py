@@ -2,9 +2,10 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
+from django.forms import inlineformset_factory
 from .models import (
     Truck, Trip, TripExpense, Client, Product, Invoice,
-    InvoiceItem, PaymentRecord, TripInvoice
+    InvoiceItem, PaymentRecord, TripInvoice, TripInvoiceLineItem
 )
 
 # ============================================
@@ -33,7 +34,7 @@ class UserLoginForm(AuthenticationForm):
 
 
 # ============================================
-# TRUCK FORMS (EXISTING - KEPT)
+# TRUCK FORMS
 # ============================================
 
 class TruckForm(forms.ModelForm):
@@ -105,12 +106,56 @@ class TruckForm(forms.ModelForm):
         }
 
 
+class QuickAddTruckForm(forms.ModelForm):
+    """Quick form to add truck from trip creation"""
+    
+    class Meta:
+        model = Truck
+        fields = ['plateNumber', 'model', 'manufacturer', 'yearOfManufacture', 'capacity', 'status', 'driverName', 'driverPhone']
+        widgets = {
+            'plateNumber': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., KRD 123 XY',
+                'required': True
+            }),
+            'model': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Howo 10-ton',
+                'required': True
+            }),
+            'manufacturer': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., Sinotruk',
+                'required': True
+            }),
+            'yearOfManufacture': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'type': 'number',
+                'required': True
+            }),
+            'capacity': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'required': True
+            }),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'driverName': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Optional'
+            }),
+            'driverPhone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Optional'
+            }),
+        }
+
+
 # ============================================
-# TRIP FORMS (EXISTING - KEPT)
+# TRIP FORMS
 # ============================================
 
 class TripForm(forms.ModelForm):
-    """Form for managing trips"""
+    """Form for creating and editing trips"""
     class Meta:
         model = Trip
         fields = ['tripNumber', 'truck', 'origin', 'destination', 'distance', 'startDate', 
@@ -180,20 +225,16 @@ class TripForm(forms.ModelForm):
 
 
 # ============================================
-# TRIP EXPENSE FORMS (EXISTING - KEPT)
+# TRIP EXPENSE FORMS
 # ============================================
 
 class TripExpenseForm(forms.ModelForm):
     """Form for managing trip expenses"""
     class Meta:
         model = TripExpense
-        fields = ['trip', 'expenseType', 'description', 'amount', 'receipt_number', 'notes']
+        fields = ['expenseType', 'description', 'amount', 'receipt_number', 'notes']
         
         widgets = {
-            'trip': forms.Select(attrs={
-                'class': 'form-control',
-                'required': True
-            }),
             'expenseType': forms.Select(attrs={
                 'class': 'form-control',
                 'required': True
@@ -222,7 +263,7 @@ class TripExpenseForm(forms.ModelForm):
 
 
 # ============================================
-# CLIENT FORMS (EXISTING - KEPT)
+# CLIENT FORMS
 # ============================================
 
 class ClientForm(forms.ModelForm):
@@ -273,21 +314,11 @@ class ClientForm(forms.ModelForm):
 
 
 # ============================================
-# PRODUCT FORMS (EXISTING - KEPT)
+# PRODUCT FORMS
 # ============================================
 
 class ProductForm(forms.ModelForm):
     """Form for managing products and services"""
-    
-    category = forms.ChoiceField(
-        choices=Product.CATEGORY_CHOICES,
-        widget=forms.Select(attrs={
-            'class': 'form-control',
-            'required': True
-        }),
-        label='Category',
-        help_text='Classify the product/service'
-    )
     
     class Meta:
         model = Product
@@ -303,6 +334,10 @@ class ProductForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Product Description',
                 'rows': 3
+            }),
+            'category': forms.Select(attrs={
+                'class': 'form-control',
+                'required': True
             }),
             'quantity': forms.NumberInput(attrs={
                 'class': 'form-control',
@@ -322,28 +357,24 @@ class ProductForm(forms.ModelForm):
 
 
 # ============================================
-# INVOICE FORMS (ENHANCED)
+# INVOICE FORMS
 # ============================================
 
 class InvoiceForm(forms.ModelForm):
-    """Form for creating and editing invoices (COMPLETE)"""
+    """Form for creating and editing invoices"""
     class Meta:
         model = Invoice
         fields = [
             'invoice_number',
-            'title',                    # ✅ ADDED - Brief description
+            'title',
             'client',
             'issue_date',
             'due_date',
-            'subtotal',                 # ✅ ADDED - Before tax
             'tax_rate',
-            'tax_amount',               # ✅ ADDED - Calculated tax
-            'total',                    # ✅ ADDED - Final total
             'paymentTerms',
-            'payment_method',           # ✅ ADDED - Payment method
-            'amount_paid',              # ✅ ADDED - Payment tracking
-            'outstanding_amount',       # ✅ ADDED - Remaining balance
-            'status',                   # ✅ ADDED - Invoice status
+            'payment_method',
+            'amount_paid',
+            'status',
             'notes',
         ]
         widgets = {
@@ -369,29 +400,11 @@ class InvoiceForm(forms.ModelForm):
                 'class': 'form-control',
                 'type': 'date',
             }),
-            'subtotal': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'placeholder': '0.00',
-                'step': '0.01',
-                'readonly': True,  # Auto-calculated from line items
-            }),
             'tax_rate': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Tax Rate (%)',
                 'step': '0.01',
                 'value': '7.5',
-            }),
-            'tax_amount': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'placeholder': '0.00',
-                'step': '0.01',
-                'readonly': True,  # Auto-calculated
-            }),
-            'total': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'placeholder': '0.00',
-                'step': '0.01',
-                'readonly': True,  # Auto-calculated
             }),
             'paymentTerms': forms.Select(attrs={
                 'class': 'form-control',
@@ -405,12 +418,6 @@ class InvoiceForm(forms.ModelForm):
                 'placeholder': '0.00',
                 'step': '0.01',
             }),
-            'outstanding_amount': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'placeholder': '0.00',
-                'step': '0.01',
-                'readonly': True,  # Auto-calculated
-            }),
             'status': forms.Select(attrs={
                 'class': 'form-control',
             }),
@@ -421,8 +428,9 @@ class InvoiceForm(forms.ModelForm):
             }),
         }
 
+
 class InvoiceItemForm(forms.ModelForm):
-    """Form for adding line items to invoices (NEW)"""
+    """Form for adding line items to invoices"""
     class Meta:
         model = InvoiceItem
         fields = [
@@ -458,7 +466,7 @@ class InvoiceItemForm(forms.ModelForm):
 
 
 class PaymentRecordForm(forms.ModelForm):
-    """Form for recording invoice payments (NEW)"""
+    """Form for recording invoice payments"""
     class Meta:
         model = PaymentRecord
         fields = [
@@ -495,142 +503,147 @@ class PaymentRecordForm(forms.ModelForm):
             }),
         }
 
-class QuickAddTruckForm(forms.ModelForm):
-    """Quick form to add truck from trip creation"""
-    
-    class Meta:
-        model = Truck
-        fields = ['plateNumber', 'model', 'manufacturer', 'yearOfManufacture', 'capacity', 'status', 'driverName', 'driverPhone']
-        widgets = {
-            'plateNumber': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'e.g., KRD 123 XY',
-                'required': True
-            }),
-            'model': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'e.g., Howo 10-ton',
-                'required': True
-            }),
-            'manufacturer': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'e.g., Sinotruk',
-                'required': True
-            }),
-            'yearOfManufacture': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'type': 'number',
-                'required': True
-            }),
-            'capacity': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01',
-                'required': True
-            }),
-            'status': forms.Select(attrs={'class': 'form-select'}),
-            'driverName': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Optional'
-            }),
-            'driverPhone': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Optional'
-            }),
-        }
 
-
-class TripForm(forms.ModelForm):
-    """Trip creation form"""
-    
-    class Meta:
-        model = Trip
-        fields = ['tripNumber', 'truck', 'origin', 'destination', 'distance', 'cargoDescription', 'cargoWeight', 'revenue', 'status']
-        widgets = {
-            'tripNumber': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Auto-generated',
-                'readonly': True
-            }),
-            'truck': forms.Select(attrs={
-                'class': 'form-select',
-                'required': True
-            }),
-            'origin': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'e.g., Lagos'
-            }),
-            'destination': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'e.g., Port Harcourt'
-            }),
-            'distance': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01',
-                'placeholder': 'kilometers'
-            }),
-            'cargoDescription': forms.Textarea(attrs={
-                'class': 'form-control',
-                'rows': 3,
-                'placeholder': 'e.g., Container (40FT) with electronics'
-            }),
-            'cargoWeight': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01',
-                'placeholder': 'kilograms'
-            }),
-            'revenue': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': '0.01',
-                'placeholder': 'Nigerian Naira'
-            }),
-            'status': forms.Select(attrs={'class': 'form-select'}),
-        }
-
-
-class ClientForm(forms.ModelForm):
-    """Client form"""
-    
-    class Meta:
-        model = Client
-        fields = ['clientName', 'addressLine1', 'state', 'phoneNumber', 'emailAddress', 'taxNumber']
-        widgets = {
-            'clientName': forms.TextInput(attrs={'class': 'form-control'}),
-            'addressLine1': forms.TextInput(attrs={'class': 'form-control'}),
-            'state': forms.Select(attrs={'class': 'form-select'}),
-            'phoneNumber': forms.TextInput(attrs={'class': 'form-control'}),
-            'emailAddress': forms.EmailInput(attrs={'class': 'form-control'}),
-            'taxNumber': forms.TextInput(attrs={'class': 'form-control'}),
-        }
-
-
-class InvoiceForm(forms.ModelForm):
-    """Invoice form"""
-    
-    class Meta:
-        model = Invoice
-        fields = ['client', 'issue_date', 'due_date', 'tax_rate', 'paymentTerms', 'notes']
-        widgets = {
-            'client': forms.Select(attrs={'class': 'form-select'}),
-            'issue_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'due_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'tax_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'paymentTerms': forms.Select(attrs={'class': 'form-select'}),
-            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-        }
-
+# ============================================
+# TRIP INVOICE FORMS (FIXED FOR NEW MODEL)
+# ============================================
 
 class TripInvoiceForm(forms.ModelForm):
-    """Trip Invoice form"""
+    """Form for creating manifest invoices (FIXED)"""
     
     class Meta:
         model = TripInvoice
-        fields = ['trip', 'client', 'issue_date', 'due_date', 'tax_rate', 'paymentTerms', 'notes']
+        fields = [
+            'invoice_number',
+            'client',
+            'issue_date',
+            'due_date',
+            'tax_rate',
+            'payment_terms',      # ✅ FIXED: Changed from paymentTerms
+            'notes'
+        ]
         widgets = {
-            'trip': forms.Select(attrs={'class': 'form-select'}),
-            'client': forms.Select(attrs={'class': 'form-select'}),
-            'issue_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'due_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'tax_rate': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'paymentTerms': forms.Select(attrs={'class': 'form-select'}),
-            'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'invoice_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., KNL/JH/26/ISDD-INB-072-EFM/1070',
+                'required': True
+            }),
+            'client': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'issue_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date',
+                'required': True
+            }),
+            'due_date': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date'
+            }),
+            'tax_rate': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'value': '7.5',
+                'placeholder': 'Nigeria VAT: 7.5%'
+            }),
+            'payment_terms': forms.Select(attrs={  # ✅ FIXED: Changed from paymentTerms
+                'class': 'form-select',
+                'required': True
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Additional notes'
+            }),
         }
+
+
+class TripInvoiceLineItemForm(forms.ModelForm):
+    """Form for adding/editing containers on manifest invoices (NEW)"""
+    
+    class Meta:
+        model = TripInvoiceLineItem
+        fields = [
+            'trip',
+            'date_loaded',
+            'file_reference',
+            'container_number',
+            'terminal',
+            'truck_number',
+            'container_length',
+            'destination',
+            'amount'
+        ]
+        widgets = {
+            'trip': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'date_loaded': forms.DateInput(attrs={
+                'class': 'form-control',
+                'type': 'date',
+                'required': True
+            }),
+            'file_reference': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., ISDD-INB-072',
+                'required': True
+            }),
+            'container_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., IBP014',
+                'required': True
+            }),
+            'terminal': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., EFM',
+                'required': True
+            }),
+            'truck_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., T13577LA',
+                'required': True
+            }),
+            'container_length': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., 20FT',
+                'required': True
+            }),
+            'destination': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'e.g., PORTHARCOURT',
+                'required': True
+            }),
+            'amount': forms.DecimalField(
+                max_digits=15,
+                decimal_places=2,
+                widget=forms.NumberInput(attrs={
+                    'class': 'form-control',
+                    'step': '0.01',
+                    'placeholder': '0.00',
+                    'required': True
+                })
+            ),
+        }
+
+
+# ============================================
+# FORMSETS (For inline editing)
+# ============================================
+
+# Invoice items formset
+InvoiceItemFormSet = inlineformset_factory(
+    Invoice,
+    InvoiceItem,
+    form=InvoiceItemForm,
+    extra=1,
+    can_delete=True
+)
+
+# Trip invoice line items formset
+TripInvoiceLineItemFormSet = inlineformset_factory(
+    TripInvoice,
+    TripInvoiceLineItem,
+    form=TripInvoiceLineItemForm,
+    extra=1,
+    can_delete=True
+)

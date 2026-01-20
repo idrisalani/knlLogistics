@@ -26,10 +26,13 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.enums import TA_CENTER, TA_RIGHT, TA_LEFT
 from reportlab.lib import colors
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from .models import Trip, Invoice, Product, Truck, Client, TripExpense, InvoiceItem, PaymentRecord, TripInvoice, Trip, PaymentRecord
+from .models import ( Trip, Invoice, Product, Truck, Client, 
+                     TripExpense, InvoiceItem, PaymentRecord, 
+                     TripInvoice, Trip, PaymentRecord, TripInvoiceLineItem )
 from .forms import TripForm, InvoiceForm, ProductForm, TripExpenseForm, ClientForm
 from .forms import QuickAddTruckForm
 from django.views.decorators.http import require_http_methods
+import uuid
 
 # from knlTrip.models import Trip  # Adjust import based on your app name
 
@@ -2316,304 +2319,6 @@ def get_trip_profitability_data(request):
     except Exception as e:
         return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
     
-# ===== TRIP INVOICE VIEWS =====
-
-@login_required
-def trip_invoice_list(request):
-    """
-    List all trip invoices with filtering and pagination
-    """
-    # Get all trip invoices for logged-in user
-    invoices = TripInvoice.objects.filter(user=request.user).select_related('trip', 'client')
-    
-    # Calculate statistics
-    total_count = invoices.count()
-    paid_count = invoices.filter(status='paid').count()
-    pending_count = invoices.filter(status='pending').count()
-    overdue_count = invoices.filter(status='overdue').count()
-    
-    # Filter by status
-    status_filter = request.GET.get('status')
-    if status_filter:
-        invoices = invoices.filter(status=status_filter)
-    
-    # Search
-    search_query = request.GET.get('search')
-    if search_query:
-        invoices = invoices.filter(
-            Q(invoice_number__icontains=search_query) |
-            Q(trip__tripNumber__icontains=search_query) |
-            Q(client__clientName__icontains=search_query)
-        )
-    
-    # Order by date created (newest first)
-    invoices = invoices.order_by('-date_created')
-    
-    # Pagination
-    paginator = Paginator(invoices, 15)  # 15 invoices per page
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    context = {
-        'invoices': page_obj.object_list,
-        'page_obj': page_obj,
-        'is_paginated': page_obj.has_other_pages(),
-        'total_count': total_count,
-        'paid_count': paid_count,
-        'pending_count': pending_count,
-        'overdue_count': overdue_count,
-    }
-    
-    return render(request, 'knlInvoice/trip_invoice_list.html', context)
-
-
-@login_required
-def trip_invoice_detail(request, slug):
-    """
-    View trip invoice details
-    """
-    invoice = get_object_or_404(TripInvoice, slug=slug, user=request.user)
-    
-    # Get related data
-    trip = invoice.trip
-    client = invoice.client
-    payments = invoice.payments.all().order_by('-payment_date')
-    
-    context = {
-        'invoice': invoice,
-        'trip': trip,
-        'client': client,
-        'payments': payments,
-    }
-    
-    return render(request, 'knlInvoice/trip_invoice_detail.html', context)
-
-
-@login_required
-def create_trip_invoice(request, trip_id):
-    """
-    Create a new trip invoice from a trip
-    """
-    trip = get_object_or_404(Trip, id=trip_id, user=request.user)
-    
-    if request.method == 'POST':
-        try:
-            # Generate invoice number
-            invoice_count = TripInvoice.objects.filter(user=request.user).count() + 1
-            invoice_number = f"TRP-{trip.tripNumber}-INV-{timezone.now().year}"
-            
-            # Get client if provided
-            client_id = request.POST.get('client')
-            client = None
-            if client_id:
-                client = get_object_or_404(Client, id=client_id)
-            else:
-                # Try to get client from trip if available
-                if hasattr(trip, 'client'):
-                    client = trip.client
-            
-            # Create invoice
-            invoice = TripInvoice.objects.create(
-                trip=trip,
-                invoice_number=invoice_number,
-                client=client,
-                user=request.user,
-                issue_date=request.POST.get('issue_date', timezone.now().date()),
-                due_date=request.POST.get('due_date'),
-                subtotal=trip.revenue,
-                tax_rate=float(request.POST.get('tax_rate', 7.5)),
-                status=request.POST.get('status', 'draft'),
-                paymentTerms=request.POST.get('paymentTerms', '14 days'),
-                notes=request.POST.get('notes', ''),
-            )
-            
-            # Calculate totals
-            invoice.calculate_totals()
-            invoice.save()
-            
-            messages.success(request, f'✅ Invoice {invoice_number} created successfully!')
-            return redirect('tripinvoice-detail', slug=invoice.slug)
-            
-        except Exception as e:
-            logger.error(f"Error creating trip invoice: {str(e)}", exc_info=True)
-            messages.error(request, f'❌ Error creating invoice: {str(e)}')
-            return redirect('trip-detail', pk=trip_id)
-    
-    # GET request - show form
-    clients = Client.objects.all().order_by('clientName')
-    
-    context = {
-        'trip': trip,
-        'clients': clients,
-    }
-    
-    return render(request, 'knlInvoice/create_trip_invoice.html', context)
-
-
-@login_required
-def trip_invoice_pdf(request, slug):
-    """
-    Download trip invoice as PDF
-    """
-    invoice = get_object_or_404(TripInvoice, slug=slug, user=request.user)
-    
-    try:
-        # Use the PDF generator function
-        pdf_bytes = generate_pdf_reportlab_trip(invoice)
-        
-        if pdf_bytes:
-            response = HttpResponse(pdf_bytes, content_type='application/pdf')
-            response['Content-Disposition'] = f'attachment; filename="INV-{invoice.invoice_number}.pdf"'
-            return response
-        else:
-            messages.error(request, 'Could not generate PDF')
-            return redirect('tripinvoice-detail', slug=slug)
-            
-    except Exception as e:
-        logger.error(f"PDF generation error: {str(e)}", exc_info=True)
-        messages.error(request, 'Could not generate PDF')
-        return redirect('tripinvoice-detail', slug=slug)
-
-
-@login_required
-def trip_invoice_email(request, slug):
-    """
-    Send trip invoice via email
-    """
-    invoice = get_object_or_404(TripInvoice, slug=slug, user=request.user)
-    
-    try:
-        if request.method == 'POST':
-            # Generate PDF
-            pdf_bytes = generate_pdf_reportlab_trip(invoice)
-            
-            if not pdf_bytes:
-                # Fallback to ReportLab if WeasyPrint fails
-                pdf_bytes = generate_pdf_reportlab_trip(invoice)
-            
-            # Get client email
-            client_email = invoice.client.emailAddress if invoice.client else None
-            
-            if not client_email:
-                messages.error(request, 'Client email address not found')
-                return redirect('tripinvoice-detail', slug=slug)
-            
-            # Prepare email context
-            email_context = {
-                'invoice': invoice,
-                'trip': invoice.trip,
-                'client': invoice.client,
-                'company_name': 'KAMRATE NIGERIA LIMITED',
-                'company_email': 'info@kamratelimited.com',
-                'company_phone': '+234 803 484 9228',
-                'company_address': '33, Creek Road, Ibu Boulevard, Apapa, Lagos',
-            }
-            
-            # Render HTML email
-            html_message = render_to_string('knlInvoice/emails/trip_invoice_email.html', email_context)
-            
-            # Plain text fallback
-            plain_message = f"""
-Dear {invoice.client.clientName if invoice.client else 'Valued Client'},
-
-Please find attached invoice {invoice.invoice_number} for trip {invoice.trip.tripNumber}.
-
-Total Amount Due: ₦{invoice.total:,.2f}
-Outstanding Amount: ₦{invoice.outstanding_amount:,.2f}
-
-Payment Details:
-Account Name: KAMRATE NIGERIA LIMITED
-Account Number: 0004662938
-Bank: JAIZ BANK
-TIN: 20727419-0001
-
-Thank you for your business!
-
-Best regards,
-KAMRATE NIGERIA LIMITED
-            """
-            
-            # Create and send email
-            email = EmailMessage(
-                subject=f'Invoice {invoice.invoice_number} from Kamrate Nigeria Limited',
-                body=plain_message,
-                from_email='invoices@kamratelimited.com',
-                to=[client_email],
-            )
-            
-            # Attach HTML version
-            email.attach_alternative(html_message, "text/html")
-            
-            # Attach PDF
-            if pdf_bytes:
-                email.attach(
-                    f'INV-{invoice.invoice_number}.pdf',
-                    pdf_bytes.read() if hasattr(pdf_bytes, 'read') else pdf_bytes,
-                    'application/pdf'
-                )
-            
-            # Send email
-            email.send()
-            
-            # Update status to 'sent'
-            invoice.status = 'sent'
-            invoice.save()
-            
-            messages.success(request, f'✅ Invoice sent to {client_email}')
-            return redirect('tripinvoice-detail', slug=slug)
-        
-        # GET request - show confirmation
-        return render(request, 'knlInvoice/trip_invoice_detail.html', {'invoice': invoice})
-        
-    except Exception as e:
-        logger.error(f"Email sending error: {str(e)}", exc_info=True)
-        messages.error(request, f'❌ Error sending email: {str(e)}')
-        return redirect('tripinvoice-detail', slug=slug)
-
-
-@login_required
-def trip_invoice_record_payment(request, slug):
-    """
-    Record payment against a trip invoice
-    """
-    invoice = get_object_or_404(TripInvoice, slug=slug, user=request.user)
-    
-    if request.method == 'POST':
-        try:
-            amount = float(request.POST.get('amount', 0))
-            payment_date = request.POST.get('payment_date', timezone.now().date())
-            payment_method = request.POST.get('payment_method')
-            reference_number = request.POST.get('reference_number', '')
-            notes = request.POST.get('notes', '')
-            
-            if amount <= 0:
-                messages.error(request, 'Amount must be greater than 0')
-                return redirect('tripinvoice-detail', slug=slug)
-            
-            # Create payment record
-            payment = PaymentRecord.objects.create(
-                invoice=invoice,
-                amount=amount,
-                payment_date=payment_date,
-                payment_method=payment_method,
-                reference_number=reference_number,
-                notes=notes,
-            )
-            
-            # The PaymentRecord.save() method should update the invoice
-            # But we can also call it explicitly
-            invoice.mark_as_paid(amount)
-            invoice.save()
-            
-            messages.success(request, f'✅ Payment of ₦{amount:,.2f} recorded successfully')
-            
-        except Exception as e:
-            logger.error(f"Payment recording error: {str(e)}", exc_info=True)
-            messages.error(request, f'❌ Error recording payment: {str(e)}')
-    
-    return redirect('tripinvoice-detail', slug=slug)
-
-
 # ===== PDF GENERATOR FUNCTION =====
 
 def generate_pdf_reportlab_trip(trip_invoice):
@@ -2922,3 +2627,475 @@ def get_trucks_json(request):
         'success': True,
         'trucks': list(trucks)
     })
+
+# ============================================
+# TRIP INVOICE LIST
+# ============================================
+
+@login_required(login_url='knlInvoice:login')
+def trip_invoice_list(request):
+    """List all trip invoices"""
+    invoices = TripInvoice.objects.all().order_by('-date_created')
+    
+    # Filter by status if provided
+    status = request.GET.get('status')
+    if status:
+        invoices = invoices.filter(status=status)
+    
+    # Calculate summary statistics
+    total_invoices = invoices.count()
+    total_revenue = invoices.aggregate(total=Sum('total'))['total'] or 0
+    total_paid = invoices.aggregate(total=Sum('amount_paid'))['total'] or 0
+    total_outstanding = total_revenue - total_paid
+    
+    context = {
+        'page_title': 'Trip Invoices',
+        'invoices': invoices,
+        'total_invoices': total_invoices,
+        'total_revenue': float(total_revenue),
+        'total_paid': float(total_paid),
+        'total_outstanding': float(total_outstanding),
+        'statuses': TripInvoice.STATUS_CHOICES,
+    }
+    
+    return render(request, 'knlInvoice/trip_invoice_list.html', context)
+
+
+# ============================================
+# CREATE TRIP INVOICE
+# ============================================
+
+@login_required(login_url='knlInvoice:login')
+def trip_invoice_create(request):
+    """Create a manifest invoice with multiple trips"""
+    
+    if request.method == 'POST':
+        try:
+            # Get form data
+            invoice_number = request.POST.get('invoice_number')
+            client_id = request.POST.get('client')
+            issue_date = request.POST.get('issue_date', timezone.now().date())
+            due_date = request.POST.get('due_date')
+            tax_rate = float(request.POST.get('tax_rate', 7.5))
+            payment_terms = request.POST.get('payment_terms', '14 days')
+            notes = request.POST.get('notes', '')
+            
+            # Get selected trips (from JavaScript containers array)
+            containers_json = request.POST.get('containers', '[]')
+            selected_trips = json.loads(containers_json) if containers_json else []
+            
+            if not selected_trips:
+                messages.error(request, '❌ Please select at least one trip!')
+                return render(request, 'knlInvoice/trip_invoice_create.html', {
+                    'clients': Client.objects.all(),
+                    'available_trips': Trip.objects.all().order_by('-startDate'),  # ✅ FIX: Get ALL trips
+                    'payment_terms': TripInvoice.TERMS,
+                })
+            
+            # Validate invoice number is unique (if provided)
+            if invoice_number and TripInvoice.objects.filter(invoice_number=invoice_number).exists():
+                messages.error(request, '❌ Invoice number already exists!')
+                return render(request, 'knlInvoice/trip_invoice_create.html', {
+                    'clients': Client.objects.all(),
+                    'available_trips': Trip.objects.all().order_by('-startDate'),  # ✅ FIX: Get ALL trips
+                    'payment_terms': TripInvoice.TERMS,
+                })
+            
+            # Get client if provided
+            client = None
+            if client_id:
+                try:
+                    client = get_object_or_404(Client, pk=client_id)
+                except:
+                    client = None
+            
+            # Create invoice
+            invoice = TripInvoice.objects.create(
+                client=client,
+                user=request.user,
+                issue_date=issue_date,
+                due_date=due_date if due_date else None,
+                tax_rate=Decimal(str(tax_rate)),
+                payment_terms=payment_terms,
+                notes=notes,
+                status='draft',
+            )
+            
+            # Add selected trips as line items
+            for trip_id in selected_trips:
+                try:
+                    trip = Trip.objects.get(pk=trip_id)
+                    
+                    # Get trip details - use all the fields from the old view
+                    date_loaded = trip.startDate.date() if trip.startDate else timezone.now().date()
+                    file_reference = trip.tripNumber if hasattr(trip, 'tripNumber') else ''
+                    container_number = ''  # Can be filled in detail view
+                    terminal = ''  # Can be filled in detail view
+                    truck_number = trip.truck.plateNumber if trip.truck else ''
+                    container_length = '20FT'  # Default
+                    destination = trip.destination
+                    amount = Decimal(str(trip.revenue))
+                    
+                    # Add as line item using the model's add_trip method
+                    invoice.add_trip(
+                        trip=trip,
+                        date_loaded=date_loaded,
+                        file_reference=file_reference,
+                        container_number=container_number,
+                        terminal=terminal,
+                        truck_number=truck_number,
+                        container_length=container_length,
+                        destination=destination,
+                        amount=amount,
+                    )
+                except Trip.DoesNotExist:
+                    continue
+                except Exception as e:
+                    logger.error(f"Error adding trip {trip_id}: {str(e)}")
+                    continue
+            
+            # Recalculate totals
+            invoice.calculate_totals()
+            invoice.save()
+            
+            messages.success(request, f'✅ Manifest Invoice created with {invoice.line_items.count()} containers!')
+            return redirect('knlInvoice:trip-invoice-detail', pk=invoice.pk)
+        
+        except Exception as e:
+            logger.error(f"Error creating invoice: {str(e)}")
+            messages.error(request, f'❌ Error creating invoice: {str(e)}')
+            return render(request, 'knlInvoice/trip_invoice_create.html', {
+                'clients': Client.objects.all(),
+                'available_trips': Trip.objects.all().order_by('-startDate'),  # ✅ FIX: Get ALL trips
+                'payment_terms': TripInvoice.TERMS,
+            })
+    
+    # GET REQUEST - Show create form
+    
+    # ✅ FIX: Get ALL trips instead of just completed
+    # This matches the real-world usage shown in the invoice PDF
+    available_trips = Trip.objects.all().order_by('-startDate')
+    clients = Client.objects.all().order_by('clientName')
+    
+    context = {
+        'page_title': 'Create Manifest Invoice',
+        'available_trips': available_trips,  # ✅ Now includes ALL trips
+        'clients': clients,
+        'payment_terms': TripInvoice.TERMS,
+    }
+    
+    return render(request, 'knlInvoice/trip_invoice_create.html', context)
+
+
+# ============================================
+# TRIP INVOICE DETAIL
+# ============================================
+
+@login_required(login_url='knlInvoice:login')
+def trip_invoice_detail(request, pk):
+    """View trip invoice details"""
+    invoice = get_object_or_404(TripInvoice, pk=pk)
+    
+    # Calculate remaining balance
+    remaining_balance = invoice.total - invoice.amount_paid
+    
+    context = {
+        'page_title': f'Invoice {invoice.invoice_number}',
+        'invoice': invoice,
+        'remaining_balance': float(remaining_balance),
+        'is_overdue': invoice.is_overdue,
+        'is_paid': invoice.is_paid,
+    }
+    
+    return render(request, 'knlInvoice/trip_invoice_detail.html', context)
+
+
+# ============================================
+# UPDATE INVOICE STATUS
+# ============================================
+
+@login_required(login_url='knlInvoice:login')
+def trip_invoice_update_status(request, pk):
+    """Update invoice status"""
+    invoice = get_object_or_404(TripInvoice, pk=pk)
+    
+    if request.method == 'POST':
+        new_status = request.POST.get('status')
+        
+        if new_status in dict(TripInvoice.STATUS_CHOICES):
+            invoice.status = new_status
+            invoice.save()
+            messages.success(request, f'✅ Invoice status updated to {new_status}!')
+        else:
+            messages.error(request, '❌ Invalid status!')
+    
+    return redirect('knlInvoice:trip-invoice-detail', pk=invoice.pk)
+
+
+# ============================================
+# RECORD PAYMENT
+# ============================================
+
+@login_required(login_url='knlInvoice:login')
+def trip_invoice_record_payment(request, pk):
+    """Record payment for invoice"""
+    invoice = get_object_or_404(TripInvoice, pk=pk)
+    
+    if request.method == 'POST':
+        try:
+            amount = float(request.POST.get('amount', 0))
+            payment_date = request.POST.get('payment_date', timezone.now().date())
+            
+            if amount <= 0:
+                messages.error(request, '❌ Payment amount must be greater than zero!')
+                return redirect('knlInvoice:trip-invoice-detail', pk=invoice.pk)
+            
+            if amount > invoice.outstanding_amount:
+                messages.error(request, f'❌ Payment exceeds outstanding amount (₦{invoice.outstanding_amount:,.2f})')
+                return redirect('knlInvoice:trip-invoice-detail', pk=invoice.pk)
+            
+            # Record payment
+            invoice.amount_paid += Decimal(str(amount))
+            invoice.outstanding_amount = invoice.total - invoice.amount_paid
+            
+            # Update status
+            if invoice.outstanding_amount <= 0:
+                invoice.status = 'paid'
+                invoice.outstanding_amount = Decimal('0')
+                messages.success(request, f'✅ Invoice paid in full!')
+            else:
+                invoice.status = 'pending'
+                messages.success(request, f'✅ Payment of ₦{amount:,.2f} recorded!')
+            
+            invoice.save()
+        
+        except ValueError:
+            messages.error(request, '❌ Invalid payment amount!')
+    
+    return redirect('knlInvoice:trip-invoice-detail', pk=invoice.pk)
+
+
+# ============================================
+# EDIT INVOICE
+# ============================================
+
+@login_required(login_url='knlInvoice:login')
+def trip_invoice_edit(request, pk):
+    """Edit trip invoice"""
+    invoice = get_object_or_404(TripInvoice, pk=pk)
+    
+    if invoice.status not in ['draft', 'pending']:
+        messages.warning(request, '⚠️ Can only edit draft or pending invoices!')
+        return redirect('knlInvoice:trip-invoice-detail', pk=invoice.pk)
+    
+    if request.method == 'POST':
+        try:
+            # Update fields
+            invoice.client_id = request.POST.get('client') or None
+            invoice.issue_date = request.POST.get('issue_date', invoice.issue_date)
+            invoice.due_date = request.POST.get('due_date', invoice.due_date)
+            invoice.tax_rate = float(request.POST.get('tax_rate', invoice.tax_rate))
+            invoice.payment_terms = request.POST.get('payment_terms', invoice.payment_terms)
+            invoice.notes = request.POST.get('notes', '')
+            
+            # Recalculate totals
+            invoice.calculate_totals()
+            invoice.save()
+            
+            messages.success(request, '✅ Invoice updated successfully!')
+            return redirect('knlInvoice:trip-invoice-detail', pk=invoice.pk)
+        
+        except Exception as e:
+            messages.error(request, f'❌ Error updating invoice: {str(e)}')
+    
+    clients = Client.objects.all().order_by('clientName')
+    
+    context = {
+        'page_title': f'Edit Invoice {invoice.invoice_number}',
+        'invoice': invoice,
+        'clients': clients,
+        'payment_terms': TripInvoice.TERMS,
+    }
+    
+    return render(request, 'knlInvoice/trip_invoice_edit.html', context)
+
+
+# ============================================
+# ADD TRIP TO EXISTING INVOICE
+# ============================================
+
+@login_required(login_url='knlInvoice:login')
+def trip_invoice_add_trip(request, pk):
+    """Add another trip to an existing invoice"""
+    invoice = get_object_or_404(TripInvoice, pk=pk)
+    
+    # Only allow adding to draft invoices
+    if invoice.status not in ['draft']:
+        messages.error(request, '❌ Can only add trips to draft invoices!')
+        return redirect('knlInvoice:trip-invoice-detail', pk=invoice.pk)
+    
+    if request.method == 'POST':
+        try:
+            trip_id = request.POST.get('trip')
+            trip = get_object_or_404(Trip, pk=trip_id)
+            
+            # Check if trip already on invoice
+            if invoice.line_items.filter(trip=trip).exists():
+                messages.error(request, '❌ This trip is already on the invoice!')
+                return redirect('knlInvoice:trip-invoice-add-trip', pk=invoice.pk)
+            
+            # Get trip details
+            date_loaded = request.POST.get('date_loaded', trip.startDate.date())
+            file_reference = request.POST.get('file_reference', '')
+            container_number = request.POST.get('container_number', '')
+            terminal = request.POST.get('terminal', '')
+            truck_number = request.POST.get('truck_number', trip.truck.plateNumber if trip.truck else '')
+            container_length = request.POST.get('container_length', '20FT')
+            destination = request.POST.get('destination', trip.destination)
+            amount = float(request.POST.get('amount', trip.revenue))
+            
+            # Add to invoice
+            invoice.add_trip(
+                trip=trip,
+                date_loaded=date_loaded,
+                file_reference=file_reference,
+                container_number=container_number,
+                terminal=terminal,
+                truck_number=truck_number,
+                container_length=container_length,
+                destination=destination,
+                amount=amount,
+            )
+            
+            messages.success(request, f'✅ Trip {trip.tripNumber} added to invoice!')
+            return redirect('knlInvoice:trip-invoice-detail', pk=invoice.pk)
+        
+        except Exception as e:
+            messages.error(request, f'❌ Error adding trip: {str(e)}')
+    
+    # Get trips not already on this invoice
+    available_trips = Trip.objects.filter(
+        status='completed'
+    ).exclude(
+        invoice_items__invoice=invoice
+    ).order_by('-startDate')
+    
+    context = {
+        'page_title': f'Add Trip to Invoice {invoice.invoice_number}',
+        'invoice': invoice,
+        'available_trips': available_trips,
+    }
+    
+    return render(request, 'knlInvoice/trip_invoice_add_trip.html', context)
+
+
+# ============================================
+# REMOVE TRIP FROM INVOICE
+# ============================================
+
+@login_required(login_url='knlInvoice:login')
+def trip_invoice_remove_trip(request, pk, item_id):
+    """Remove a trip from an invoice"""
+    invoice = get_object_or_404(TripInvoice, pk=pk)
+    item = get_object_or_404(TripInvoiceLineItem, pk=item_id, invoice=invoice)
+    
+    if invoice.status not in ['draft']:
+        messages.error(request, '❌ Can only remove trips from draft invoices!')
+        return redirect('knlInvoice:trip-invoice-detail', pk=invoice.pk)
+    
+    if request.method == 'POST':
+        trip_number = item.trip.tripNumber if item.trip else item.container_number
+        invoice.remove_trip(item_id)
+        messages.success(request, f'✅ Trip {trip_number} removed from invoice!')
+    
+    return redirect('knlInvoice:trip-invoice-detail', pk=invoice.pk)
+
+
+# ============================================
+# EDIT TRIP LINE ITEM
+# ============================================
+
+@login_required(login_url='knlInvoice:login')
+def trip_invoice_edit_trip(request, pk, item_id):
+    """Edit a trip line item in the invoice"""
+    invoice = get_object_or_404(TripInvoice, pk=pk)
+    item = get_object_or_404(TripInvoiceLineItem, pk=item_id, invoice=invoice)
+    
+    if invoice.status not in ['draft']:
+        messages.error(request, '❌ Can only edit trips in draft invoices!')
+        return redirect('knlInvoice:trip-invoice-detail', pk=invoice.pk)
+    
+    if request.method == 'POST':
+        try:
+            item.date_loaded = request.POST.get('date_loaded', item.date_loaded)
+            item.file_reference = request.POST.get('file_reference', item.file_reference)
+            item.container_number = request.POST.get('container_number', item.container_number)
+            item.terminal = request.POST.get('terminal', item.terminal)
+            item.truck_number = request.POST.get('truck_number', item.truck_number)
+            item.container_length = request.POST.get('container_length', item.container_length)
+            item.destination = request.POST.get('destination', item.destination)
+            item.amount = Decimal(str(request.POST.get('amount', item.amount)))
+            item.save()
+            
+            # Recalculate invoice totals
+            invoice.calculate_totals()
+            invoice.save()
+            
+            messages.success(request, '✅ Trip details updated!')
+            return redirect('knlInvoice:trip-invoice-detail', pk=invoice.pk)
+        
+        except Exception as e:
+            messages.error(request, f'❌ Error updating trip: {str(e)}')
+    
+    context = {
+        'page_title': f'Edit Trip - Invoice {invoice.invoice_number}',
+        'invoice': invoice,
+        'item': item,
+    }
+    
+    return render(request, 'knlInvoice/trip_invoice_edit_trip.html', context)
+
+
+# ============================================
+# DELETE INVOICE (DRAFT ONLY)
+# ============================================
+
+@login_required(login_url='knlInvoice:login')
+def trip_invoice_delete(request, pk):
+    """Delete trip invoice (draft only)"""
+    invoice = get_object_or_404(TripInvoice, pk=pk)
+    
+    if invoice.status != 'draft':
+        messages.error(request, '❌ Can only delete draft invoices!')
+        return redirect('knlInvoice:trip-invoice-detail', pk=invoice.pk)
+    
+    if request.method == 'POST':
+        invoice_number = invoice.invoice_number
+        invoice.delete()
+        messages.success(request, f'✅ Invoice {invoice_number} deleted!')
+        return redirect('knlInvoice:trip-invoice-list')
+    
+    context = {
+        'page_title': f'Delete Invoice {invoice.invoice_number}',
+        'invoice': invoice,
+    }
+    
+    return render(request, 'knlInvoice/trip_invoice_delete_confirm.html', context)
+
+
+# ============================================
+# SEND INVOICE (Placeholder for email)
+# ============================================
+
+@login_required(login_url='knlInvoice:login')
+def trip_invoice_send(request, pk):
+    """Mark invoice as sent (placeholder for email)"""
+    invoice = get_object_or_404(TripInvoice, pk=pk)
+    
+    if request.method == 'POST':
+        invoice.status = 'sent'
+        invoice.save()
+        messages.success(request, f'✅ Invoice marked as sent!')
+        # TODO: Send email to client
+    
+    return redirect('knlInvoice:trip-invoice-detail', pk=invoice.pk)

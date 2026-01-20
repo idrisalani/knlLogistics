@@ -1,196 +1,213 @@
 {% extends 'partials/base.html' %}
 {% load static %}
 
-{% block title %}Trip Details - Kamrate Nigeria Limited{% endblock %}
+{% block title %}{{ trip.tripNumber }} - Trip Details - Kamrate{% endblock %}
 
 {% block content %}
-
-<div class="container-fluid mt-4">
-  <!-- Header Section -->
-  <div class="d-flex justify-content-between align-items-center mb-4">
+<main>
+  <!-- Page Header -->
+  <div class="page-header">
     <div>
-      <h1 class="page-title mb-1">
-        <i class="fas fa-truck"></i> {{ trip.tripNumber }}
-      </h1>
-      <p class="text-muted">
-        {{ trip.origin }} → {{ trip.destination }}
-      </p>
+      <h1>🚚 {{ trip.tripNumber }}</h1>
+      <p class="text-muted">{{ trip.origin }} → {{ trip.destination }}</p>
     </div>
-    <div class="btn-group" role="group">
+    <div class="btn-group">
       <a href="{% url 'knlInvoice:trips-list' %}" class="btn btn-outline-secondary">
-        <i class="fas fa-arrow-left"></i> Back to Trips
+        ← Back to Trips
       </a>
-      <a href="{% url 'knlInvoice:trip-edit' trip.pk %}" class="btn btn-warning">
-        <i class="fas fa-edit"></i> Edit Trip
+      <a href="{% url 'knlInvoice:trip-update' pk=trip.pk %}" class="btn btn-primary" style="background-color: var(--kamrate-orange); border-color: var(--kamrate-orange); font-weight: 700;">
+        ✏️ Edit Trip
       </a>
     </div>
   </div>
 
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
   <div class="row">
-    <!-- Left: Trip Details (8 columns) -->
+    <!-- Left Column: Trip Details & Expenses (8 cols) -->
     <div class="col-lg-8">
       <!-- Trip Information Card -->
-      <div class="card mb-4 shadow-sm" style="border-left: 5px solid #FF9500;">
-        <div class="card-header bg-white p-3" style="border-bottom: 2px solid #FF9500;">
-          <h5 class="mb-0" style="color: #001f4d; font-weight: 700;">
-            <i class="fas fa-info-circle"></i> Trip Information
+      <div class="card mb-4" style="border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-top: 4px solid var(--kamrate-orange);">
+        <div class="card-header" style="background-color: #f8f9fa; border-bottom: 2px solid #e9ecef; padding: 20px;">
+          <h5 style="color: var(--kamrate-blue); font-weight: 800; margin: 0;">
+            ℹ️ Trip Information
           </h5>
         </div>
-        <div class="card-body">
+        <div class="card-body p-4">
           <div class="row">
-            <div class="col-md-6 mb-3">
-              <p class="text-muted small">Trip Date</p>
-              <h6 style="color: #001f4d; font-weight: 700;">{{ trip.startDate|date:"d M Y" }}</h6>
+            <div class="col-md-6 mb-4">
+              <small class="text-muted" style="font-weight: 700;">TRIP DATE</small>
+              <p style="margin: 8px 0; color: var(--kamrate-blue); font-weight: 800; font-size: 1.1rem;">
+                {{ trip.startDate|date:"d M Y" }}
+              </p>
             </div>
-            <div class="col-md-6 mb-3">
-              <p class="text-muted small">Trip Status</p>
-              <h6>
+            <div class="col-md-6 mb-4">
+              <small class="text-muted" style="font-weight: 700;">STATUS</small>
+              <p style="margin: 8px 0;">
                 {% if trip.status == 'COMPLETED' %}
-                  <span class="badge bg-success">COMPLETED</span>
+                  <span class="badge" style="background-color: #0D7A3D; color: white; padding: 8px 12px; font-weight: 600;">✓ Completed</span>
                 {% elif trip.status == 'IN_PROGRESS' %}
-                  <span class="badge bg-warning">IN PROGRESS</span>
+                  <span class="badge" style="background-color: var(--kamrate-orange); color: white; padding: 8px 12px; font-weight: 600;">⟳ In Progress</span>
+                {% elif trip.status == 'PENDING' %}
+                  <span class="badge" style="background-color: #95a5a6; color: white; padding: 8px 12px; font-weight: 600;">⏳ Pending</span>
                 {% else %}
-                  <span class="badge bg-secondary">{{ trip.status }}</span>
+                  <span class="badge" style="background-color: #95a5a6; color: white; padding: 8px 12px; font-weight: 600;">{{ trip.status }}</span>
                 {% endif %}
-              </h6>
+              </p>
             </div>
           </div>
+
+          <hr style="margin: 15px 0; border-top: 1px solid #e9ecef;">
+
           <div class="row">
-            <div class="col-md-6 mb-3">
-              <p class="text-muted small">Truck</p>
-              <h6 style="color: #001f4d; font-weight: 700;">
+            <div class="col-md-6 mb-4">
+              <small class="text-muted" style="font-weight: 700;">TRUCK</small>
+              <p style="margin: 8px 0; color: var(--kamrate-blue); font-weight: 800;">
                 {% if trip.truck %}
                   {{ trip.truck.plateNumber }}
                 {% else %}
-                  Not assigned
+                  <span class="text-muted">Not assigned</span>
                 {% endif %}
-              </h6>
+              </p>
             </div>
-            <div class="col-md-6 mb-3">
-              <p class="text-muted small">Cargo Description</p>
-              <h6 style="color: #666;">{{ trip.cargoDescription|default:"N/A" }}</h6>
+            <div class="col-md-6 mb-0">
+              <small class="text-muted" style="font-weight: 700;">CARGO DESCRIPTION</small>
+              <p style="margin: 8px 0; color: #333;">
+                {{ trip.cargoDescription|default:"N/A" }}
+              </p>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Financial Summary Card -->
-      <div class="card mb-4 shadow-sm">
-        <div class="card-header bg-white p-3">
-          <h5 class="mb-0" style="color: #001f4d; font-weight: 700;">
-            <i class="fas fa-chart-bar"></i> Financial Summary
+      <div class="card mb-4" style="border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div class="card-header" style="background-color: #f8f9fa; border-bottom: 2px solid #e9ecef; padding: 20px;">
+          <h5 style="color: var(--kamrate-blue); font-weight: 800; margin: 0;">
+            💰 Financial Summary
           </h5>
         </div>
-        <div class="card-body">
-          <!-- Revenue Row -->
-          <div class="row align-items-center mb-4 pb-4 border-bottom">
-            <div class="col-md-6">
-              <p class="text-muted small mb-1">Trip Revenue</p>
-              <h4 style="color: #27ae60; font-weight: 700;">₦{{ total_revenue|floatformat:0 }}</h4>
+        <div class="card-body p-4">
+          <!-- Trip Revenue -->
+          <div class="mb-4 pb-4" style="border-bottom: 1px solid #e9ecef;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <small class="text-muted" style="font-weight: 700;">TRIP REVENUE</small>
+                <h4 style="margin: 8px 0; color: #0D7A3D; font-weight: 800;">₦{{ total_revenue|floatformat:0 }}</h4>
+              </div>
+              <div style="text-align: right; font-weight: 700; color: #0D7A3D;">
+                100%
+              </div>
             </div>
-            <div class="col-md-6">
-              <div class="progress" style="height: 20px; background-color: #f0f0f0;">
-                <div class="progress-bar" role="progressbar" 
-                     style="width: 100%; background-color: #27ae60;" 
-                     aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
-                </div>
+            <div class="progress" style="height: 8px; background-color: #f0f0f0; border-radius: 4px;">
+              <div class="progress-bar" role="progressbar" 
+                   style="width: 100%; background-color: #0D7A3D; border-radius: 4px;" 
+                   aria-valuenow="100" aria-valuemin="0" aria-valuemax="100">
               </div>
             </div>
           </div>
 
-          <!-- Expenses Row -->
-          <div class="row align-items-center mb-4 pb-4 border-bottom">
-            <div class="col-md-6">
-              <p class="text-muted small mb-1">Total Expenses</p>
-              <h4 style="color: #e74c3c; font-weight: 700;">₦{{ total_expenses|floatformat:0 }}</h4>
-              <small class="text-muted">{{ expenses_count }} expense{% if expenses_count != 1 %}s{% endif %}</small>
-            </div>
-            <div class="col-md-6">
-              <div class="progress" style="height: 20px; background-color: #f0f0f0;">
-                <div class="progress-bar" role="progressbar" 
-                     style="width: {{ expense_percentage }}%; background-color: #e74c3c;" 
-                     aria-valuenow="{{ expense_percentage }}" 
-                     aria-valuemin="0" 
-                     aria-valuemax="100">
-                </div>
+          <!-- Total Expenses -->
+          <div class="mb-4 pb-4" style="border-bottom: 1px solid #e9ecef;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <div>
+                <small class="text-muted" style="font-weight: 700;">TOTAL EXPENSES</small>
+                <h4 style="margin: 8px 0; color: #dc3545; font-weight: 800;">₦{{ total_expenses|floatformat:0 }}</h4>
+                <small class="text-muted">{{ expenses_count }} expense{% if expenses_count != 1 %}s{% endif %}</small>
               </div>
-              <small class="text-muted">{{ expense_percentage|floatformat:1 }}% of revenue</small>
+              <div style="text-align: right; font-weight: 700; color: #dc3545;">
+                {{ expense_percentage|floatformat:1 }}%
+              </div>
+            </div>
+            <div class="progress" style="height: 8px; background-color: #f0f0f0; border-radius: 4px;">
+              <div class="progress-bar" role="progressbar" 
+                   style="width: {{ expense_percentage }}%; background-color: #dc3545; border-radius: 4px;" 
+                   aria-valuenow="{{ expense_percentage }}" aria-valuemin="0" aria-valuemax="100">
+              </div>
             </div>
           </div>
 
-          <!-- Profit/Loss Row -->
-          <div class="row align-items-center">
-            <div class="col-md-6">
-              <p class="text-muted small mb-1">Net Profit/Loss</p>
-              {% if profit >= 0 %}
-                <h4 style="color: #27ae60; font-weight: 700;">✅ ₦{{ profit|floatformat:0 }}</h4>
-                <small class="text-success">
-                  <i class="fas fa-smile"></i> Profitable trip
-                </small>
-              {% else %}
-                <h4 style="color: #e74c3c; font-weight: 700;">❌ -₦{{ profit|floatformat:0 }}</h4>
-                <small class="text-danger">
-                  <i class="fas fa-frown"></i> Loss-making trip
-                </small>
-              {% endif %}
-            </div>
-            <div class="col-md-6">
-              <p class="text-muted small mb-1">Profit Margin</p>
-              <h5 style="color: {% if profit_margin >= 0 %}#27ae60{% else %}#e74c3c{% endif %}; font-weight: 700;">
-                {{ profit_margin|floatformat:2 }}%
-              </h5>
+          <!-- Net Profit/Loss -->
+          <div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <div>
+                {% if profit >= 0 %}
+                  <small class="text-success" style="font-weight: 700;">NET PROFIT</small>
+                  <h4 style="margin: 8px 0; color: #0D7A3D; font-weight: 800;">✓ ₦{{ profit|floatformat:0 }}</h4>
+                  <small class="text-success">😊 Profitable Trip</small>
+                {% else %}
+                  <small class="text-danger" style="font-weight: 700;">TOTAL LOSS</small>
+                  <h4 style="margin: 8px 0; color: #dc3545; font-weight: 800;">❌ ₦{{ profit|floatformat:0 }}</h4>
+                  <small class="text-danger">😞 Loss-Making Trip</small>
+                {% endif %}
+              </div>
+              <div style="text-align: right;">
+                <p class="text-muted mb-1" style="font-weight: 700;">MARGIN</p>
+                <h5 style="margin: 0; color: {% if profit_margin >= 0 %}#0D7A3D{% else %}#dc3545{% endif %}; font-weight: 800;">
+                  {{ profit_margin|floatformat:2 }}%
+                </h5>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
       <!-- Expenses Section -->
-      <div class="card shadow-sm border-0">
-        <div class="card-header bg-white p-3">
-          <div class="d-flex justify-content-between align-items-center">
-            <h5 class="mb-0" style="color: #001f4d; font-weight: 700;">
-              <i class="fas fa-receipt"></i> Trip Expenses
+      <div class="card" style="border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div class="card-header" style="background-color: #f8f9fa; border-bottom: 2px solid #e9ecef; padding: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h5 style="color: var(--kamrate-blue); font-weight: 800; margin: 0;">
+              📋 Trip Expenses
             </h5>
-            <a href="{% url 'knlInvoice:add-expense' trip.pk %}" class="btn btn-sm btn-warning">
-              <i class="fas fa-plus"></i> Add Expense
+            <a href="{% url 'knlInvoice:add-expense' trip.pk %}" class="btn btn-sm btn-primary" style="background-color: var(--kamrate-orange); border-color: var(--kamrate-orange); font-weight: 700;">
+              ➕ Add Expense
             </a>
           </div>
         </div>
+
         <div class="card-body p-0">
           {% if expenses %}
             <div class="table-responsive">
-              <table class="table table-hover mb-0" style="font-size: 13px;">
-                <thead style="background-color: #f8f9fa;">
+              <table class="table table-hover mb-0">
+                <thead style="background-color: #f8f9fa; border-bottom: 2px solid #e9ecef;">
                   <tr>
-                    <th style="color: #001f4d; font-weight: 700; padding: 12px;">DATE</th>
-                    <th style="color: #001f4d; font-weight: 700; padding: 12px;">CATEGORY</th>
-                    <th style="color: #001f4d; font-weight: 700; padding: 12px;">DESCRIPTION</th>
-                    <th style="color: #001f4d; font-weight: 700; padding: 12px; text-align: right;">AMOUNT</th>
-                    <th style="color: #001f4d; font-weight: 700; padding: 12px; text-align: center;">ACTIONS</th>
+                    <th style="padding: 15px; color: var(--kamrate-blue); font-weight: 800;">Date</th>
+                    <th style="padding: 15px; color: var(--kamrate-blue); font-weight: 800;">Category</th>
+                    <th style="padding: 15px; color: var(--kamrate-blue); font-weight: 800;">Description</th>
+                    <th style="padding: 15px; color: var(--kamrate-blue); font-weight: 800; text-align: right;">Amount</th>
+                    <th style="padding: 15px; color: var(--kamrate-blue); font-weight: 800; text-align: center;">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {% for expense in expenses %}
-                    <tr>
-                      <td style="padding: 12px; color: #666;">{{ expense.date|date:"d M Y" }}</td>
-                      <td style="padding: 12px;">
-                        <span class="badge" style="background-color: #FF9500; color: white; padding: 5px 10px; font-weight: 600;">
-                          {{ expense.get_category_display|default:expense.expenseType }}
-                        </span>
-                      </td>
-                      <td style="padding: 12px; color: #333;">
-                        <strong>{{ expense.description }}</strong>
-                        {% if expense.notes %}
-                          <br><small class="text-muted">{{ expense.notes }}</small>
-                        {% endif %}
-                      </td>
-                      <td style="padding: 12px; text-align: right;">
-                        <strong style="color: #e74c3c; font-weight: 700;">₦{{ expense.amount|floatformat:0 }}</strong>
-                      </td>
-                      <td style="padding: 12px; text-align: center;">
+                  <tr style="border-bottom: 1px solid #e9ecef;">
+                    <td style="padding: 15px; color: #333;">{{ expense.date|date:"d M Y" }}</td>
+                    <td style="padding: 15px;">
+                      <span class="badge" style="background-color: var(--kamrate-orange); color: white; padding: 6px 10px; font-weight: 600;">
+                        {{ expense.get_category_display|default:expense.expenseType }}
+                      </span>
+                    </td>
+                    <td style="padding: 15px;">
+                      <strong style="color: #333;">{{ expense.description }}</strong>
+                      {% if expense.notes %}
+                        <br><small class="text-muted">{{ expense.notes }}</small>
+                      {% endif %}
+                    </td>
+                    <td style="padding: 15px; text-align: right;">
+                      <strong style="color: #dc3545; font-weight: 800;">₦{{ expense.amount|floatformat:0 }}</strong>
+                    </td>
+                    <td style="padding: 15px; text-align: center;">
+                      <div style="display: flex; gap: 5px; justify-content: center;">
                         <a href="{% url 'knlInvoice:edit-expense' trip.pk expense.pk %}" 
-                           class="btn btn-sm btn-outline-warning" title="Edit">
-                          <i class="fas fa-edit"></i>
+                           class="btn btn-sm btn-outline-secondary" title="Edit">
+                          ✏️
                         </a>
                         <form method="post" 
                               action="{% url 'knlInvoice:delete-expense' trip.pk expense.pk %}" 
@@ -198,125 +215,133 @@
                               onsubmit="return confirm('Delete this expense?');">
                           {% csrf_token %}
                           <button type="submit" class="btn btn-sm btn-outline-danger" title="Delete">
-                            <i class="fas fa-trash"></i>
+                            🗑️
                           </button>
                         </form>
-                      </td>
-                    </tr>
+                      </div>
+                    </td>
+                  </tr>
                   {% endfor %}
                 </tbody>
               </table>
             </div>
           {% else %}
-            <div class="alert alert-info m-4">
-              <i class="fas fa-info-circle"></i> No expenses recorded yet.
-              <a href="{% url 'knlInvoice:add-expense' trip.pk %}" class="alert-link">Add first expense</a>
+            <div class="alert alert-info m-4 p-4" style="border: none; background-color: #d1ecf1; border-radius: 8px;">
+              📋 No expenses recorded yet.
+              <a href="{% url 'knlInvoice:add-expense' trip.pk %}" class="alert-link" style="font-weight: 700;">Add first expense</a>
             </div>
           {% endif %}
         </div>
       </div>
     </div>
 
-    <!-- Right: Quick Actions (4 columns) -->
+    <!-- Right Column: Summary & Actions (4 cols) -->
     <div class="col-lg-4">
-      <!-- Summary Card -->
-      <div class="card shadow-sm mb-4 sticky-top" style="top: 20px;">
-        <div class="card-header bg-white p-3" style="border-bottom: 2px solid #001f4d;">
-          <h5 class="mb-0" style="color: #001f4d; font-weight: 700;">
-            <i class="fas fa-tachometer-alt"></i> Summary
+      <!-- Quick Summary Card (Sticky) -->
+      <div class="card mb-4" style="border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: sticky; top: 20px;">
+        <div class="card-header" style="background-color: #f8f9fa; border-bottom: 2px solid #e9ecef; padding: 20px;">
+          <h5 style="color: var(--kamrate-blue); font-weight: 800; margin: 0;">
+            📊 Quick Summary
           </h5>
         </div>
-        <div class="card-body">
-          <div class="mb-3 pb-3 border-bottom">
-            <p class="text-muted small mb-1">Revenue</p>
-            <h5 style="color: #27ae60; font-weight: 700;">₦{{ total_revenue|floatformat:0 }}</h5>
+        <div class="card-body p-4">
+          <!-- Revenue -->
+          <div class="mb-4 pb-4" style="border-bottom: 1px solid #e9ecef;">
+            <small class="text-muted" style="font-weight: 700;">REVENUE</small>
+            <h5 style="margin: 8px 0; color: #0D7A3D; font-weight: 800;">₦{{ total_revenue|floatformat:0 }}</h5>
           </div>
 
-          <div class="mb-3 pb-3 border-bottom">
-            <p class="text-muted small mb-1">Expenses</p>
-            <h5 style="color: #e74c3c; font-weight: 700;">₦{{ total_expenses|floatformat:0 }}</h5>
+          <!-- Expenses -->
+          <div class="mb-4 pb-4" style="border-bottom: 1px solid #e9ecef;">
+            <small class="text-muted" style="font-weight: 700;">EXPENSES</small>
+            <h5 style="margin: 8px 0; color: #dc3545; font-weight: 800;">₦{{ total_expenses|floatformat:0 }}</h5>
             <small class="text-muted">{{ expenses_count }} items</small>
           </div>
 
+          <!-- Profit -->
           <div class="mb-4">
-            <p class="text-muted small mb-1">Profit</p>
             {% if profit >= 0 %}
-              <h5 style="color: #27ae60; font-weight: 700;">✅ ₦{{ profit|floatformat:0 }}</h5>
+              <small class="text-success" style="font-weight: 700;">NET PROFIT</small>
+              <h5 style="margin: 8px 0; color: #0D7A3D; font-weight: 800;">✓ ₦{{ profit|floatformat:0 }}</h5>
             {% else %}
-              <h5 style="color: #e74c3c; font-weight: 700;">❌ -₦{{ profit|floatformat:0 }}</h5>
+              <small class="text-danger" style="font-weight: 700;">TOTAL LOSS</small>
+              <h5 style="margin: 8px 0; color: #dc3545; font-weight: 800;">❌ ₦{{ profit|floatformat:0 }}</h5>
             {% endif %}
           </div>
 
-          <div class="d-grid gap-2">
-            <a href="{% url 'knlInvoice:add-expense' trip.pk %}" class="btn btn-warning">
-              <i class="fas fa-plus-circle"></i> Add Expense
+          <!-- Action Buttons -->
+          <div style="display: flex; flex-direction: column; gap: 10px;">
+            <a href="{% url 'knlInvoice:add-expense' trip.pk %}" 
+               class="btn btn-primary" 
+               style="background-color: var(--kamrate-orange); border-color: var(--kamrate-orange); font-weight: 700;">
+              ➕ Add Expense
             </a>
-            <a href="{% url 'knlInvoice:expense-list' trip.pk %}" class="btn btn-outline-primary">
-              <i class="fas fa-list"></i> All Expenses
+            <a href="{% url 'knlInvoice:expense-list' trip.pk %}" 
+               class="btn btn-outline-primary" 
+               style="font-weight: 700;">
+              📋 All Expenses
             </a>
-            <a href="{% url 'knlInvoice:trips-list' %}" class="btn btn-outline-secondary">
-              <i class="fas fa-arrow-left"></i> Back
+            <a href="{% url 'knlInvoice:trips-list' %}" 
+               class="btn btn-outline-secondary" 
+               style="font-weight: 700;">
+              ← Back to Trips
             </a>
           </div>
         </div>
       </div>
 
-      <!-- Trip Status Card -->
-      <div class="card shadow-sm">
-        <div class="card-header bg-white p-3">
-          <h5 class="mb-0" style="color: #001f4d; font-weight: 700;">Status</h5>
+      <!-- Status Card -->
+      <div class="card" style="border: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div class="card-header" style="background-color: #f8f9fa; border-bottom: 2px solid #e9ecef; padding: 20px;">
+          <h5 style="color: var(--kamrate-blue); font-weight: 800; margin: 0;">
+            ⚡ Trip Status
+          </h5>
         </div>
-        <div class="card-body">
-          <p class="text-muted small mb-2">Current Status</p>
+        <div class="card-body p-4">
           {% if trip.status == 'COMPLETED' %}
-            <h6><span class="badge bg-success">✅ COMPLETED</span></h6>
-            <small class="text-muted">Trip has been completed</small>
+            <p class="text-muted mb-2" style="font-weight: 700;">CURRENT STATUS</p>
+            <h6 style="margin: 0;">
+              <span class="badge" style="background-color: #0D7A3D; color: white; padding: 8px 12px; font-weight: 600;">✓ Completed</span>
+            </h6>
+            <small class="text-muted mt-2 d-block">Trip has been successfully completed</small>
           {% elif trip.status == 'IN_PROGRESS' %}
-            <h6><span class="badge bg-warning">⏳ IN PROGRESS</span></h6>
-            <small class="text-muted">Trip is currently active</small>
+            <p class="text-muted mb-2" style="font-weight: 700;">CURRENT STATUS</p>
+            <h6 style="margin: 0;">
+              <span class="badge" style="background-color: var(--kamrate-orange); color: white; padding: 8px 12px; font-weight: 600;">⟳ In Progress</span>
+            </h6>
+            <small class="text-muted mt-2 d-block">Trip is currently active</small>
           {% else %}
-            <h6><span class="badge bg-secondary">{{ trip.status }}</span></h6>
-            <small class="text-muted">Trip status: {{ trip.status }}</small>
+            <p class="text-muted mb-2" style="font-weight: 700;">CURRENT STATUS</p>
+            <h6 style="margin: 0;">
+              <span class="badge" style="background-color: #95a5a6; color: white; padding: 8px 12px; font-weight: 600;">{{ trip.status }}</span>
+            </h6>
+            <small class="text-muted mt-2 d-block">Trip status: {{ trip.status }}</small>
           {% endif %}
         </div>
       </div>
     </div>
   </div>
-</div>
+</main>
 
 <style>
-  .container-fluid {
-    max-width: 60%;
-    padding-right: 20px;
-    padding-left: 20px;
+  /* Table styling */
+  .table tbody tr:hover {
+    background-color: #f8f9fa;
+    transition: all 0.2s ease;
   }
 
-  .page-title {
-    color: #001f4d;
-    font-weight: 700;
-    font-size: 28px;
-  }
-
+  /* Card styling */
   .card {
     border-radius: 8px;
     overflow: hidden;
-    border: 1px solid #e0e0e0;
+    transition: all 0.3s ease;
   }
 
-  .table {
-    margin-bottom: 0;
+  .card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
   }
 
-  .table tbody tr:hover {
-    background-color: #f8f9fa;
-  }
-
-  .badge {
-    font-weight: 600;
-    border-radius: 4px;
-    padding: 6px 12px;
-  }
-
+  /* Button styling */
   .btn {
     border-radius: 5px;
     font-weight: 600;
@@ -327,37 +352,36 @@
     transform: translateY(-2px);
   }
 
-  .btn-warning {
-    background-color: #ff9500 !important;
-    border-color: #ff9500 !important;
-    color: white !important;
+  /* Badge styling */
+  .badge {
+    border-radius: 4px;
+    font-weight: 600;
   }
 
-  .btn-outline-warning {
-    color: #f39c12;
-    border-color: #f39c12;
-  }
-
-  .btn-outline-danger {
-    color: #e74c3c;
-    border-color: #e74c3c;
-  }
-
-  .text-muted {
-    color: #6c757d;
-  }
-
+  /* Progress bar styling */
   .progress {
     border-radius: 4px;
     background-color: #f0f0f0;
+    height: 8px;
   }
 
+  /* Responsive adjustments */
   @media (max-width: 992px) {
-    .sticky-top {
+    .card {
       position: static !important;
-      margin-bottom: 20px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .table thead th, .table tbody td {
+      padding: 10px 8px !important;
+      font-size: 0.85rem;
+    }
+
+    .btn-sm {
+      padding: 4px 8px !important;
+      font-size: 0.75rem;
     }
   }
 </style>
-
 {% endblock %}

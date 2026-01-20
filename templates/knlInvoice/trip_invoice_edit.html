@@ -1,0 +1,252 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %}Edit Manifest Invoice - Kamrate{% endblock %}
+
+{% block content %}
+<main>
+  <div class="page-header">
+    <h1>✏️ Edit Manifest Invoice</h1>
+    <div class="btn-group">
+      <a href="{% url 'knlInvoice:trip-invoice-detail' pk=invoice.pk %}" class="btn btn-outline-secondary">
+        👁️ View
+      </a>
+      <a href="{% url 'knlInvoice:trip-invoice-list' %}" class="btn btn-outline-secondary">
+        📋 Back to List
+      </a>
+    </div>
+  </div>
+
+  {% if messages %}
+    {% for message in messages %}
+      <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <div class="row">
+    <!-- LEFT PANEL: Invoice Details -->
+    <div class="col-lg-6">
+      <div class="card mb-4">
+        <div class="card-header" style="background-color: #f8f9fa; border-bottom: 2px solid var(--kamrate-orange);">
+          <h5 class="mb-0">Invoice Details</h5>
+        </div>
+        <div class="card-body">
+          <form method="POST">
+            {% csrf_token %}
+            
+            <!-- Invoice Number (Read-only) -->
+            <div class="mb-3">
+              <label class="form-label">Invoice Number</label>
+              <input type="text" class="form-control" value="{{ invoice.invoice_number }}" readonly>
+            </div>
+
+            <!-- Client Selection -->
+            <div class="mb-3">
+              <label for="id_client" class="form-label">Client *</label>
+              <select name="client" id="id_client" class="form-select" required>
+                <option value="">Select Client</option>
+                {% for client in clients %}
+                  <option value="{{ client.pk }}" {% if invoice.client.pk == client.pk %}selected{% endif %}>
+                    {{ client.clientName }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Issue Date -->
+            <div class="mb-3">
+              <label for="id_issue_date" class="form-label">Issue Date *</label>
+              <input type="date" name="issue_date" id="id_issue_date" class="form-control" 
+                     value="{{ invoice.issue_date|date:'Y-m-d' }}" required>
+            </div>
+
+            <!-- Due Date -->
+            <div class="mb-3">
+              <label for="id_due_date" class="form-label">Due Date</label>
+              <input type="date" name="due_date" id="id_due_date" class="form-control" 
+                     value="{{ invoice.due_date|date:'Y-m-d' }}">
+            </div>
+
+            <!-- Tax Rate -->
+            <div class="mb-3">
+              <label for="id_tax_rate" class="form-label">Tax Rate (%)</label>
+              <input type="number" name="tax_rate" id="id_tax_rate" class="form-control" 
+                     value="{{ invoice.tax_rate }}" step="0.01" min="0" max="100">
+              <small class="text-muted">Default: 7.5% (Nigeria VAT)</small>
+            </div>
+
+            <!-- Payment Terms -->
+            <div class="mb-3">
+              <label for="id_payment_terms" class="form-label">Payment Terms</label>
+              <select name="payment_terms" id="id_payment_terms" class="form-select">
+                <option value="immediate" {% if invoice.payment_terms == 'immediate' %}selected{% endif %}>Immediate</option>
+                <option value="14_days" {% if invoice.payment_terms == '14_days' %}selected{% endif %}>14 Days</option>
+                <option value="30_days" {% if invoice.payment_terms == '30_days' %}selected{% endif %}>30 Days</option>
+                <option value="60_days" {% if invoice.payment_terms == '60_days' %}selected{% endif %}>60 Days</option>
+              </select>
+            </div>
+
+            <!-- Payment Method -->
+            <div class="mb-3">
+              <label for="id_payment_method" class="form-label">Payment Method</label>
+              <input type="text" name="payment_method" id="id_payment_method" class="form-control" 
+                     value="{{ invoice.payment_method }}" placeholder="e.g., Bank Transfer">
+            </div>
+
+            <!-- Notes -->
+            <div class="mb-3">
+              <label for="id_notes" class="form-label">Notes</label>
+              <textarea name="notes" id="id_notes" class="form-control" rows="3">{{ invoice.notes }}</textarea>
+            </div>
+
+            <!-- Save Button -->
+            <div class="d-grid gap-2">
+              <button type="submit" class="btn btn-primary" style="background-color: var(--kamrate-orange); font-weight: 700;">
+                💾 Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL: Containers/Line Items -->
+    <div class="col-lg-6">
+      <div class="card mb-4">
+        <div class="card-header" style="background-color: #f8f9fa; border-bottom: 2px solid var(--kamrate-orange);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h5 class="mb-0">Containers ({{ invoice.line_items.count }})</h5>
+            <a href="{% url 'knlInvoice:trip-invoice-add-trip' pk=invoice.pk %}" class="btn btn-sm btn-primary">
+              ➕ Add Container
+            </a>
+          </div>
+        </div>
+        <div class="card-body">
+          {% if invoice.line_items.all %}
+            <div class="table-responsive">
+              <table class="table table-sm table-hover">
+                <thead style="background-color: #f8f9fa;">
+                  <tr>
+                    <th>Container</th>
+                    <th>Destination</th>
+                    <th>Amount</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for item in invoice.line_items.all %}
+                  <tr>
+                    <td><strong>{{ item.container_number }}</strong></td>
+                    <td>{{ item.destination }}</td>
+                    <td>₦{{ item.amount|floatformat:2 }}</td>
+                    <td>
+                      <a href="{% url 'knlInvoice:trip-invoice-edit-trip' pk=invoice.pk item_id=item.pk %}" 
+                         class="btn btn-xs btn-outline-secondary" style="padding: 3px 8px; font-size: 0.75rem;">
+                        Edit
+                      </a>
+                      <a href="{% url 'knlInvoice:trip-invoice-remove-trip' pk=invoice.pk item_id=item.pk %}" 
+                         class="btn btn-xs btn-outline-danger" style="padding: 3px 8px; font-size: 0.75rem;"
+                         onclick="return confirm('Remove this container?');">
+                        Remove
+                      </a>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Summary -->
+            <hr>
+            <div class="row text-end">
+              <div class="col-12">
+                <p class="mb-2">
+                  <strong>Subtotal:</strong> 
+                  <span style="font-size: 1.1rem; color: var(--kamrate-blue);">₦{{ invoice.subtotal|floatformat:2 }}</span>
+                </p>
+                <p class="mb-2">
+                  <strong>Tax ({{ invoice.tax_rate }}%):</strong> 
+                  <span style="font-size: 1.1rem; color: var(--kamrate-orange);">₦{{ invoice.tax_amount|floatformat:2 }}</span>
+                </p>
+                <p class="mb-0">
+                  <strong>Total:</strong> 
+                  <span style="font-size: 1.3rem; color: #0D7A3D; font-weight: 800;">₦{{ invoice.total|floatformat:2 }}</span>
+                </p>
+              </div>
+            </div>
+          {% else %}
+            <div class="alert alert-info">
+              <p>No containers yet. <a href="{% url 'knlInvoice:trip-invoice-add-trip' pk=invoice.pk %}">Add one now</a>!</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Status & Actions -->
+      <div class="card">
+        <div class="card-header" style="background-color: #f8f9fa; border-bottom: 2px solid var(--kamrate-orange);">
+          <h5 class="mb-0">Status & Actions</h5>
+        </div>
+        <div class="card-body">
+          <!-- Current Status -->
+          <div class="mb-3">
+            <label class="form-label">Current Status:</label>
+            <p>
+              <span class="badge" style="background-color: 
+                {% if invoice.status == 'draft' %}#808080
+                {% elif invoice.status == 'sent' %}#0099ff
+                {% elif invoice.status == 'pending' %}#ff6600
+                {% elif invoice.status == 'paid' %}#00cc00
+                {% elif invoice.status == 'overdue' %}#ff0000
+                {% else %}#999999{% endif %}; font-size: 0.9rem; padding: 0.5rem 1rem;">
+                {{ invoice.get_status_display }}
+              </span>
+            </p>
+          </div>
+
+          <!-- Status Update -->
+          <div class="mb-3">
+            <form method="POST" action="{% url 'knlInvoice:trip-invoice-update-status' pk=invoice.pk %}">
+              {% csrf_token %}
+              <label class="form-label">Change Status:</label>
+              <select name="status" class="form-select" onchange="this.form.submit()">
+                <option value="">Select new status...</option>
+                <option value="draft">Draft</option>
+                <option value="sent">Sent</option>
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
+                <option value="overdue">Overdue</option>
+              </select>
+            </form>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="d-grid gap-2">
+            {% if invoice.status != 'paid' %}
+            <a href="{% url 'knlInvoice:trip-invoice-record-payment' pk=invoice.pk %}" 
+               class="btn btn-success">
+              💰 Record Payment
+            </a>
+            {% endif %}
+
+            {% if invoice.status == 'draft' %}
+            <a href="{% url 'knlInvoice:trip-invoice-send' pk=invoice.pk %}" 
+               class="btn btn-info">
+              ✉️ Mark as Sent
+            </a>
+            {% endif %}
+
+            <a href="{% url 'knlInvoice:trip-invoice-delete' pk=invoice.pk %}" 
+               class="btn btn-outline-danger">
+              🗑️ Delete Invoice
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}

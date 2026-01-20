@@ -377,16 +377,6 @@
               <span>Dashboard</span>
             </a>
 
-            <a href="{% url 'knlInvoice:invoices-list' %}" class="nav-link {% if request.resolver_match.url_name == 'invoices-list' %}active{% endif %}">
-              <span class="icon">📄</span>
-              <span>Invoices</span>
-            </a>
-
-            <a href="{% url 'knlInvoice:products-list' %}" class="nav-link {% if request.resolver_match.url_name == 'products-list' %}active{% endif %}">
-              <span class="icon">🛒</span>
-              <span>Products / Services</span>
-            </a>
-
             <a href="{% url 'knlInvoice:clients-list' %}" class="nav-link {% if request.resolver_match.url_name == 'clients-list' %}active{% endif %}">
               <span class="icon">👥</span>
               <span>Clients</span>
@@ -395,6 +385,31 @@
             <a href="{% url 'knlInvoice:trips-list' %}" class="nav-link {% if request.resolver_match.url_name == 'trips-list' %}active{% endif %}">
               <span class="icon">🚚</span>
               <span>Truck Trips</span>
+            </a>
+
+            <a href="{% url 'knlInvoice:products-list' %}" class="nav-link {% if request.resolver_match.url_name == 'products-list' %}active{% endif %}">
+              <span class="icon">🛒</span>
+              <span>Products / Services</span>
+            </a>
+          </div>
+
+          <!-- INVOICING -->
+          <div class="sidebar-section">
+            <h6 class="sidebar-title">INVOICING</h6>
+            
+            <a href="{% url 'knlInvoice:invoices-list' %}" class="nav-link {% if request.resolver_match.url_name == 'invoices-list' %}active{% endif %}">
+              <span class="icon">📋</span>
+              <span>Standard Invoices</span>
+            </a>
+
+            <a href="{% url 'knlInvoice:trip-invoice-list' %}" class="nav-link {% if request.resolver_match.url_name == 'trip-invoice-list' %}active{% endif %}">
+              <span class="icon">✨</span>
+              <span>Manifest Invoices</span>
+            </a>
+
+            <a href="{% url 'knlInvoice:trip-invoice-create' %}" class="nav-link" style="background-color: rgba(255, 149, 0, 0.1); border-left-color: var(--kamrate-orange); color: var(--kamrate-orange); font-weight: 800;">
+              <span class="icon">➕</span>
+              <span>New Manifest Invoice</span>
             </a>
           </div>
 
