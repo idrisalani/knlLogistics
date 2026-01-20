@@ -93,6 +93,12 @@ urlpatterns = [
     path('trip-invoices/<int:pk>/trip/<int:item_id>/edit/', views.trip_invoice_edit_trip, name='trip-invoice-edit-trip'),
     path('trip-invoices/<int:pk>/send/', views.trip_invoice_send, name='trip-invoice-send'),
     path('trip-invoices/<int:pk>/delete/', views.trip_invoice_delete, name='trip-invoice-delete'),
+    path('trip-invoices/<int:pk>/pdf/', views.trip_invoice_pdf, name='trip-invoice-pdf'),
+    path('trip-invoices/<int:pk>/email/', views.trip_invoice_email, name='trip-invoice-email'),
+    path('trip-invoices/<int:pk>/record-payment/', views.record_payment, name='trip-invoice-record-payment'),
+    path('trip-invoices/<int:pk>/view/', views.trip_invoice_view, name='trip-invoice-view'),
+    path('trip-invoices/<int:pk>/print/', views.trip_invoice_print, name='trip-invoice-print'),
+    # path('trip-invoices/<int:pk>/email/', views.trip_invoice_email, name='trip-invoice-email'),
 
     # ============================================================================
     # PAYMENTS MANAGEMENT

@@ -1,0 +1,359 @@
+{% extends 'partials/base.html' %}
+{% load static %}
+
+{% block title %}Edit Trip Invoice - Kamrate Nigeria Limited{% endblock %}
+
+{% block css %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+  :root {
+    --kamrate-orange: #FF9500;
+    --kamrate-blue: #001F4D;
+    --kamrate-green: #0D7A3D;
+  }
+
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 3px solid var(--kamrate-orange);
+  }
+
+  .page-header h1 {
+    color: var(--kamrate-blue);
+    font-weight: 800;
+    font-size: 2rem;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .page-header h1 i {
+    color: var(--kamrate-orange);
+  }
+
+  .form-section {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    margin-bottom: 30px;
+  }
+
+  .form-section h2 {
+    color: var(--kamrate-blue);
+    font-weight: 700;
+    font-size: 1.3rem;
+    margin-bottom: 25px;
+    padding-bottom: 15px;
+    border-bottom: 2px solid #f0f0f0;
+  }
+
+  .form-group {
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    font-weight: 700;
+    color: var(--kamrate-blue);
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all 0.3s ease;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--kamrate-orange);
+    box-shadow: 0 0 0 3px rgba(255, 149, 0, 0.1);
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+  }
+
+  .button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 2px solid #f0f0f0;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--kamrate-blue), #003d7a);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: linear-gradient(135deg, #003d7a, #002850);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 31, 77, 0.3);
+  }
+
+  .btn-secondary {
+    background: #e0e0e0;
+    color: #333;
+  }
+
+  .btn-secondary:hover {
+    background: #d0d0d0;
+  }
+
+  .error-message {
+    background: #ffebee;
+    color: #c62828;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    border-left: 4px solid #c62828;
+  }
+
+  .success-message {
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    border-left: 4px solid #2e7d32;
+  }
+
+  .help-text {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-top: 5px;
+  }
+
+  @media (max-width: 768px) {
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+
+    .page-header {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .button-group {
+      flex-direction: column;
+    }
+
+    .btn {
+      width: 100%;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<main>
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <h1><i class="fas fa-edit"></i> Edit Trip Invoice</h1>
+  </div>
+
+  <!-- MESSAGES -->
+  {% if messages %}
+    {% for message in messages %}
+      <div class="{% if message.tags %}{{ message.tags }}{% endif %}">
+        {{ message }}
+      </div>
+    {% endfor %}
+  {% endif %}
+
+  <!-- INVOICE FORM -->
+  <div class="form-section">
+    <h2><i class="fas fa-file-invoice"></i> Invoice Details</h2>
+
+    <form method="POST" enctype="multipart/form-data">
+      {% csrf_token %}
+
+      <!-- Display form errors if any -->
+      {% if form.non_field_errors %}
+        <div class="error-message">
+          {% for error in form.non_field_errors %}
+            {{ error }}<br>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- INVOICE NUMBER -->
+      <div class="form-group">
+        <label for="{{ form.invoice_number.id_for_label }}">
+          Invoice Number *
+        </label>
+        {{ form.invoice_number }}
+        {% if form.invoice_number.errors %}
+          <div class="error-message">{{ form.invoice_number.errors }}</div>
+        {% endif %}
+        <div class="help-text">e.g., KNL/JH/26/ISDD-INB-072-EFM/1070</div>
+      </div>
+
+      <!-- CLIENT -->
+      <div class="form-group">
+        <label for="{{ form.client.id_for_label }}">
+          Client *
+        </label>
+        {{ form.client }}
+        {% if form.client.errors %}
+          <div class="error-message">{{ form.client.errors }}</div>
+        {% endif %}
+      </div>
+
+      <!-- DATES ROW -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="{{ form.issue_date.id_for_label }}">
+            Issue Date *
+          </label>
+          {{ form.issue_date }}
+          {% if form.issue_date.errors %}
+            <div class="error-message">{{ form.issue_date.errors }}</div>
+          {% endif %}
+        </div>
+
+        <div class="form-group">
+          <label for="{{ form.due_date.id_for_label }}">
+            Due Date
+          </label>
+          {{ form.due_date }}
+          {% if form.due_date.errors %}
+            <div class="error-message">{{ form.due_date.errors }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- TAX & PAYMENT TERMS ROW -->
+      <div class="form-row">
+        <div class="form-group">
+          <label for="{{ form.tax_rate.id_for_label }}">
+            Tax Rate (%)
+          </label>
+          {{ form.tax_rate }}
+          {% if form.tax_rate.errors %}
+            <div class="error-message">{{ form.tax_rate.errors }}</div>
+          {% endif %}
+          <div class="help-text">Nigeria VAT: 7.5%</div>
+        </div>
+
+        <div class="form-group">
+          <label for="{{ form.payment_terms.id_for_label }}">
+            Payment Terms *
+          </label>
+          {{ form.payment_terms }}
+          {% if form.payment_terms.errors %}
+            <div class="error-message">{{ form.payment_terms.errors }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- NOTES -->
+      <div class="form-group">
+        <label for="{{ form.notes.id_for_label }}">
+          Notes
+        </label>
+        {{ form.notes }}
+        {% if form.notes.errors %}
+          <div class="error-message">{{ form.notes.errors }}</div>
+        {% endif %}
+      </div>
+
+      <!-- BUTTONS -->
+      <div class="button-group">
+        <button type="submit" class="btn btn-primary">
+          <i class="fas fa-save"></i> Save Changes
+        </button>
+        <a href="{% url 'knlInvoice:trip-invoice-detail' invoice.pk %}" class="btn btn-secondary">
+          <i class="fas fa-times"></i> Cancel
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- LINE ITEMS SECTION -->
+  {% if invoice.tripinvoicelineitem_set.exists %}
+  <div class="form-section">
+    <h2><i class="fas fa-cube"></i> Containers / Line Items</h2>
+
+    <table style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background: #f8f9fa;">
+          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e0e0e0; color: var(--kamrate-blue); font-weight: 700;">Container</th>
+          <th style="padding: 12px; text-align: left; border-bottom: 2px solid #e0e0e0; color: var(--kamrate-blue); font-weight: 700;">Destination</th>
+          <th style="padding: 12px; text-align: right; border-bottom: 2px solid #e0e0e0; color: var(--kamrate-blue); font-weight: 700;">Amount</th>
+          <th style="padding: 12px; text-align: center; border-bottom: 2px solid #e0e0e0; color: var(--kamrate-blue); font-weight: 700;">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in invoice.tripinvoicelineitem_set.all %}
+        <tr style="border-bottom: 1px solid #e0e0e0;">
+          <td style="padding: 12px;">{{ item.container_id }}</td>
+          <td style="padding: 12px;">{{ item.destination }}</td>
+          <td style="padding: 12px; text-align: right;">₦{{ item.line_total|floatformat:2 }}</td>
+          <td style="padding: 12px; text-align: center;">
+            <a href="{% url 'knlInvoice:trip-invoice-edit-item' invoice.pk item.pk %}" class="btn btn-secondary" style="padding: 6px 12px; font-size: 0.8rem;">
+              <i class="fas fa-edit"></i>
+            </a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div style="margin-top: 20px;">
+      <a href="{% url 'knlInvoice:trip-invoice-add-item' invoice.pk %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Add Container
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- BACK LINK -->
+  <div style="margin-top: 20px;">
+    <a href="{% url 'knlInvoice:trip-invoice-detail' invoice.pk %}" class="btn btn-secondary">
+      <i class="fas fa-arrow-left"></i> Back to Invoice
+    </a>
+  </div>
+
+</main>
+
+{% endblock %}

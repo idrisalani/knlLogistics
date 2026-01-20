@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Invoice {{ invoice.invoice_number }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --kamrate-orange: #FF9500;
+            --kamrate-blue: #001F4D;
+            --kamrate-green: #0D7A3D;
+            --border-color: #e0e0e0;
+        }
+
+        @page {
+            size: A4 landscape;
+            margin: 15mm;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .invoice-document {
+            width: 100%;
+            background: white;
+        }
+
+        /* ===== HEADER ===== */
+        .invoice-header {
+            display: table;
+            width: 100%;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 3px solid var(--kamrate-orange);
+        }
+
+        .header-logo {
+            display: table-cell;
+            width: 15%;
+            text-align: center;
+            vertical-align: top;
+        }
+
+        .logo-placeholder {
+            width: 80px;
+            height: 80px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            margin: 0 auto 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: var(--kamrate-orange);
+        }
+
+        .company-brand {
+            font-weight: 700;
+            color: var(--kamrate-blue);
+            font-size: 10px;
+            letter-spacing: 1px;
+        }
+
+        .header-title {
+            display: table-cell;
+            width: 50%;
+            text-align: center;
+            vertical-align: top;
+        }
+
+        .header-title h1 {
+            color: var(--kamrate-blue);
+            font-size: 22px;
+            font-weight: 800;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+
+        .header-title p {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .header-meta {
+            display: table-cell;
+            width: 35%;
+            vertical-align: top;
+        }
+
+        .meta-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            font-size: 11px;
+        }
+
+        .meta-label {
+            color: var(--kamrate-blue);
+            font-weight: 600;
+            min-width: 80px;
+        }
+
+        .meta-value {
+            text-align: right;
+            flex: 1;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 5px;
+        }
+
+        .badge-paid {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .badge-pending {
+            background-color: #fff3e0;
+            color: #e65100;
+        }
+
+        .badge-draft {
+            background-color: #f5f5f5;
+            color: #424242;
+        }
+
+        .badge-overdue {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        /* ===== CLIENT INFO ===== */
+        .client-info {
+            display: table;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .client-section {
+            display: table-cell;
+            width: 50%;
+            padding-right: 20px;
+            font-size: 11px;
+        }
+
+        .client-section:last-child {
+            padding-right: 0;
+        }
+
+        .client-section h3 {
+            color: var(--kamrate-blue);
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .client-section p {
+            margin-bottom: 3px;
+            line-height: 1.5;
+        }
+
+        /* ===== ITEMS TABLE ===== */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 11px;
+        }
+
+        .items-table thead {
+            background-color: var(--kamrate-blue);
+            color: white;
+        }
+
+        .items-table th {
+            padding: 8px 6px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid #333;
+        }
+
+        .items-table td {
+            padding: 8px 6px;
+            border: 1px solid var(--border-color);
+            vertical-align: top;
+        }
+
+        .items-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .items-table tbody tr:last-child td {
+            font-weight: 700;
+            background-color: #fff3e0;
+            border-width: 2px;
+            border-color: var(--kamrate-orange);
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-left {
+            text-align: left;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        /* ===== SUMMARY ===== */
+        .invoice-summary {
+            display: table;
+            width: 100%;
+            margin-bottom: 15px;
+            gap: 20px;
+        }
+
+        .summary-left {
+            display: table-cell;
+            width: 65%;
+            vertical-align: top;
+        }
+
+        .summary-right {
+            display: table-cell;
+            width: 35%;
+            vertical-align: top;
+            padding-left: 20px;
+        }
+
+        .summary-notes {
+            font-size: 11px;
+        }
+
+        .summary-notes h3 {
+            color: var(--kamrate-blue);
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .summary-notes p {
+            line-height: 1.5;
+            color: #666;
+        }
+
+        .summary-totals {
+            font-size: 11px;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .total-row.total-final {
+            background-color: #fff3e0;
+            border: 2px solid var(--kamrate-orange);
+            border-radius: 3px;
+            font-weight: 700;
+            font-size: 12px;
+            padding: 8px;
+            margin-top: 5px;
+        }
+
+        .total-row.total-final .label {
+            color: var(--kamrate-blue);
+        }
+
+        .total-row.total-final .value {
+            color: var(--kamrate-orange);
+        }
+
+        .label {
+            color: var(--kamrate-blue);
+            font-weight: 600;
+        }
+
+        .value {
+            text-align: right;
+            font-weight: 600;
+        }
+
+        /* ===== PAYMENT DETAILS ===== */
+        .payment-section {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            font-size: 10px;
+            display: table;
+            width: 100%;
+        }
+
+        .payment-detail {
+            display: table-cell;
+            width: 33.33%;
+            padding-right: 15px;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .payment-detail:last-child {
+            border-right: none;
+            padding-right: 0;
+        }
+
+        .payment-detail h4 {
+            color: var(--kamrate-blue);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+            letter-spacing: 0.5px;
+        }
+
+        .payment-detail p {
+            margin-bottom: 3px;
+            line-height: 1.4;
+        }
+
+        /* ===== AMOUNT IN WORDS ===== */
+        .amount-words {
+            background-color: #e3f2fd;
+            padding: 10px;
+            border-left: 4px solid var(--kamrate-orange);
+            margin-bottom: 15px;
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        /* ===== FOOTER ===== */
+        .invoice-footer {
+            display: table;
+            width: 100%;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px solid var(--border-color);
+            font-size: 9px;
+        }
+
+        .footer-left {
+            display: table-cell;
+            width: 50%;
+            text-align: left;
+            vertical-align: top;
+            padding-right: 20px;
+        }
+
+        .footer-right {
+            display: table-cell;
+            width: 50%;
+            vertical-align: top;
+            padding: 8px;
+            background-color: var(--kamrate-orange);
+            color: white;
+            border-radius: 3px;
+        }
+
+        .signature-line {
+            border-top: 1px solid #333;
+            width: 80%;
+            margin: 30px auto 5px;
+        }
+
+        .footer-right p {
+            margin: 2px 0;
+            line-height: 1.4;
+        }
+
+        .footer-right strong {
+            color: white;
+        }
+
+        .footer-contact {
+            color: #666;
+            line-height: 1.5;
+        }
+
+        /* ===== PRINT STYLES ===== */
+        @media print {
+            body {
+                background: white;
+            }
+
+            .invoice-document {
+                box-shadow: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="invoice-document">
+        <!-- HEADER -->
+        <div class="invoice-header">
+            <div class="header-logo">
+                <div class="logo-placeholder">🌍</div>
+                <div class="company-brand">KAMRATE</div>
+            </div>
+            <div class="header-title">
+                <h1>INVOICE</h1>
+                <p>Professional Logistics & Transportation</p>
+            </div>
+            <div class="header-meta">
+                <div class="meta-row">
+                    <span class="meta-label">Invoice #:</span>
+                    <span class="meta-value"><strong>{{ invoice.invoice_number }}</strong></span>
+                </div>
+                <div class="meta-row">
+                    <span class="meta-label">Date:</span>
+                    <span class="meta-value">{{ invoice.issue_date|date:"d M Y" }}</span>
+                </div>
+                {% if invoice.due_date %}
+                <div class="meta-row">
+                    <span class="meta-label">Due Date:</span>
+                    <span class="meta-value">{{ invoice.due_date|date:"d M Y" }}</span>
+                </div>
+                {% endif %}
+                <div class="meta-row">
+                    <span class="meta-label">Status:</span>
+                    <span class="meta-value">
+                        <span class="status-badge badge-{{ invoice.status|lower }}">
+                            {{ invoice.get_status_display }}
+                        </span>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- CLIENT INFORMATION -->
+        <div class="client-info">
+            <div class="client-section">
+                <h3>Bill To:</h3>
+                <p><strong>{{ client.clientName }}</strong></p>
+                <p>{{ client.addressLine1 }}</p>
+                <p>{{ client.state }}, Lagos</p>
+                <p>📧 {{ client.emailAddress }}</p>
+                <p>📱 {{ client.phoneNumber }}</p>
+            </div>
+            <div class="client-section">
+                <h3>Trip Information:</h3>
+                <p><strong>Trip #:</strong> {{ trip.tripNumber }}</p>
+                <p><strong>From:</strong> {{ trip.origin }}</p>
+                <p><strong>To:</strong> {{ trip.destination }}</p>
+                <p><strong>Departure:</strong> {{ trip.departure_date|date:"d M Y" }}</p>
+                <p><strong>Arrival:</strong> {{ trip.arrival_date|date:"d M Y" }}</p>
+            </div>
+        </div>
+
+        <!-- MANIFEST TABLE -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 10%;">Date Loaded</th>
+                    <th style="width: 12%;">File Reference</th>
+                    <th style="width: 12%;">Container</th>
+                    <th style="width: 10%;">Terminal</th>
+                    <th style="width: 12%;">Truck No.</th>
+                    <th style="width: 10%;">Length</th>
+                    <th style="width: 18%;">Destination</th>
+                    <th style="width: 16%; text-align: right;">Amount (₦)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in invoice.tripinvoicelineitem_set.all %}
+                <tr>
+                    <td>{{ item.created_at|date:"d/m/Y" }}</td>
+                    <td>{{ item.file_reference|default:"-" }}</td>
+                    <td><strong>{{ item.container_id }}</strong></td>
+                    <td>{{ item.terminal|default:"-" }}</td>
+                    <td>{{ item.truck_number|default:"-" }}</td>
+                    <td>{{ item.container_length|default:"20FT" }}</td>
+                    <td>{{ item.destination }}</td>
+                    <td class="text-right">{{ item.line_total|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+                <tr>
+                    <td colspan="7" style="text-align: right;"><strong>TOTAL</strong></td>
+                    <td class="text-right"><strong>{{ invoice.total|floatformat:2 }}</strong></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- AMOUNT IN WORDS -->
+        {% if invoice.amount_in_words %}
+        <div class="amount-words">
+            <strong>AMOUNT IN WORDS:</strong> {{ invoice.amount_in_words|upper }}
+        </div>
+        {% endif %}
+
+        <!-- SUMMARY SECTION -->
+        <div class="invoice-summary">
+            <div class="summary-left">
+                {% if invoice.notes %}
+                <div class="summary-notes">
+                    <h3>Notes:</h3>
+                    <p>{{ invoice.notes }}</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="summary-right">
+                <div class="summary-totals">
+                    <div class="total-row">
+                        <span class="label">Subtotal:</span>
+                        <span class="value">{{ invoice.subtotal|floatformat:2 }}</span>
+                    </div>
+                    {% if invoice.tax_rate > 0 %}
+                    <div class="total-row">
+                        <span class="label">Tax ({{ invoice.tax_rate|floatformat:1 }}%):</span>
+                        <span class="value">{{ invoice.tax_amount|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                    <div class="total-row total-final">
+                        <span class="label">TOTAL AMOUNT:</span>
+                        <span class="value">{{ invoice.total|floatformat:2 }}</span>
+                    </div>
+                    {% if invoice.amount_paid > 0 %}
+                    <div class="total-row">
+                        <span class="label">Amount Paid:</span>
+                        <span class="value">{{ invoice.amount_paid|floatformat:2 }}</span>
+                    </div>
+                    <div class="total-row">
+                        <span class="label">Outstanding:</span>
+                        <span class="value">{{ invoice.outstanding_amount|floatformat:2 }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- PAYMENT DETAILS -->
+        <div class="payment-section">
+            <div class="payment-detail">
+                <h4>Account Name:</h4>
+                <p>KAMRATE NIGERIA LIMITED</p>
+            </div>
+            <div class="payment-detail">
+                <h4>Bank Details:</h4>
+                <p><strong>Bank:</strong> {{ invoice.bank_name|default:"JAIZ BANK" }}</p>
+                <p><strong>Account No:</strong> {{ invoice.account_number|default:"0004662938" }}</p>
+            </div>
+            <div class="payment-detail">
+                <h4>Tax Information:</h4>
+                <p><strong>TIN:</strong> {{ invoice.tin|default:"20727419-0001" }}</p>
+                <p><strong>RC Number:</strong> 1421251</p>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="invoice-footer">
+            <div class="footer-left">
+                <div class="signature-line"></div>
+                <p><strong>Ayinla O Kamaldeen</strong></p>
+                <p>MD/CEO</p>
+                <div class="footer-contact" style="margin-top: 15px;">
+                    <p><strong>KAMRATE NIGERIA LIMITED</strong></p>
+                    <p>33, Creek Road, Ibru Boulevard, Apapa, Lagos</p>
+                    <p>📞 08134834928, 08026826552, 09126220261</p>
+                    <p>🌐 www.kamratelimited.com</p>
+                    <p>✉️ info@kamratelimited.com</p>
+                </div>
+            </div>
+            <div class="footer-right">
+                <p><strong>PAYMENT INSTRUCTION:</strong></p>
+                <p>Please arrange payment at your earliest convenience.</p>
+                <p style="margin-top: 10px; font-size: 9px;">For inquiries, contact our billing department.</p>
+                <p style="margin-top: 10px; border-top: 1px solid rgba(255,255,255,0.3); padding-top: 5px; font-size: 8px;">
+                    Document Generated: {{ "now"|date:"d M Y" }}<br>
+                    Invoice ID: {{ invoice.invoice_number }}
+                </p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
