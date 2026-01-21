@@ -34,6 +34,7 @@ from .forms import QuickAddTruckForm
 from django.views.decorators.http import require_http_methods
 import uuid
 from weasyprint import HTML
+from django.urls import reverse
 
 # from knlTrip.models import Trip  # Adjust import based on your app name
 
@@ -3171,245 +3172,196 @@ from reportlab.lib.units import inch, mm
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Spacer, Paragraph
 from reportlab.lib import colors
 
-@login_required
-def trip_invoice_pdf(request, pk):
-    """Generate professional PDF invoice using ReportLab - SIMPLE WORKING VERSION"""
+# ===== ENHANCED TRIP INVOICE PDF - WITH MANIFEST TABLE =====
+
+from decimal import Decimal
+from io import BytesIO
+
+def generate_invoice_pdf(invoice):
+    """Generate professional PDF with manifest invoice layout"""
     
-    invoice = get_object_or_404(TripInvoice, pk=pk, user=request.user)
-    
-    # Create PDF response
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename="Invoice_{invoice.invoice_number}.pdf"'
     
-    # Create PDF document (Landscape A4)
+    # Create PDF document (Landscape for manifest table)
     doc = SimpleDocTemplate(
         response,
         pagesize=landscape(A4),
-        rightMargin=10*mm,
-        leftMargin=10*mm,
-        topMargin=10*mm,
-        bottomMargin=10*mm,
+        rightMargin=8*mm,
+        leftMargin=8*mm,
+        topMargin=12*mm,
+        bottomMargin=8*mm,
     )
     
     elements = []
     styles = getSampleStyleSheet()
     
-    # ===== HEADER =====
+    # ===== HEADER SECTION =====
     header_data = [
-        ['KAMRATE NIGERIA LIMITED', '', 'INVOICE', f'{invoice.invoice_number}'],
-        ['Professional Logistics & Transportation', '', 'Date:', f'{invoice.issue_date.strftime("%d %b %Y")}'],
+        [
+            Paragraph(f'<b>{invoice.client.clientName}</b><br/>{invoice.client.addressLine1}<br/>{invoice.client.state}', styles['Normal']),
+            '',
+            Paragraph(f'<b>KAMRATE NIGERIA LIMITED</b><br/>Professional Logistics & Transportation<br/>Rc: 1421251', styles['Normal']),
+            '',
+            Paragraph(f'<b>INVOICE</b><br/><font size=14><b>{invoice.invoice_number}</b></font><br/>{invoice.issue_date.strftime("%d %b %Y")}', styles['Normal'])
+        ]
     ]
     
-    header_table = Table(header_data, colWidths=[2.5*inch, 1.5*inch, 1*inch, 1.5*inch])
+    header_table = Table(header_data, colWidths=[2*inch, 0.5*inch, 2*inch, 0.5*inch, 2*inch])
     header_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (0, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (0, 0), 16),
-        ('TEXTCOLOR', (0, 0), (0, 0), colors.HexColor('#001F4D')),
-        ('FONTNAME', (2, 0), (3, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (2, 0), (3, 0), 14),
-        ('TEXTCOLOR', (2, 0), (3, 0), colors.HexColor('#FF9500')),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('ALIGN', (0, 0), (0, 0), 'LEFT'),
+        ('ALIGN', (2, 0), (2, 0), 'CENTER'),
+        ('ALIGN', (4, 0), (4, 0), 'RIGHT'),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
+        ('FONTNAME', (4, 0), (4, 0), 'Helvetica-Bold'),
+        ('TEXTCOLOR', (4, 0), (4, 0), colors.HexColor('#FF9500')),
     ]))
     elements.append(header_table)
-    elements.append(Spacer(1, 0.3*inch))
+    elements.append(Spacer(1, 0.15*inch))
     
-    # ===== INVOICE DETAILS =====
-    details_data = [
-        ['BILL TO:', 'INVOICE DETAILS:', 'PAYMENT TERMS:'],
-        [
-            f'{invoice.client.clientName}\n{invoice.client.addressLine1}\n{invoice.client.state}',
-            f'Status: {invoice.get_status_display()}\nIssue Date: {invoice.issue_date.strftime("%d %b %Y")}\nDue Date: {invoice.due_date.strftime("%d %b %Y") if invoice.due_date else "Not set"}',
-            f'Terms: {invoice.get_payment_terms_display()}\nTax Rate: {invoice.tax_rate}%\nPhone: {invoice.client.phoneNumber}'
-        ],
+    # ===== INVOICE INFO ROW =====
+    info_data = [
+        ['Status: ' + invoice.get_status_display(), 'Issue Date: ' + invoice.issue_date.strftime("%d %b %Y"), 
+         'Due Date: ' + (invoice.due_date.strftime("%d %b %Y") if invoice.due_date else "Not set"), 
+         'Terms: ' + invoice.get_payment_terms_display()]
     ]
     
-    details_table = Table(details_data, colWidths=[2*inch, 2*inch, 2*inch])
-    details_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#001F4D')),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f0f0f0')),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('FONTSIZE', (0, 1), (-1, 1), 9),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+    info_table = Table(info_data, colWidths=[1.5*inch, 1.5*inch, 1.5*inch, 1.5*inch])
+    info_table.setStyle(TableStyle([
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#001F4D')),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
     ]))
-    elements.append(details_table)
-    elements.append(Spacer(1, 0.3*inch))
+    elements.append(info_table)
+    elements.append(Spacer(1, 0.2*inch))
+    
+    # ===== MANIFEST TABLE - USING CORRECT RELATIONSHIP ✅ =====
+    
+    # ✅ THIS IS CORRECT - use related_name 'line_items'
+    line_items = invoice.line_items.all()
+    
+    manifest_data = [
+        ['DATE LOADED', 'AA FILE REFERENCE', 'CONTAINER NO', 'TERMINAL', 'TRUCK NO.', 'LENGTH', 'DESTINATION', 'AMOUNT (₦)']
+    ]
+    
+    total_amount = Decimal('0.00')
+    
+    for item in line_items:
+        amount = Decimal(str(item.amount)) if item.amount else Decimal('0.00')
+        manifest_data.append([
+            item.date_loaded.strftime('%d/%m/%Y') if item.date_loaded else '',
+            item.file_reference or '-',
+            item.container_number or '-',
+            item.terminal or '-',
+            item.truck_number or '-',
+            item.container_length or '20FT',
+            item.destination or '-',
+            f'{float(amount):,.2f}'
+        ])
+        total_amount += amount
+    
+    # Add total row
+    manifest_data.append([
+        '', '', '', '', '', '', 'TOTAL', f'{float(total_amount):,.2f}'
+    ])
+    
+    manifest_table = Table(manifest_data, colWidths=[0.9*inch, 1.1*inch, 1*inch, 0.8*inch, 0.9*inch, 0.7*inch, 1.2*inch, 1.2*inch])
+    manifest_table.setStyle(TableStyle([
+        # Header row
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#001F4D')),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, 0), 8),
+        ('ALIGN', (0, 0), (-1, 0), 'CENTER'),
+        ('GRID', (0, 0), (-1, 0), 1, colors.black),
+        
+        # Data rows
+        ('FONTSIZE', (0, 1), (-1, -2), 8),
+        ('ALIGN', (0, 1), (6, -2), 'LEFT'),
+        ('ALIGN', (7, 1), (7, -2), 'RIGHT'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.HexColor('#f9f9f9')]),
+        
+        # Total row - YELLOW
+        ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor('#FFD700')),
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, -1), (-1, -1), 9),
+        ('ALIGN', (7, -1), (7, -1), 'RIGHT'),
+        ('GRID', (0, -1), (-1, -1), 1, colors.black),
+    ]))
+    
+    elements.append(manifest_table)
+    elements.append(Spacer(1, 0.2*inch))
     
     # ===== FINANCIAL SUMMARY =====
     summary_data = [
-        ['Invoice Summary:', ''],
-        ['Subtotal:', f'₦{invoice.subtotal:,.2f}'],
-        [f'Tax ({invoice.tax_rate}%):', f'₦{invoice.tax_amount:,.2f}'],
-        ['', ''],
-        ['TOTAL AMOUNT:', f'₦{invoice.total:,.2f}'],
-        ['Amount Paid:', f'₦{invoice.amount_paid:,.2f}'],
-        ['OUTSTANDING:', f'₦{invoice.outstanding_amount:,.2f}'],
+        ['', f'SUBTOTAL:', f'₦{float(invoice.subtotal):,.2f}'],
+        ['', f'TAX ({invoice.tax_rate}%):', f'₦{float(invoice.tax_amount):,.2f}'],
+        ['', '', ''],
+        ['', f'TOTAL AMOUNT:', f'₦{float(invoice.total):,.2f}'],
+        ['', 'Amount Paid:', f'₦{float(invoice.amount_paid):,.2f}'],
+        ['', f'OUTSTANDING:', f'₦{float(invoice.outstanding_amount):,.2f}'],
     ]
     
-    summary_table = Table(summary_data, colWidths=[3*inch, 2*inch])
+    summary_table = Table(summary_data, colWidths=[3.5*inch, 1.5*inch, 1.5*inch])
     summary_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (0, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (0, 0), 12),
-        ('TEXTCOLOR', (0, 0), (0, 0), colors.HexColor('#001F4D')),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f0f0f0')),
-        ('FONTNAME', (0, 4), (-1, 4), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 4), (-1, 4), 11),
-        ('TEXTCOLOR', (0, 4), (-1, 4), colors.HexColor('#FF9500')),
-        ('BACKGROUND', (0, 4), (-1, 4), colors.HexColor('#fff3e0')),
-        ('ALIGN', (1, 1), (1, -1), 'RIGHT'),
-        ('GRID', (0, 1), (-1, -1), 0.5, colors.lightgrey),
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
+        ('ALIGN', (1, 0), (-1, -1), 'RIGHT'),
+        ('FONTNAME', (1, 3), (-1, 3), 'Helvetica-Bold'),
+        ('FONTSIZE', (1, 3), (-1, 3), 9),
+        ('TEXTCOLOR', (1, 3), (-1, 3), colors.HexColor('#FF9500')),
+        ('BACKGROUND', (0, 3), (-1, 3), colors.HexColor('#fff3e0')),
     ]))
     elements.append(summary_table)
-    elements.append(Spacer(1, 0.3*inch))
+    elements.append(Spacer(1, 0.15*inch))
     
     # ===== PAYMENT DETAILS =====
-    payment_text = f"""
-    <b>PAYMENT DETAILS:</b><br/>
-    <b>Account Name:</b> KAMRATE NIGERIA LIMITED<br/>
-    <b>Bank:</b> JAIZ BANK<br/>
-    <b>Account Number:</b> 0004662938<br/>
-    <b>TIN:</b> 20727419-0001<br/>
-    <b>RC Number:</b> 1421251
-    """
+    payment_data = [
+        ['ACCOUNT NAME:', 'KAMRATE NIGERIA LIMITED'],
+        ['ACCOUNT NO:', '0004662938'],
+        ['JAIZ BANK', 'TIN: 20727419-0001'],
+    ]
     
-    elements.append(Paragraph(payment_text, styles['Normal']))
-    elements.append(Spacer(1, 0.2*inch))
+    payment_table = Table(payment_data, colWidths=[2*inch, 3.5*inch])
+    payment_table.setStyle(TableStyle([
+        ('FONTSIZE', (0, 0), (-1, -1), 8),
+        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica-Bold'),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.HexColor('#001F4D')),
+    ]))
+    elements.append(payment_table)
+    elements.append(Spacer(1, 0.1*inch))
     
     # ===== FOOTER =====
-    footer_text = """
-    <b>33 Creek Road, Ibru Boulevard, Apapa, Lagos</b><br/>
-    Phone: 08134834928, 08026826552, 09126220261<br/>
-    Email: info@kamratelimited.com | Website: www.kamratelimited.com
-    """
-    
-    elements.append(Paragraph(footer_text, styles['Normal']))
+    footer_text = Paragraph(
+        '<b>33 Creek Road, Ibru Boulevard, Apapa, Lagos</b><br/>'
+        'Phone: 08134834928, 08026826552, 09126220261<br/>'
+        'Email: info@kamratelimited.com | Website: www.kamratelimited.com',
+        styles['Normal']
+    )
+    footer_text.fontSize = 7
+    elements.append(footer_text)
     
     # Build PDF
     doc.build(elements)
-    
     return response
 
 
-# ===== VIEW INVOICE - Display PDF Inline in Browser =====
+@login_required
+def trip_invoice_pdf(request, pk):
+    """Download invoice PDF"""
+    invoice = get_object_or_404(TripInvoice, pk=pk, user=request.user)
+    response = generate_invoice_pdf(invoice)
+    response['Content-Disposition'] = f'attachment; filename="Invoice_{invoice.invoice_number}.pdf"'
+    return response
+
 
 @login_required
 def trip_invoice_view(request, pk):
-    """Display invoice PDF in browser (VIEW button)"""
-    
+    """View invoice PDF in browser"""
     invoice = get_object_or_404(TripInvoice, pk=pk, user=request.user)
-    
-    # KEY: Use 'inline' to display in browser, not 'attachment' to download
-    response = HttpResponse(content_type='application/pdf')
+    response = generate_invoice_pdf(invoice)
     response['Content-Disposition'] = f'inline; filename="Invoice_{invoice.invoice_number}.pdf"'
-    
-    # Create PDF document (Landscape A4)
-    doc = SimpleDocTemplate(
-        response,
-        pagesize=landscape(A4),
-        rightMargin=10*mm,
-        leftMargin=10*mm,
-        topMargin=10*mm,
-        bottomMargin=10*mm,
-    )
-    
-    elements = []
-    styles = getSampleStyleSheet()
-    
-    # ===== HEADER =====
-    header_data = [
-        ['KAMRATE NIGERIA LIMITED', '', 'INVOICE', f'{invoice.invoice_number}'],
-        ['Professional Logistics & Transportation', '', 'Date:', f'{invoice.issue_date.strftime("%d %b %Y")}'],
-    ]
-    
-    header_table = Table(header_data, colWidths=[2.5*inch, 1.5*inch, 1*inch, 1.5*inch])
-    header_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (0, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (0, 0), 16),
-        ('TEXTCOLOR', (0, 0), (0, 0), colors.HexColor('#001F4D')),
-        ('FONTNAME', (2, 0), (3, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (2, 0), (3, 0), 14),
-        ('TEXTCOLOR', (2, 0), (3, 0), colors.HexColor('#FF9500')),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-    ]))
-    elements.append(header_table)
-    elements.append(Spacer(1, 0.3*inch))
-    
-    # ===== INVOICE DETAILS =====
-    details_data = [
-        ['BILL TO:', 'INVOICE DETAILS:', 'PAYMENT TERMS:'],
-        [
-            f'{invoice.client.clientName}\n{invoice.client.addressLine1}\n{invoice.client.state}',
-            f'Status: {invoice.get_status_display()}\nIssue Date: {invoice.issue_date.strftime("%d %b %Y")}\nDue Date: {invoice.due_date.strftime("%d %b %Y") if invoice.due_date else "Not set"}',
-            f'Terms: {invoice.get_payment_terms_display()}\nTax Rate: {invoice.tax_rate}%\nPhone: {invoice.client.phoneNumber}'
-        ],
-    ]
-    
-    details_table = Table(details_data, colWidths=[2*inch, 2*inch, 2*inch])
-    details_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#001F4D')),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f0f0f0')),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('FONTSIZE', (0, 1), (-1, 1), 9),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-    ]))
-    elements.append(details_table)
-    elements.append(Spacer(1, 0.3*inch))
-    
-    # ===== FINANCIAL SUMMARY =====
-    summary_data = [
-        ['Invoice Summary:', ''],
-        ['Subtotal:', f'₦{invoice.subtotal:,.2f}'],
-        [f'Tax ({invoice.tax_rate}%):', f'₦{invoice.tax_amount:,.2f}'],
-        ['', ''],
-        ['TOTAL AMOUNT:', f'₦{invoice.total:,.2f}'],
-        ['Amount Paid:', f'₦{invoice.amount_paid:,.2f}'],
-        ['OUTSTANDING:', f'₦{invoice.outstanding_amount:,.2f}'],
-    ]
-    
-    summary_table = Table(summary_data, colWidths=[3*inch, 2*inch])
-    summary_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (0, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (0, 0), 12),
-        ('TEXTCOLOR', (0, 0), (0, 0), colors.HexColor('#001F4D')),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f0f0f0')),
-        ('FONTNAME', (0, 4), (-1, 4), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 4), (-1, 4), 11),
-        ('TEXTCOLOR', (0, 4), (-1, 4), colors.HexColor('#FF9500')),
-        ('BACKGROUND', (0, 4), (-1, 4), colors.HexColor('#fff3e0')),
-        ('ALIGN', (1, 1), (1, -1), 'RIGHT'),
-        ('GRID', (0, 1), (-1, -1), 0.5, colors.lightgrey),
-    ]))
-    elements.append(summary_table)
-    elements.append(Spacer(1, 0.3*inch))
-    
-    # ===== PAYMENT DETAILS =====
-    payment_text = f"""
-    <b>PAYMENT DETAILS:</b><br/>
-    <b>Account Name:</b> KAMRATE NIGERIA LIMITED<br/>
-    <b>Bank:</b> JAIZ BANK<br/>
-    <b>Account Number:</b> 0004662938<br/>
-    <b>TIN:</b> 20727419-0001<br/>
-    <b>RC Number:</b> 1421251
-    """
-    elements.append(Paragraph(payment_text, styles['Normal']))
-    elements.append(Spacer(1, 0.2*inch))
-    
-    # ===== FOOTER =====
-    footer_text = """
-    <b>33 Creek Road, Ibru Boulevard, Apapa, Lagos</b><br/>
-    Phone: 08134834928, 08026826552, 09126220261<br/>
-    Email: info@kamratelimited.com | Website: www.kamratelimited.com
-    """
-    elements.append(Paragraph(footer_text, styles['Normal']))
-    
-    # Build PDF
-    doc.build(elements)
-    
     return response
-
 
 # ===== EMAIL INVOICE =====
 
@@ -3549,123 +3501,3 @@ def trip_invoice_email(request, pk):
         messages.error(request, f'Error sending email: {str(e)}')
     
     return redirect('knlInvoice:trip-invoice-detail', pk=invoice.pk)
-
-
-# ===== PRINT INVOICE - Display PDF Inline in Browser =====
-
-@login_required
-def trip_invoice_print(request, pk):
-    """Print invoice - Display PDF in browser (PRINT button)"""
-    
-    invoice = get_object_or_404(TripInvoice, pk=pk, user=request.user)
-    
-    # KEY: Use 'inline' to display in browser, not 'attachment' to download
-    response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = f'inline; filename="Invoice_{invoice.invoice_number}.pdf"'
-    
-    # Create PDF document (Landscape A4)
-    doc = SimpleDocTemplate(
-        response,
-        pagesize=landscape(A4),
-        rightMargin=10*mm,
-        leftMargin=10*mm,
-        topMargin=10*mm,
-        bottomMargin=10*mm,
-    )
-    
-    elements = []
-    styles = getSampleStyleSheet()
-    
-    # ===== HEADER =====
-    header_data = [
-        ['KAMRATE NIGERIA LIMITED', '', 'INVOICE', f'{invoice.invoice_number}'],
-        ['Professional Logistics & Transportation', '', 'Date:', f'{invoice.issue_date.strftime("%d %b %Y")}'],
-    ]
-    
-    header_table = Table(header_data, colWidths=[2.5*inch, 1.5*inch, 1*inch, 1.5*inch])
-    header_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (0, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (0, 0), 16),
-        ('TEXTCOLOR', (0, 0), (0, 0), colors.HexColor('#001F4D')),
-        ('FONTNAME', (2, 0), (3, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (2, 0), (3, 0), 14),
-        ('TEXTCOLOR', (2, 0), (3, 0), colors.HexColor('#FF9500')),
-        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-    ]))
-    elements.append(header_table)
-    elements.append(Spacer(1, 0.3*inch))
-    
-    # ===== INVOICE DETAILS =====
-    details_data = [
-        ['BILL TO:', 'INVOICE DETAILS:', 'PAYMENT TERMS:'],
-        [
-            f'{invoice.client.clientName}\n{invoice.client.addressLine1}\n{invoice.client.state}',
-            f'Status: {invoice.get_status_display()}\nIssue Date: {invoice.issue_date.strftime("%d %b %Y")}\nDue Date: {invoice.due_date.strftime("%d %b %Y") if invoice.due_date else "Not set"}',
-            f'Terms: {invoice.get_payment_terms_display()}\nTax Rate: {invoice.tax_rate}%\nPhone: {invoice.client.phoneNumber}'
-        ],
-    ]
-    
-    details_table = Table(details_data, colWidths=[2*inch, 2*inch, 2*inch])
-    details_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (-1, 0), 10),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.HexColor('#001F4D')),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f0f0f0')),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('FONTSIZE', (0, 1), (-1, 1), 9),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-    ]))
-    elements.append(details_table)
-    elements.append(Spacer(1, 0.3*inch))
-    
-    # ===== FINANCIAL SUMMARY =====
-    summary_data = [
-        ['Invoice Summary:', ''],
-        ['Subtotal:', f'₦{invoice.subtotal:,.2f}'],
-        [f'Tax ({invoice.tax_rate}%):', f'₦{invoice.tax_amount:,.2f}'],
-        ['', ''],
-        ['TOTAL AMOUNT:', f'₦{invoice.total:,.2f}'],
-        ['Amount Paid:', f'₦{invoice.amount_paid:,.2f}'],
-        ['OUTSTANDING:', f'₦{invoice.outstanding_amount:,.2f}'],
-    ]
-    
-    summary_table = Table(summary_data, colWidths=[3*inch, 2*inch])
-    summary_table.setStyle(TableStyle([
-        ('FONTNAME', (0, 0), (0, 0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 0), (0, 0), 12),
-        ('TEXTCOLOR', (0, 0), (0, 0), colors.HexColor('#001F4D')),
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f0f0f0')),
-        ('FONTNAME', (0, 4), (-1, 4), 'Helvetica-Bold'),
-        ('FONTSIZE', (0, 4), (-1, 4), 11),
-        ('TEXTCOLOR', (0, 4), (-1, 4), colors.HexColor('#FF9500')),
-        ('BACKGROUND', (0, 4), (-1, 4), colors.HexColor('#fff3e0')),
-        ('ALIGN', (1, 1), (1, -1), 'RIGHT'),
-        ('GRID', (0, 1), (-1, -1), 0.5, colors.lightgrey),
-    ]))
-    elements.append(summary_table)
-    elements.append(Spacer(1, 0.3*inch))
-    
-    # ===== PAYMENT DETAILS =====
-    payment_text = f"""
-    <b>PAYMENT DETAILS:</b><br/>
-    <b>Account Name:</b> KAMRATE NIGERIA LIMITED<br/>
-    <b>Bank:</b> JAIZ BANK<br/>
-    <b>Account Number:</b> 0004662938<br/>
-    <b>TIN:</b> 20727419-0001<br/>
-    <b>RC Number:</b> 1421251
-    """
-    elements.append(Paragraph(payment_text, styles['Normal']))
-    elements.append(Spacer(1, 0.2*inch))
-    
-    # ===== FOOTER =====
-    footer_text = """
-    <b>33 Creek Road, Ibru Boulevard, Apapa, Lagos</b><br/>
-    Phone: 08134834928, 08026826552, 09126220261<br/>
-    Email: info@kamratelimited.com | Website: www.kamratelimited.com
-    """
-    elements.append(Paragraph(footer_text, styles['Normal']))
-    
-    # Build PDF
-    doc.build(elements)
-    
-    return response

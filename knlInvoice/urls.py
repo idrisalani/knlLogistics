@@ -97,7 +97,7 @@ urlpatterns = [
     path('trip-invoices/<int:pk>/email/', views.trip_invoice_email, name='trip-invoice-email'),
     path('trip-invoices/<int:pk>/record-payment/', views.record_payment, name='trip-invoice-record-payment'),
     path('trip-invoices/<int:pk>/view/', views.trip_invoice_view, name='trip-invoice-view'),
-    path('trip-invoices/<int:pk>/print/', views.trip_invoice_print, name='trip-invoice-print'),
+    # path('trip-invoices/<int:pk>/print/', views.trip_invoice_print, name='trip-invoice-print'),
     # path('trip-invoices/<int:pk>/email/', views.trip_invoice_email, name='trip-invoice-email'),
 
     # ============================================================================

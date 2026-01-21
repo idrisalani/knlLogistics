@@ -631,9 +631,9 @@
         <a href="{% url 'knlInvoice:trip-invoice-email' invoice.pk %}" class="btn btn-email">
           <i class="fas fa-envelope"></i> Email Invoice
         </a>
-        <a href="{% url 'knlInvoice:trip-invoice-print' invoice.pk %}" class="btn btn-print">
+        <button onclick="printTripInvoicePDF('{% url 'knlInvoice:trip-invoice-view' invoice.pk %}')" class="btn btn-print">
           <i class="fas fa-print"></i> Print
-        </a>
+        </button>
         <a href="{% url 'knlInvoice:trip-invoice-edit' invoice.pk %}" class="btn btn-primary">
           <i class="fas fa-edit"></i> Edit
         </a>
@@ -880,8 +880,20 @@ function switchTab(event, tabName) {
   event.target.closest('.tab-button').classList.add('active');
 }
 
-function printInvoicePDF() {
-  window.print();
+function printTripInvoicePDF(pdfUrl) {
+  const printWindow = window.open(pdfUrl, '_blank');
+  if (printWindow) {
+    printWindow.onload = function() {
+      setTimeout(function() {
+        printWindow.print();
+        printWindow.onafterprint = function() {
+          printWindow.close();
+        };
+      }, 250);
+    };
+  } else {
+    alert('Please allow popups to print the invoice.');
+  }
 }
 
 // View Invoice button - scroll
