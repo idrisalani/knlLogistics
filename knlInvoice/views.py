@@ -33,7 +33,6 @@ from .forms import TripForm, InvoiceForm, ProductForm, TripExpenseForm, ClientFo
 from .forms import QuickAddTruckForm
 from django.views.decorators.http import require_http_methods
 import uuid
-from weasyprint import HTML
 from django.urls import reverse
 
 # from knlTrip.models import Trip  # Adjust import based on your app name
